@@ -1,8 +1,29 @@
 {
-  "name": "rest-express",
+  "name": "sistem-informasi-pengawas-sekolah",
   "version": "1.0.0",
+  "description": "Sistem manajemen pengawasan sekolah berbasis web untuk memantau aktivitas dan supervisi di lingkungan pendidikan",
   "type": "module",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wawan-yogaswara/sistem-informasi-pengawas-sekolah.git"
+  },
+  "homepage": "https://github.com/wawan-yogaswara/sistem-informasi-pengawas-sekolah#readme",
+  "bugs": {
+    "url": "https://github.com/wawan-yogaswara/sistem-informasi-pengawas-sekolah/issues"
+  },
+  "author": {
+    "name": "Wawan Yogaswara",
+    "url": "https://github.com/wawan-yogaswara"
+  },
+  "keywords": [
+    "school-management",
+    "supervision",
+    "education",
+    "react",
+    "typescript",
+    "supabase"
+  ],
   "scripts": {
     "dev": "tsx server/index.ts",
     "build": "vite build",

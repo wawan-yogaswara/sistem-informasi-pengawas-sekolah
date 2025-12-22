@@ -1,6 +1,12 @@
-# 🏫 Aplikasi Pengawas Sekolah
+# 🏫 Sistem Informasi Pengawas Sekolah
 
 Aplikasi manajemen tugas dan supervisi untuk pengawas sekolah dengan fitur lengkap untuk mengelola tugas pokok, supervisi sekolah, kegiatan tambahan, dan pelaporan.
+
+[![GitHub Repository](https://img.shields.io/badge/GitHub-sistem--informasi--pengawas--sekolah-blue?logo=github)](https://github.com/wawan-yogaswara/sistem-informasi-pengawas-sekolah)
+[![React](https://img.shields.io/badge/React-18+-blue?logo=react)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5+-blue?logo=typescript)](https://www.typescriptlang.org/)
+
+**Repository:** https://github.com/wawan-yogaswara/sistem-informasi-pengawas-sekolah
 
 ---
 
