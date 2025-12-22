@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Netlify-Supabase Helper: Fix Data Saving</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #2d3748;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .warning { background: #fff3cd; border: 1px solid #ffeaa7; color: #856404; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .info { background: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+        
+        .step {
+            background: #f8f9fa;
+            border-left: 5px solid #4299e1;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 0 10px 10px 0;
+        }
+        .step h3 {
+            margin-top: 0;
+            color: #2d3748;
+        }
+        
+        .input-group {
+            margin: 15px 0;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #4a5568;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        .input-group input:focus {
+            outline: none;
+            border-color: #4299e1;
+        }
+        
+        .btn {
+            background: #4299e1;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+            transition: background 0.3s;
+        }
+        .btn:hover { background: #3182ce; }
+        .btn:disabled { background: #a0aec0; cursor: not-allowed; }
+        
+        .btn-success { background: #48bb78; }
+        .btn-success:hover { background: #38a169; }
+        
+        .btn-warning { background: #ed8936; }
+        .btn-warning:hover { background: #dd6b20; }
+        
+        .code {
+            background: #f1f3f4;
+            border: 1px solid #dadce0;
+            border-radius: 6px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            margin: 10px 0;
+            white-space: pre-wrap;
+        }
+        
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #e2e8f0;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 12px 24px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s;
+        }
+        .tab.active {
+            border-bottom-color: #4299e1;
+            color: #4299e1;
+            font-weight: bold;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Netlify-Supabase Helper: Fix Data Saving</h1>
+        
+        <div class="status error">
+            <strong>🚨 Masalah Terdeteksi:</strong> Data tidak tersimpan ke Supabase meskipun koneksi Netlify-Supabase sudah dibuat
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="showTab('diagnosis')">🔍 Diagnosa</div>
+            <div class="tab" onclick="showTab('fix')">🔧 Perbaikan</div>
+            <div class="tab" onclick="showTab('test')">🧪 Test</div>
+            <div class="tab" onclick="showTab('netlify')">🌐 Netlify Setup</div>
+        </div>
+
+        <!-- Tab Diagnosa -->
+        <div id="diagnosis" class="tab-content active">
+            <div class="step">
+                <h3>📋 Step 1: Periksa Konfigurasi Supabase</h3>
+                <p>Masukkan konfigurasi Supabase Anda untuk diagnosa:</p>
+                
+                <div class="input-group">
+                    <label for="supabaseUrl">Supabase URL:</label>
+                    <input type="text" id="supabaseUrl" value="https://fmxeboullgcewzjpql.supabase.co">
+                </div>
+                
+                <div class="input-group">
+                    <label for="supabaseKey">Supabase Anon Key:</label>
+                    <input type="password" id="supabaseKey" placeholder="Paste key dari Supabase dashboard">
+                </div>
+                
+                <button onclick="diagnoseConnection()" class="btn">🔍 Diagnosa Koneksi</button>
+                <button onclick="showCurrentConfig()" class="btn btn-warning">📋 Lihat Config Saat Ini</button>
+            </div>
+            
+            <div id="diagnosisResult"></div>
+        </div>
+
+        <!-- Tab Perbaikan -->
+        <div id="fix" class="tab-content">
+            <div class="step">
+                <h3>🔧 Step 1: Dapatkan Key Supabase yang Benar</h3>
+                <ol>
+                    <li>Buka <a href="https://supabase.com/dashboard" target="_blank">Supabase Dashboard</a></li>
+                    <li>Pilih project: <strong>fmxeboullgcewzjpql</strong></li>
+                    <li>Pergi ke <strong>Settings > API</strong></li>
+                    <li>Copy <strong>"anon public"</strong> key (BUKAN service_role!)</li>
+                    <li>Paste di form diagnosa di atas</li>
+                </ol>
+            </div>
+            
+            <div class="step">
+                <h3>🛠️ Step 2: Setup Database Schema</h3>
+                <p>Jika tabel belum ada, jalankan SQL ini di Supabase SQL Editor:</p>
+                <button onclick="showSchemaSQL()" class="btn btn-success">📝 Tampilkan SQL Schema</button>
+                <div id="schemaSQL" style="display: none;">
+                    <div class="code" id="sqlCode"></div>
+                    <button onclick="copySQL()" class="btn">📋 Copy SQL</button>
+                </div>
+            </div>
+            
+            <div class="step">
+                <h3>📝 Step 3: Update File .env</h3>
+                <button onclick="generateEnvConfig()" class="btn btn-success">🔧 Generate .env Config</button>
+                <div id="envConfig" style="display: none;">
+                    <div class="code" id="envCode"></div>
+                    <button onclick="copyEnvConfig()" class="btn">📋 Copy Config</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Test -->
+        <div id="test" class="tab-content">
+            <div class="step">
+                <h3>🧪 Test Koneksi dan Penyimpanan Data</h3>
+                <p>Setelah key diupdate, test koneksi dan penyimpanan data:</p>
+                
+                <button onclick="testConnection()" class="btn">🔗 Test Koneksi</button>
+                <button onclick="testDataSaving()" class="btn btn-success">💾 Test Penyimpanan Data</button>
+                <button onclick="testSchema()" class="btn btn-warning">🗄️ Test Schema Database</button>
+            </div>
+            
+            <div id="testResult"></div>
+        </div>
+
+        <!-- Tab Netlify -->
+        <div id="netlify" class="tab-content">
+            <div class="step">
+                <h3>🌐 Setup Environment Variables di Netlify</h3>
+                <ol>
+                    <li>Buka <a href="https://app.netlify.com" target="_blank">Netlify Dashboard</a></li>
+                    <li>Pilih site Anda</li>
+                    <li>Pergi ke <strong>Site settings > Environment variables</strong></li>
+                    <li>Tambahkan variables berikut:</li>
+                </ol>
+                
+                <button onclick="showNetlifyVars()" class="btn btn-success">📋 Tampilkan Environment Variables</button>
+                <div id="netlifyVars" style="display: none;">
+                    <div class="code" id="netlifyCode"></div>
+                    <button onclick="copyNetlifyVars()" class="btn">📋 Copy Variables</button>
+                </div>
+                
+                <div class="info" style="margin-top: 20px;">
+                    <strong>⚠️ Penting:</strong> Setelah menambah environment variables, klik <strong>"Trigger deploy"</strong> untuk redeploy site Anda.
+                </div>
+            </div>
+        </div>
+
+        <div class="step" style="margin-top: 30px;">
+            <h3>💡 Tips Troubleshooting</h3>
+            <ul>
+                <li><strong>Key berulang "Ej8Ej8Ej8":</strong> Gunakan key asli dari dashboard</li>
+                <li><strong>Error "relation does not exist":</strong> Setup schema database</li>
+                <li><strong>Error "permission denied":</strong> Periksa RLS policy</li>
+                <li><strong>Data tidak muncul:</strong> Periksa environment variables Netlify</li>
+            </ul>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function showResult(message, type = 'info', containerId = 'diagnosisResult') {
+            const container = document.getElementById(containerId);
+            container.className = `result ${type}`;
+            container.textContent = message;
+        }
+
+        function getSupabaseClient() {
+            const url = document.getElementById('supabaseUrl').value.trim();
+            const key = document.getElementById('supabaseKey').value.trim();
+            
+            if (!url || !key) {
+                showResult('❌ Harap isi URL dan Key Supabase', 'error');
+                return null;
+            }
+            
+            if (key.includes('Ej8Ej8Ej8')) {
+                showResult('❌ Key tidak valid (berulang). Dapatkan key yang benar dari dashboard Supabase.', 'error');
+                return null;
+            }
+            
+            return supabase.createClient(url, key);
+        }
+
+        function showCurrentConfig() {
+            const url = document.getElementById('supabaseUrl').value;
+            const key = document.getElementById('supabaseKey').value;
+            
+            let message = `📋 Konfigurasi Saat Ini:\n\n`;
+            message += `URL: ${url}\n`;
+            message += `Key: ${key ? key.substring(0, 30) + '...' : 'Belum diisi'}\n\n`;
+            
+            if (key.includes('Ej8Ej8Ej8')) {
+                message += `❌ Status: Key tidak valid (berulang)\n`;
+                message += `💡 Solusi: Dapatkan key yang benar dari Supabase dashboard`;
+            } else if (key.length > 100) {
+                message += `✅ Status: Key format valid\n`;
+                message += `🔄 Lanjut test koneksi`;
+            } else {
+                message += `⚠️ Status: Key terlalu pendek atau belum diisi`;
+            }
+            
+            showResult(message, key.includes('Ej8Ej8Ej8') ? 'error' : 'info');
+        }
+
+        async function diagnoseConnection() {
+            showResult('🔄 Mendiagnosa koneksi...', 'info');
+            
+            const client = getSupabaseClient();
+            if (!client) return;
+            
+            try {
+                const { data, error } = await client
+                    .from('users')
+                    .select('count')
+                    .limit(1);
+                
+                if (error) {
+                    let message = `❌ Error: ${error.message}\n\n`;
+                    
+                    if (error.message.includes('relation "users" does not exist')) {
+                        message += `💡 Masalah: Tabel "users" belum dibuat\n`;
+                        message += `🔧 Solusi: Setup schema database\n`;
+                        message += `📋 Pergi ke tab "Perbaikan" untuk setup schema`;
+                    } else if (error.message.includes('Invalid API key')) {
+                        message += `💡 Masalah: API key tidak valid\n`;
+                        message += `🔧 Solusi: Periksa key di dashboard Supabase`;
+                    } else {
+                        message += `💡 Error lain: ${error.message}`;
+                    }
+                    
+                    showResult(message, 'error');
+                } else {
+                    showResult(`✅ Koneksi berhasil!\n📊 Response: ${JSON.stringify(data)}\n\n🎉 Supabase siap digunakan!`, 'success');
+                }
+                
+            } catch (err) {
+                showResult(`❌ Error koneksi: ${err.message}\n\n💡 Periksa koneksi internet atau firewall`, 'error');
+            }
+        }
+
+        async function testConnection() {
+            showResult('🔄 Testing koneksi...', 'info', 'testResult');
+            
+            const client = getSupabaseClient();
+            if (!client) {
+                showResult('❌ Konfigurasi tidak valid', 'error', 'testResult');
+                return;
+            }
+            
+            try {
+                const { data, error } = await client.from('users').select('count').limit(1);
+                
+                if (error) {
+                    showResult(`❌ Koneksi gagal: ${error.message}`, 'error', 'testResult');
+                } else {
+                    showResult(`✅ Koneksi berhasil!\n📊 Data: ${JSON.stringify(data)}`, 'success', 'testResult');
+                }
+            } catch (err) {
+                showResult(`❌ Error: ${err.message}`, 'error', 'testResult');
+            }
+        }
+
+        async function testDataSaving() {
+            showResult('💾 Testing penyimpanan data...', 'info', 'testResult');
+            
+            const client = getSupabaseClient();
+            if (!client) return;
+            
+            try {
+                // Test insert user
+                const testUser = {
+                    username: `test_${Date.now()}`,
+                    password: 'test123',
+                    name: 'Test User',
+                    role: 'user'
+                };
+                
+                const { data, error } = await client
+                    .from('users')
+                    .insert(testUser)
+                    .select();
+                
+                if (error) {
+                    showResult(`❌ Error insert: ${error.message}\n\n💡 Periksa schema database dan RLS policy`, 'error', 'testResult');
+                } else {
+                    // Hapus data test
+                    await client.from('users').delete().eq('username', testUser.username);
+                    
+                    showResult(`✅ Penyimpanan data berhasil!\n📊 User ID: ${data[0].id}\n🧹 Data test dihapus\n\n🎉 Aplikasi siap untuk production!`, 'success', 'testResult');
+                }
+            } catch (err) {
+                showResult(`❌ Error: ${err.message}`, 'error', 'testResult');
+            }
+        }
+
+        async function testSchema() {
+            showResult('🗄️ Testing schema database...', 'info', 'testResult');
+            
+            const client = getSupabaseClient();
+            if (!client) return;
+            
+            const tables = ['users', 'schools', 'tasks', 'supervisions', 'additional_tasks'];
+            let results = [];
+            
+            for (const table of tables) {
+                try {
+                    const { data, error } = await client.from(table).select('count').limit(1);
+                    
+                    if (error) {
+                        results.push(`❌ ${table}: ${error.message}`);
+                    } else {
+                        results.push(`✅ ${table}: OK`);
+                    }
+                } catch (err) {
+                    results.push(`❌ ${table}: ${err.message}`);
+                }
+            }
+            
+            showResult(`📊 Hasil Test Schema:\n\n${results.join('\n')}`, 'info', 'testResult');
+        }
+
+        function showSchemaSQL() {
+            const sql = `-- Schema Database untuk School Guard Manager
+CREATE TABLE IF NOT EXISTS users (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  username VARCHAR(50) UNIQUE NOT NULL,
+  password VARCHAR(255) NOT NULL,
+  role VARCHAR(20) DEFAULT 'user',
+  name VARCHAR(100) NOT NULL,
+  nip VARCHAR(50),
+  position VARCHAR(100),
+  photo TEXT,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS schools (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name VARCHAR(200) NOT NULL,
+  address TEXT,
+  principal VARCHAR(100),
+  phone VARCHAR(20),
+  email VARCHAR(100),
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Enable RLS dan buat policy
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE schools ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow all operations on users" ON users FOR ALL USING (true);
+CREATE POLICY "Allow all operations on schools" ON schools FOR ALL USING (true);`;
+            
+            document.getElementById('sqlCode').textContent = sql;
+            document.getElementById('schemaSQL').style.display = 'block';
+        }
+
+        function generateEnvConfig() {
+            const url = document.getElementById('supabaseUrl').value.trim();
+            const key = document.getElementById('supabaseKey').value.trim();
+            
+            if (!url || !key) {
+                alert('Harap isi URL dan Key terlebih dahulu!');
+                return;
+            }
+            
+            const envConfig = `SUPABASE_URL=${url}
+SUPABASE_ANON_KEY=${key}
+VITE_SUPABASE_URL=${url}
+VITE_SUPABASE_ANON_KEY=${key}`;
+            
+            document.getElementById('envCode').textContent = envConfig;
+            document.getElementById('envConfig').style.display = 'block';
+        }
+
+        function showNetlifyVars() {
+            const url = document.getElementById('supabaseUrl').value.trim();
+            const key = document.getElementById('supabaseKey').value.trim();
+            
+            const netlifyVars = `Variable 1:
+Key: VITE_SUPABASE_URL
+Value: ${url || 'https://fmxeboullgcewzjpql.supabase.co'}
+
+Variable 2:
+Key: VITE_SUPABASE_ANON_KEY
+Value: ${key || '[paste-key-yang-benar-disini]'}
+
+⚠️ Setelah menambah variables, klik "Trigger deploy" untuk redeploy site`;
+            
+            document.getElementById('netlifyCode').textContent = netlifyVars;
+            document.getElementById('netlifyVars').style.display = 'block';
+        }
+
+        async function copySQL() {
+            const sql = document.getElementById('sqlCode').textContent;
+            await navigator.clipboard.writeText(sql);
+            alert('✅ SQL berhasil di-copy! Paste di Supabase SQL Editor.');
+        }
+
+        async function copyEnvConfig() {
+            const config = document.getElementById('envCode').textContent;
+            await navigator.clipboard.writeText(config);
+            alert('✅ Config berhasil di-copy! Paste di file .env Anda.');
+        }
+
+        async function copyNetlifyVars() {
+            const vars = document.getElementById('netlifyCode').textContent;
+            await navigator.clipboard.writeText(vars);
+            alert('✅ Variables berhasil di-copy! Set di Netlify Dashboard.');
+        }
+
+        // Auto-save input values
+        document.getElementById('supabaseUrl').addEventListener('input', function() {
+            localStorage.setItem('supabase_url', this.value);
+        });
+        
+        document.getElementById('supabaseKey').addEventListener('input', function() {
+            localStorage.setItem('supabase_key', this.value);
+        });
+
+        // Load saved values
+        window.onload = function() {
+            const savedUrl = localStorage.getItem('supabase_url');
+            const savedKey = localStorage.getItem('supabase_key');
+            
+            if (savedUrl) document.getElementById('supabaseUrl').value = savedUrl;
+            if (savedKey) document.getElementById('supabaseKey').value = savedKey;
+        };
+    </script>
+</body>
+</html>

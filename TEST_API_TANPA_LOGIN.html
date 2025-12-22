@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test API Tanpa Login</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 900px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, textarea, select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        button { background: #007bff; color: white; padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer; margin: 5px; font-size: 14px; }
+        button:hover { background: #0056b3; }
+        button.success { background: #28a745; }
+        button.danger { background: #dc3545; }
+        .result { margin-top: 20px; padding: 15px; border-radius: 4px; }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .info { background: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+        .warning { background: #fff3cd; border: 1px solid #ffeaa7; color: #856404; }
+        pre { white-space: pre-wrap; word-wrap: break-word; max-height: 300px; overflow-y: auto; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .card { border: 1px solid #ddd; border-radius: 8px; padding: 15px; }
+        .status-indicator { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 8px; }
+        .status-online { background: #28a745; }
+        .status-offline { background: #dc3545; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test API Direct (Tanpa Login)</h1>
+        
+        <div class="card">
+            <h3>📊 Server Status</h3>
+            <p id="serverStatus">
+                <span class="status-indicator status-offline"></span>
+                Checking server...
+            </p>
+            <button onclick="checkServerStatus()">🔄 Refresh Status</button>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <h3>📝 Test Input Data</h3>
+                <form id="testForm">
+                    <div class="form-group">
+                        <label>API Endpoint:</label>
+                        <select id="apiEndpoint">
+                            <option value="/api/additional-tasks">Tugas Tambahan</option>
+                            <option value="/api/tasks">Tasks</option>
+                            <option value="/api/activities">Activities</option>
+                            <option value="/api/supervisions">Supervisi</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="name">Nama Kegiatan:</label>
+                        <input type="text" id="name" name="name" value="Test Direct API Call" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="description">Deskripsi:</label>
+                        <textarea id="description" name="description" rows="2">Test langsung ke API tanpa login</textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="date">Tanggal:</label>
+                        <input type="datetime-local" id="date" name="date" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="location">Lokasi:</label>
+                        <input type="text" id="location" name="location" value="Test Location">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="organizer">Penyelenggara:</label>
+                        <input type="text" id="organizer" name="organizer" value="Test Organizer">
+                    </div>
+
+                    <button type="submit">🚀 Kirim Data</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h3>📊 Test Endpoints</h3>
+                <button onclick="testEndpoint('GET')">📥 GET Data</button>
+                <button onclick="testEndpoint('POST')" class="success">📤 POST Data</button>
+                <button onclick="testAllEndpoints()" class="warning">🔍 Test All APIs</button>
+                <button onclick="testLocalStorage()" class="danger">💾 Test localStorage</button>
+            </div>
+        </div>
+
+        <div id="result"></div>
+    </div>
+
+    <script>
+        // Set default datetime
+        document.getElementById('date').value = new Date().toISOString().slice(0, 16);
+
+        // Base URL for API calls
+        const BASE_URL = 'http://localhost:5000';
+
+        async function checkServerStatus() {
+            const statusEl = document.getElementById('serverStatus');
+            
+            try {
+                const response = await fetch(`${BASE_URL}/api/health`);
+                if (response.ok) {
+                    statusEl.innerHTML = '<span class="status-indicator status-online"></span>Server Online (Port 5000)';
+                } else {
+                    statusEl.innerHTML = '<span class="status-indicator status-offline"></span>Server Error: ' + response.status;
+                }
+            } catch (error) {
+                statusEl.innerHTML = '<span class="status-indicator status-offline"></span>Server Offline - ' + error.message;
+            }
+        }
+
+        // Check server status on load
+        checkServerStatus();
+
+        document.getElementById('testForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await testEndpoint('POST');
+        });
+
+        async function testEndpoint(method) {
+            const resultDiv = document.getElementById('result');
+            const endpoint = document.getElementById('apiEndpoint').value;
+            
+            // Use test endpoints that don't require authentication
+            let url = `${BASE_URL}${endpoint}`;
+            if (endpoint === '/api/additional-tasks') {
+                url = `${BASE_URL}/api/test/additional-tasks`;
+            } else if (endpoint === '/api/tasks') {
+                url = `${BASE_URL}/api/test/additional-tasks`; // Use same endpoint for testing
+            }
+            
+            let requestData = null;
+            if (method === 'POST') {
+                const formData = new FormData(document.getElementById('testForm'));
+                requestData = Object.fromEntries(formData.entries());
+                requestData.date = new Date(requestData.date).toISOString();
+                // Remove user_id since server will assign automatically
+                delete requestData.user_id;
+            }
+            
+            resultDiv.innerHTML = `<div class="info">⏳ Testing ${method} ${url}...</div>`;
+            
+            try {
+                const options = {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                };
+                
+                if (requestData) {
+                    options.body = JSON.stringify(requestData);
+                }
+                
+                const response = await fetch(url, options);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h4>✅ ${method} Request Berhasil!</h4>
+                            <p><strong>URL:</strong> ${url}</p>
+                            <p><strong>Status:</strong> ${response.status}</p>
+                            <p><strong>Data Count:</strong> ${Array.isArray(data) ? data.length : 'N/A'}</p>
+                            <details>
+                                <summary>📄 Response Data</summary>
+                                <pre>${JSON.stringify(data, null, 2)}</pre>
+                            </details>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <h4>❌ ${method} Request Gagal</h4>
+                            <p><strong>URL:</strong> ${url}</p>
+                            <p><strong>Status:</strong> ${response.status}</p>
+                            <p><strong>Error:</strong> ${data.error || 'Unknown error'}</p>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ Network Error</h4>
+                        <p><strong>URL:</strong> ${url}</p>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                        <p>Pastikan server berjalan di http://localhost:5000</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function testAllEndpoints() {
+            const endpoints = [
+                '/api/health',
+                '/api/test/additional-tasks', 
+                '/api/dev/data'
+            ];
+            const resultDiv = document.getElementById('result');
+            
+            resultDiv.innerHTML = '<div class="info">⏳ Testing all endpoints...</div>';
+            
+            let results = [];
+            
+            for (const endpoint of endpoints) {
+                try {
+                    const response = await fetch(`${BASE_URL}${endpoint}`);
+                    const data = await response.json();
+                    
+                    results.push({
+                        endpoint,
+                        status: response.status,
+                        success: response.ok,
+                        count: Array.isArray(data) ? data.length : (data.additionalTasks ? data.additionalTasks.length : 'N/A'),
+                        error: response.ok ? null : data.error
+                    });
+                } catch (error) {
+                    results.push({
+                        endpoint,
+                        status: 'ERROR',
+                        success: false,
+                        count: 0,
+                        error: error.message
+                    });
+                }
+            }
+            
+            const successCount = results.filter(r => r.success).length;
+            const totalCount = results.length;
+            
+            let html = `
+                <div class="${successCount === totalCount ? 'success' : 'warning'}">
+                    <h4>📊 Test Results: ${successCount}/${totalCount} endpoints working</h4>
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                        <tr style="background: #f8f9fa;">
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Endpoint</th>
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">Status</th>
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">Records</th>
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Error</th>
+                        </tr>
+            `;
+            
+            results.forEach(result => {
+                const statusColor = result.success ? '#28a745' : '#dc3545';
+                html += `
+                    <tr>
+                        <td style="border: 1px solid #ddd; padding: 8px;">${result.endpoint}</td>
+                        <td style="border: 1px solid #ddd; padding: 8px; text-align: center; color: ${statusColor};">
+                            ${result.success ? '✅' : '❌'} ${result.status}
+                        </td>
+                        <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${result.count}</td>
+                        <td style="border: 1px solid #ddd; padding: 8px; font-size: 12px;">${result.error || '-'}</td>
+                    </tr>
+                `;
+            });
+            
+            html += '</table></div>';
+            resultDiv.innerHTML = html;
+        }
+
+        async function testLocalStorage() {
+            const resultDiv = document.getElementById('result');
+            
+            // Test localStorage data
+            const localData = {
+                users: JSON.parse(localStorage.getItem('users_data') || '[]'),
+                schools: JSON.parse(localStorage.getItem('schools_data') || '[]'),
+                tasks: JSON.parse(localStorage.getItem('tasks_data') || '[]'),
+                additionalTasks: JSON.parse(localStorage.getItem('additional_tasks_data') || '[]'),
+                supervisions: JSON.parse(localStorage.getItem('supervisions_data') || '[]')
+            };
+            
+            let html = `
+                <div class="info">
+                    <h4>💾 localStorage Data</h4>
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                        <tr style="background: #f8f9fa;">
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Data Type</th>
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: center;">Count</th>
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Sample</th>
+                        </tr>
+            `;
+            
+            Object.entries(localData).forEach(([key, data]) => {
+                const sample = Array.isArray(data) && data.length > 0 ? 
+                    (data[0].name || data[0].title || data[0].full_name || 'No name') : 
+                    'No data';
+                    
+                html += `
+                    <tr>
+                        <td style="border: 1px solid #ddd; padding: 8px;">${key}</td>
+                        <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${data.length}</td>
+                        <td style="border: 1px solid #ddd; padding: 8px; font-size: 12px;">${sample}</td>
+                    </tr>
+                `;
+            });
+            
+            html += '</table></div>';
+            resultDiv.innerHTML = html;
+        }
+    </script>
+</body>
+</html>

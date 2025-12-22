@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Simple API</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .result { margin: 10px 0; padding: 10px; border-radius: 4px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Simple API</h1>
+    
+    <button onclick="testHealth()">Test Health</button>
+    <button onclick="testAdditionalTasks()">Test Additional Tasks</button>
+    <button onclick="testDevData()">Test Dev Data</button>
+    <button onclick="testPost()">Test POST Data</button>
+    
+    <div id="results"></div>
+
+    <script>
+        const BASE_URL = 'http://localhost:5000';
+        
+        function addResult(title, success, data) {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result ${success ? 'success' : 'error'}`;
+            resultDiv.innerHTML = `
+                <h3>${success ? '✅' : '❌'} ${title}</h3>
+                <pre>${JSON.stringify(data, null, 2)}</pre>
+            `;
+            resultsDiv.appendChild(resultDiv);
+        }
+        
+        async function testHealth() {
+            try {
+                const response = await fetch(`${BASE_URL}/api/health`);
+                const data = await response.json();
+                addResult('Health Check', response.ok, data);
+            } catch (error) {
+                addResult('Health Check', false, { error: error.message });
+            }
+        }
+        
+        async function testAdditionalTasks() {
+            try {
+                const response = await fetch(`${BASE_URL}/api/test/additional-tasks`);
+                const data = await response.json();
+                addResult('Additional Tasks GET', response.ok, data);
+            } catch (error) {
+                addResult('Additional Tasks GET', false, { error: error.message });
+            }
+        }
+        
+        async function testDevData() {
+            try {
+                const response = await fetch(`${BASE_URL}/api/dev/data`);
+                const data = await response.json();
+                addResult('Dev Data', response.ok, { 
+                    totalTasks: data.tasks?.length || 0,
+                    totalAdditionalTasks: data.additionalTasks?.length || 0,
+                    totalUsers: data.users?.length || 0
+                });
+            } catch (error) {
+                addResult('Dev Data', false, { error: error.message });
+            }
+        }
+        
+        async function testPost() {
+            try {
+                const testData = {
+                    name: 'Test dari HTML Simple',
+                    description: 'Test POST request',
+                    date: new Date().toISOString(),
+                    location: 'Test Location',
+                    organizer: 'Test Organizer'
+                };
+                
+                const response = await fetch(`${BASE_URL}/api/test/additional-tasks`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(testData)
+                });
+                
+                const data = await response.json();
+                addResult('POST Additional Task', response.ok, data);
+            } catch (error) {
+                addResult('POST Additional Task', false, { error: error.message });
+            }
+        }
+        
+        // Auto test on load
+        window.onload = function() {
+            setTimeout(testHealth, 500);
+            setTimeout(testAdditionalTasks, 1000);
+            setTimeout(testDevData, 1500);
+        };
+    </script>
+</body>
+</html>

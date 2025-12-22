@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test API Localhost</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, textarea, select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+        button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin: 5px; }
+        button:hover { background: #0056b3; }
+        .result { margin-top: 20px; padding: 15px; border-radius: 4px; }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .info { background: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+        pre { white-space: pre-wrap; word-wrap: break-word; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test API Localhost (Port 5000)</h1>
+        <p>Server berjalan di: <strong>http://localhost:5000</strong></p>
+
+        <div class="form-group">
+            <label>API Endpoint:</label>
+            <select id="apiEndpoint">
+                <option value="http://localhost:5000/api/additional-tasks">Tugas Tambahan</option>
+                <option value="http://localhost:5000/api/tasks">Tasks</option>
+                <option value="http://localhost:5000/api/supervisions">Supervisi</option>
+                <option value="http://localhost:5000/api/schools">Sekolah</option>
+            </select>
+        </div>
+
+        <h3>📝 Form Input Data</h3>
+        <form id="testForm">
+            <div class="form-group">
+                <label for="name">Nama Kegiatan:</label>
+                <input type="text" id="name" name="name" value="Test Input Manual dari HTML" required>
+            </div>
+
+            <div class="form-group">
+                <label for="description">Deskripsi:</label>
+                <textarea id="description" name="description" rows="3">Test input data manual ke server localhost</textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="date">Tanggal:</label>
+                <input type="datetime-local" id="date" name="date" required>
+            </div>
+
+            <div class="form-group">
+                <label for="location">Lokasi:</label>
+                <input type="text" id="location" name="location" value="Test Location" required>
+            </div>
+
+            <div class="form-group">
+                <label for="organizer">Penyelenggara:</label>
+                <input type="text" id="organizer" name="organizer" value="Test Organizer" required>
+            </div>
+
+            <div class="form-group">
+                <label for="user_id">User ID:</label>
+                <input type="text" id="user_id" name="user_id" value="test-user" required>
+            </div>
+
+            <button type="submit">🚀 Kirim Data ke Server</button>
+        </form>
+
+        <div id="result"></div>
+
+        <h3>📊 Test API Endpoints</h3>
+        <button onclick="testGet()">🔍 GET - Ambil Data</button>
+        <button onclick="testServerStatus()">⚡ Test Server Status</button>
+        <div id="dataResult"></div>
+    </div>
+
+    <script>
+        // Set default datetime to now
+        document.getElementById('date').value = new Date().toISOString().slice(0, 16);
+
+        document.getElementById('testForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const resultDiv = document.getElementById('result');
+            const endpoint = document.getElementById('apiEndpoint').value;
+            
+            // Get form data
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+            
+            // Convert date to ISO string
+            data.date = new Date(data.date).toISOString();
+            
+            resultDiv.innerHTML = '<div class="info">⏳ Mengirim data ke ' + endpoint + '...</div>';
+            
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h4>✅ Data berhasil dikirim!</h4>
+                            <p><strong>Status:</strong> ${response.status}</p>
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <h4>❌ Gagal mengirim data</h4>
+                            <p><strong>Status:</strong> ${response.status}</p>
+                            <p><strong>Error:</strong> ${result.error || 'Unknown error'}</p>
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ Network Error</h4>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                        <p>Pastikan server berjalan di http://localhost:5000</p>
+                    </div>
+                `;
+            }
+        });
+
+        async function testGet() {
+            const dataResultDiv = document.getElementById('dataResult');
+            const endpoint = document.getElementById('apiEndpoint').value;
+            
+            dataResultDiv.innerHTML = '<div class="info">⏳ Mengambil data dari ' + endpoint + '...</div>';
+            
+            try {
+                const response = await fetch(endpoint);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    dataResultDiv.innerHTML = `
+                        <div class="success">
+                            <h4>📊 Data dari Server (${Array.isArray(data) ? data.length : 'N/A'} records):</h4>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    dataResultDiv.innerHTML = `
+                        <div class="error">
+                            <h4>❌ Gagal mengambil data</h4>
+                            <p><strong>Status:</strong> ${response.status}</p>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                dataResultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ Network Error</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function testServerStatus() {
+            const dataResultDiv = document.getElementById('dataResult');
+            
+            dataResultDiv.innerHTML = '<div class="info">⏳ Testing server status...</div>';
+            
+            try {
+                const response = await fetch('http://localhost:5000/api/health');
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    dataResultDiv.innerHTML = `
+                        <div class="success">
+                            <h4>✅ Server Status: OK</h4>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    dataResultDiv.innerHTML = `
+                        <div class="error">
+                            <h4>⚠️ Server Response: ${response.status}</h4>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                dataResultDiv.innerHTML = `
+                    <div class="error">
+                        <h4>❌ Server tidak dapat diakses</h4>
+                        <p>${error.message}</p>
+                        <p>Pastikan server berjalan dengan: <code>npm run dev</code></p>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

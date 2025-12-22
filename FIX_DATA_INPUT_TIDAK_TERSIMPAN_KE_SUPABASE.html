@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fix Data Input Tidak Tersimpan ke Supabase</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f8f9fa; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .alert { padding: 15px; margin: 15px 0; border-radius: 5px; }
+        .alert-danger { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .alert-warning { background: #fff3cd; border: 1px solid #ffeaa7; color: #856404; }
+        .alert-success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .alert-info { background: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+        .step { background: #f8f9fa; padding: 20px; margin: 15px 0; border-radius: 8px; border-left: 4px solid #007bff; }
+        .code { background: #2d3748; color: #e2e8f0; padding: 15px; border-radius: 5px; font-family: 'Courier New', monospace; font-size: 14px; overflow-x: auto; margin: 10px 0; }
+        .btn { background: #007bff; color: white; padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; margin: 5px; font-size: 14px; }
+        .btn:hover { background: #0056b3; }
+        .btn-success { background: #28a745; }
+        .btn-success:hover { background: #1e7e34; }
+        .btn-warning { background: #ffc107; color: #212529; }
+        .btn-warning:hover { background: #e0a800; }
+        .btn-danger { background: #dc3545; }
+        .btn-danger:hover { background: #c82333; }
+        h1 { color: #dc3545; text-align: center; }
+        h2 { color: #007bff; border-bottom: 2px solid #007bff; padding-bottom: 10px; }
+        h3 { color: #28a745; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚨 FIX: DATA INPUT TIDAK TERSIMPAN KE SUPABASE</h1>
+
+        <div class="alert alert-danger">
+            <strong>⚠️ MASALAH TERIDENTIFIKASI:</strong>
+            <ul>
+                <li>Data yang diinput tidak tersimpan ke Supabase</li>
+                <li>Yang muncul adalah data dummy/sample</li>
+                <li>API tidak berfungsi dengan benar untuk menyimpan data real</li>
+                <li>Kemungkinan masalah autentikasi atau konfigurasi API</li>
+            </ul>
+        </div>
+
+        <div class="alert alert-info">
+            <strong>📋 ANALISIS DARI SCREENSHOT SUPABASE:</strong>
+            <p>Terlihat di tabel <code>additional_tasks</code> ada data dengan nama seperti "Pembinaan Guru", "Rapat Koordinasi", dll. 
+            Ini adalah data dummy/sample, bukan data yang Anda input secara real.</p>
+        </div>
+
+        <!-- STEP 1: DIAGNOSA API -->
+        <div class="step">
+            <h3>🔍 STEP 1: DIAGNOSA API ENDPOINTS</h3>
+            <p>Pertama, kita perlu mengecek apakah API endpoints berfungsi dengan benar:</p>
+            
+            <div class="code">
+// SCRIPT CEK API ENDPOINTS
+console.log('🔍 Mengecek API endpoints...');
+
+async function cekAPIEndpoints() {
+    const endpoints = [
+        '/api/activities',
+        '/api/supervisions', 
+        '/api/tasks',
+        '/api/auth/me'
+    ];
+    
+    for (const endpoint of endpoints) {
+        try {
+            console.log(`Testing ${endpoint}...`);
+            const response = await fetch(endpoint);
+            console.log(`${endpoint}: ${response.status} ${response.statusText}`);
+            
+            if (response.ok) {
+                const data = await response.json();
+                console.log(`Data count: ${Array.isArray(data) ? data.length : 'Not array'}`);
+            }
+        } catch (error) {
+            console.error(`Error ${endpoint}:`, error);
+        }
+    }
+}
+
+cekAPIEndpoints();
+            </div>
+            
+            <button class="btn btn-success" onclick="copyScript('diagnosa')">Copy Script Diagnosa</button>
+        </div>
+
+        <!-- STEP 2: CEK AUTENTIKASI -->
+        <div class="step">
+            <h3>🔐 STEP 2: CEK AUTENTIKASI USER</h3>
+            <p>Masalah bisa jadi karena user tidak terautentikasi dengan benar:</p>
+            
+            <div class="code">
+// SCRIPT CEK AUTENTIKASI
+console.log('🔐 Mengecek autentikasi user...');
+
+async function cekAutentikasi() {
+    // Cek localStorage
+    const authUser = localStorage.getItem('auth_user');
+    console.log('Auth user dari localStorage:', authUser);
+    
+    if (authUser) {
+        const userData = JSON.parse(authUser);
+        console.log('User data:', userData);
+        console.log('User ID:', userData.id);
+        console.log('Username:', userData.username);
+    }
+    
+    // Cek session dari API
+    try {
+        const response = await fetch('/api/auth/me');
+        if (response.ok) {
+            const sessionData = await response.json();
+            console.log('Session data dari API:', sessionData);
+        } else {
+            console.log('❌ Session tidak valid:', response.status);
+        }
+    } catch (error) {
+        console.error('❌ Error cek session:', error);
+    }
+}
+
+cekAutentikasi();
+            </div>
+            
+            <button class="btn btn-success" onclick="copyScript('auth')">Copy Script Cek Auth</button>
+        </div>
+
+        <!-- STEP 3: TEST INPUT DATA LANGSUNG -->
+        <div class="step">
+            <h3>⚡ STEP 3: TEST INPUT DATA LANGSUNG VIA API</h3>
+            <p>Mari test input data langsung ke API untuk melihat apakah berhasil:</p>
+            
+            <div class="code">
+// SCRIPT TEST INPUT DATA LANGSUNG
+console.log('⚡ Test input data langsung...');
+
+async function testInputDataLangsung() {
+    // Data test
+    const testActivity = {
+        id: 'test_' + Date.now(),
+        title: 'TEST AKTIVITAS REAL - ' + new Date().toLocaleString(),
+        description: 'Ini adalah test input data real ke Supabase',
+        date: new Date().toISOString().split('T')[0],
+        user_id: 'current_user',
+        created_at: new Date().toISOString()
+    };
+    
+    try {
+        console.log('📤 Mengirim data test:', testActivity);
+        
+        const response = await fetch('/api/activities', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(testActivity)
+        });
+        
+        console.log('📥 Response status:', response.status);
+        console.log('📥 Response headers:', [...response.headers.entries()]);
+        
+        if (response.ok) {
+            const result = await response.json();
+            console.log('✅ Data berhasil disimpan:', result);
+        } else {
+            const errorText = await response.text();
+            console.log('❌ Error response:', errorText);
+        }
+        
+    } catch (error) {
+        console.error('❌ Error test input:', error);
+    }
+}
+
+testInputDataLangsung();
+            </div>
+            
+            <button class="btn btn-success" onclick="copyScript('test')">Copy Script Test Input</button>
+        </div>
+
+        <!-- STEP 4: CLEAR DATA DUMMY -->
+        <div class="step">
+            <h3>🗑️ STEP 4: HAPUS DATA DUMMY DARI SUPABASE</h3>
+            <p>Sebelum input data real, kita perlu hapus data dummy yang ada:</p>
+            
+            <div class="alert alert-warning">
+                <strong>⚠️ PERINGATAN:</strong> Script ini akan menghapus SEMUA data di tabel. 
+                Pastikan Anda sudah backup data penting sebelum menjalankan!
+            </div>
+            
+            <div class="code">
+// SCRIPT HAPUS DATA DUMMY (HATI-HATI!)
+console.log('🗑️ PERINGATAN: Script ini akan menghapus semua data!');
+
+async function hapusDataDummy() {
+    const konfirmasi = confirm('⚠️ PERINGATAN!\n\nScript ini akan menghapus SEMUA data di database.\nApakah Anda yakin ingin melanjutkan?');
+    
+    if (!konfirmasi) {
+        console.log('❌ Operasi dibatalkan oleh user');
+        return;
+    }
+    
+    const tables = ['activities', 'supervisions', 'tasks'];
+    
+    for (const table of tables) {
+        try {
+            console.log(`🗑️ Menghapus data dari tabel ${table}...`);
+            
+            const response = await fetch(`/api/${table}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (response.ok) {
+                console.log(`✅ Data tabel ${table} berhasil dihapus`);
+            } else {
+                console.log(`❌ Gagal hapus tabel ${table}:`, response.status);
+            }
+            
+        } catch (error) {
+            console.error(`❌ Error hapus ${table}:`, error);
+        }
+    }
+    
+    console.log('🎉 Proses hapus data dummy selesai!');
+}
+
+// Uncomment baris di bawah untuk menjalankan (HATI-HATI!)
+// hapusDataDummy();
+            </div>
+            
+            <button class="btn btn-danger" onclick="copyScript('delete')">Copy Script Hapus (HATI-HATI!)</button>
+        </div>
+
+        <!-- STEP 5: INPUT DATA REAL DENGAN FORCE -->
+        <div class="step">
+            <h3>💪 STEP 5: FORCE INPUT DATA REAL</h3>
+            <p>Setelah data dummy dihapus, input data real dengan force:</p>
+            
+            <div class="code">
+// SCRIPT FORCE INPUT DATA REAL
+console.log('💪 Force input data real...');
+
+async function forceInputDataReal() {
+    // Pastikan user terautentikasi
+    const authUser = localStorage.getItem('auth_user');
+    if (!authUser) {
+        alert('❌ User belum login! Login terlebih dahulu.');
+        return;
+    }
+    
+    const userData = JSON.parse(authUser);
+    console.log('👤 User aktif:', userData.username);
+    
+    // Data real yang akan diinput (GANTI DENGAN DATA ANDA)
+    const dataReal = {
+        activities: [
+            {
+                id: 'real_activity_' + Date.now() + '_1',
+                title: 'GANTI: Aktivitas Real Anda 1',
+                description: 'GANTI: Deskripsi aktivitas real Anda',
+                date: '2024-12-21',
+                user_id: userData.id,
+                created_at: new Date().toISOString()
+            },
+            {
+                id: 'real_activity_' + Date.now() + '_2', 
+                title: 'GANTI: Aktivitas Real Anda 2',
+                description: 'GANTI: Deskripsi aktivitas real Anda',
+                date: '2024-12-20',
+                user_id: userData.id,
+                created_at: new Date().toISOString()
+            }
+        ],
+        supervisions: [
+            {
+                id: 'real_supervision_' + Date.now() + '_1',
+                school: 'GANTI: Nama Sekolah Real',
+                date: '2024-12-21',
+                result: 'Baik',
+                notes: 'GANTI: Catatan supervisi real',
+                user_id: userData.id,
+                created_at: new Date().toISOString()
+            }
+        ],
+        tasks: [
+            {
+                id: 'real_task_' + Date.now() + '_1',
+                title: 'GANTI: Tugas Real Anda',
+                description: 'GANTI: Deskripsi tugas real',
+                date: '2024-12-21',
+                status: 'Selesai',
+                user_id: userData.id,
+                created_at: new Date().toISOString()
+            }
+        ]
+    };
+    
+    // Input data satu per satu
+    let successCount = 0;
+    let errorCount = 0;
+    
+    // Input activities
+    for (const activity of dataReal.activities) {
+        try {
+            const response = await fetch('/api/activities', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(activity)
+            });
+            
+            if (response.ok) {
+                console.log('✅ Activity berhasil:', activity.title);
+                successCount++;
+            } else {
+                console.log('❌ Activity gagal:', activity.title, response.status);
+                errorCount++;
+            }
+        } catch (error) {
+            console.error('❌ Error activity:', error);
+            errorCount++;
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Delay 1 detik
+    }
+    
+    // Input supervisions
+    for (const supervision of dataReal.supervisions) {
+        try {
+            const response = await fetch('/api/supervisions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(supervision)
+            });
+            
+            if (response.ok) {
+                console.log('✅ Supervision berhasil:', supervision.school);
+                successCount++;
+            } else {
+                console.log('❌ Supervision gagal:', supervision.school, response.status);
+                errorCount++;
+            }
+        } catch (error) {
+            console.error('❌ Error supervision:', error);
+            errorCount++;
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Delay 1 detik
+    }
+    
+    // Input tasks
+    for (const task of dataReal.tasks) {
+        try {
+            const response = await fetch('/api/tasks', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(task)
+            });
+            
+            if (response.ok) {
+                console.log('✅ Task berhasil:', task.title);
+                successCount++;
+            } else {
+                console.log('❌ Task gagal:', task.title, response.status);
+                errorCount++;
+            }
+        } catch (error) {
+            console.error('❌ Error task:', error);
+            errorCount++;
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Delay 1 detik
+    }
+    
+    console.log('🎉 SELESAI!');
+    console.log(`✅ Berhasil: ${successCount} data`);
+    console.log(`❌ Gagal: ${errorCount} data`);
+    
+    if (successCount > 0) {
+        alert(`✅ Berhasil input ${successCount} data real!\nRefresh halaman untuk melihat hasilnya.`);
+        setTimeout(() => location.reload(), 2000);
+    }
+}
+
+forceInputDataReal();
+            </div>
+            
+            <button class="btn btn-success" onclick="copyScript('force')">Copy Script Force Input</button>
+        </div>
+
+        <!-- STEP 6: VERIFIKASI HASIL -->
+        <div class="step">
+            <h3>✅ STEP 6: VERIFIKASI HASIL DI SUPABASE</h3>
+            <p>Setelah input, cek kembali di Supabase Dashboard apakah data real sudah tersimpan:</p>
+            
+            <div class="alert alert-success">
+                <strong>📋 CHECKLIST VERIFIKASI:</strong>
+                <ul>
+                    <li>✅ Buka Supabase Dashboard</li>
+                    <li>✅ Cek tabel activities, supervisions, tasks</li>
+                    <li>✅ Pastikan data yang muncul adalah data real Anda</li>
+                    <li>✅ Pastikan tidak ada lagi data dummy</li>
+                    <li>✅ Cek di aplikasi apakah data real sudah muncul</li>
+                </ul>
+            </div>
+            
+            <button class="btn btn-success" onclick="window.open('https://sistem-informasi-pengawas-cd11.netlify.app/', '_blank')">Buka Aplikasi</button>
+            <button class="btn btn-success" onclick="window.open('https://supabase.com/dashboard', '_blank')">Buka Supabase Dashboard</button>
+        </div>
+
+        <!-- INSTRUKSI PENGGUNAAN -->
+        <div class="alert alert-info">
+            <h3>📖 CARA MENGGUNAKAN:</h3>
+            <ol>
+                <li><strong>Login</strong> ke aplikasi terlebih dahulu</li>
+                <li><strong>Buka Console (F12)</strong> di browser</li>
+                <li><strong>Jalankan script</strong> sesuai urutan step</li>
+                <li><strong>Ganti data dummy</strong> di Step 5 dengan data real Anda</li>
+                <li><strong>Verifikasi hasil</strong> di Supabase dan aplikasi</li>
+            </ol>
+        </div>
+
+        <!-- KEMUNGKINAN PENYEBAB -->
+        <div class="alert alert-warning">
+            <h3>🔍 KEMUNGKINAN PENYEBAB MASALAH:</h3>
+            <ul>
+                <li><strong>API tidak terhubung ke Supabase:</strong> Konfigurasi environment variables salah</li>
+                <li><strong>User tidak terautentikasi:</strong> Session login tidak valid</li>
+                <li><strong>Data hanya tersimpan di localStorage:</strong> Tidak ter-sync ke Supabase</li>
+                <li><strong>CORS atau network issue:</strong> Request ke API gagal</li>
+                <li><strong>Database schema mismatch:</strong> Struktur tabel tidak sesuai</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function copyScript(type) {
+            const scripts = {
+                diagnosa: `// SCRIPT CEK API ENDPOINTS
+console.log('🔍 Mengecek API endpoints...');
+
+async function cekAPIEndpoints() {
+    const endpoints = [
+        '/api/activities',
+        '/api/supervisions', 
+        '/api/tasks',
+        '/api/auth/me'
+    ];
+    
+    for (const endpoint of endpoints) {
+        try {
+            console.log(\`Testing \${endpoint}...\`);
+            const response = await fetch(endpoint);
+            console.log(\`\${endpoint}: \${response.status} \${response.statusText}\`);
+            
+            if (response.ok) {
+                const data = await response.json();
+                console.log(\`Data count: \${Array.isArray(data) ? data.length : 'Not array'}\`);
+            }
+        } catch (error) {
+            console.error(\`Error \${endpoint}:\`, error);
+        }
+    }
+}
+
+cekAPIEndpoints();`,
+
+                auth: `// SCRIPT CEK AUTENTIKASI
+console.log('🔐 Mengecek autentikasi user...');
+
+async function cekAutentikasi() {
+    const authUser = localStorage.getItem('auth_user');
+    console.log('Auth user dari localStorage:', authUser);
+    
+    if (authUser) {
+        const userData = JSON.parse(authUser);
+        console.log('User data:', userData);
+        console.log('User ID:', userData.id);
+        console.log('Username:', userData.username);
+    }
+    
+    try {
+        const response = await fetch('/api/auth/me');
+        if (response.ok) {
+            const sessionData = await response.json();
+            console.log('Session data dari API:', sessionData);
+        } else {
+            console.log('❌ Session tidak valid:', response.status);
+        }
+    } catch (error) {
+        console.error('❌ Error cek session:', error);
+    }
+}
+
+cekAutentikasi();`,
+
+                test: `// SCRIPT TEST INPUT DATA LANGSUNG
+console.log('⚡ Test input data langsung...');
+
+async function testInputDataLangsung() {
+    const testActivity = {
+        id: 'test_' + Date.now(),
+        title: 'TEST AKTIVITAS REAL - ' + new Date().toLocaleString(),
+        description: 'Ini adalah test input data real ke Supabase',
+        date: new Date().toISOString().split('T')[0],
+        user_id: 'current_user',
+        created_at: new Date().toISOString()
+    };
+    
+    try {
+        console.log('📤 Mengirim data test:', testActivity);
+        
+        const response = await fetch('/api/activities', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(testActivity)
+        });
+        
+        console.log('📥 Response status:', response.status);
+        
+        if (response.ok) {
+            const result = await response.json();
+            console.log('✅ Data berhasil disimpan:', result);
+        } else {
+            const errorText = await response.text();
+            console.log('❌ Error response:', errorText);
+        }
+        
+    } catch (error) {
+        console.error('❌ Error test input:', error);
+    }
+}
+
+testInputDataLangsung();`,
+
+                delete: `// SCRIPT HAPUS DATA DUMMY (HATI-HATI!)
+console.log('🗑️ PERINGATAN: Script ini akan menghapus semua data!');
+
+async function hapusDataDummy() {
+    const konfirmasi = confirm('⚠️ PERINGATAN!\\n\\nScript ini akan menghapus SEMUA data di database.\\nApakah Anda yakin ingin melanjutkan?');
+    
+    if (!konfirmasi) {
+        console.log('❌ Operasi dibatalkan oleh user');
+        return;
+    }
+    
+    const tables = ['activities', 'supervisions', 'tasks'];
+    
+    for (const table of tables) {
+        try {
+            console.log(\`🗑️ Menghapus data dari tabel \${table}...\`);
+            
+            const response = await fetch(\`/api/\${table}\`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (response.ok) {
+                console.log(\`✅ Data tabel \${table} berhasil dihapus\`);
+            } else {
+                console.log(\`❌ Gagal hapus tabel \${table}:\`, response.status);
+            }
+            
+        } catch (error) {
+            console.error(\`❌ Error hapus \${table}:\`, error);
+        }
+    }
+    
+    console.log('🎉 Proses hapus data dummy selesai!');
+}
+
+hapusDataDummy();`,
+
+                force: `// SCRIPT FORCE INPUT DATA REAL - GANTI DATA DI BAWAH DENGAN DATA ANDA!
+console.log('💪 Force input data real...');
+
+async function forceInputDataReal() {
+    const authUser = localStorage.getItem('auth_user');
+    if (!authUser) {
+        alert('❌ User belum login! Login terlebih dahulu.');
+        return;
+    }
+    
+    const userData = JSON.parse(authUser);
+    console.log('👤 User aktif:', userData.username);
+    
+    // GANTI DATA DI BAWAH INI DENGAN DATA REAL ANDA!
+    const dataReal = {
+        activities: [
+            {
+                id: 'real_activity_' + Date.now() + '_1',
+                title: 'GANTI: Aktivitas Real Anda 1',
+                description: 'GANTI: Deskripsi aktivitas real Anda',
+                date: '2024-12-21',
+                user_id: userData.id,
+                created_at: new Date().toISOString()
+            }
+        ],
+        supervisions: [
+            {
+                id: 'real_supervision_' + Date.now() + '_1',
+                school: 'GANTI: Nama Sekolah Real',
+                date: '2024-12-21',
+                result: 'Baik',
+                notes: 'GANTI: Catatan supervisi real',
+                user_id: userData.id,
+                created_at: new Date().toISOString()
+            }
+        ],
+        tasks: [
+            {
+                id: 'real_task_' + Date.now() + '_1',
+                title: 'GANTI: Tugas Real Anda',
+                description: 'GANTI: Deskripsi tugas real',
+                date: '2024-12-21',
+                status: 'Selesai',
+                user_id: userData.id,
+                created_at: new Date().toISOString()
+            }
+        ]
+    };
+    
+    let successCount = 0;
+    let errorCount = 0;
+    
+    // Input semua data
+    for (const [type, items] of Object.entries(dataReal)) {
+        for (const item of items) {
+            try {
+                const response = await fetch(\`/api/\${type}\`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(item)
+                });
+                
+                if (response.ok) {
+                    console.log(\`✅ \${type} berhasil:\`, item.title || item.school);
+                    successCount++;
+                } else {
+                    console.log(\`❌ \${type} gagal:\`, item.title || item.school, response.status);
+                    errorCount++;
+                }
+            } catch (error) {
+                console.error(\`❌ Error \${type}:\`, error);
+                errorCount++;
+            }
+            
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+    }
+    
+    console.log('🎉 SELESAI!');
+    console.log(\`✅ Berhasil: \${successCount} data\`);
+    console.log(\`❌ Gagal: \${errorCount} data\`);
+    
+    if (successCount > 0) {
+        alert(\`✅ Berhasil input \${successCount} data real!\\nRefresh halaman untuk melihat hasilnya.\`);
+        setTimeout(() => location.reload(), 2000);
+    }
+}
+
+forceInputDataReal();`
+            };
+            
+            navigator.clipboard.writeText(scripts[type]).then(() => {
+                alert('✅ Script berhasil di-copy! Paste di Console aplikasi (F12).');
+            }).catch(() => {
+                alert('❌ Gagal copy script. Silakan copy manual.');
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recovery Data Terbaru - Ganti Domain</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .step { background: #f5f5f5; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .warning { background: #fff3cd; border: 1px solid #ffeaa7; padding: 10px; border-radius: 5px; }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; padding: 10px; border-radius: 5px; }
+        .code { background: #f8f9fa; padding: 10px; border-radius: 5px; font-family: monospace; }
+        button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <h1>🔄 Recovery Data Terbaru Setelah Ganti Domain</h1>
+    
+    <div class="warning">
+        <strong>⚠️ MASALAH:</strong> Data yang muncul adalah data lama, bukan data yang baru diinput sebelum ganti domain.
+    </div>
+
+    <h2>📋 LANGKAH RECOVERY:</h2>
+
+    <div class="step">
+        <h3>1. CEK DATA DI DOMAIN LAMA</h3>
+        <p>Buka domain lama jika masih bisa diakses, lalu buka Console (F12) dan jalankan:</p>
+        <div class="code">
+// Cek data terbaru di localStorage domain lama
+console.log('=== DATA TERBARU DI DOMAIN LAMA ===');
+console.log('Auth User:', localStorage.getItem('auth_user'));
+console.log('Profile Data:', localStorage.getItem('profile_data'));
+console.log('Local Database:', localStorage.getItem('local-database'));
+
+// Export semua data
+const allData = {
+    auth_user: localStorage.getItem('auth_user'),
+    profile_data: localStorage.getItem('profile_data'),
+    local_database: localStorage.getItem('local-database'),
+    activities: localStorage.getItem('activities'),
+    supervisions: localStorage.getItem('supervisions'),
+    tasks: localStorage.getItem('tasks'),
+    schools: localStorage.getItem('schools')
+};
+
+console.log('=== COPY DATA INI ===');
+console.log(JSON.stringify(allData, null, 2));
+        </div>
+        <button onclick="copyToClipboard(document.querySelector('.code').textContent)">Copy Script</button>
+    </div>
+
+    <div class="step">
+        <h3>2. IMPORT DATA KE DOMAIN BARU</h3>
+        <p>Di domain baru (https://sistem-informasi-pengawas-cd11.netlify.app/), buka Console (F12):</p>
+        <div class="code">
+// Paste data yang di-copy dari domain lama
+const importedData = {
+    // PASTE DATA DARI LANGKAH 1 DI SINI
+};
+
+// Import semua data
+Object.keys(importedData).forEach(key => {
+    if (importedData[key] && importedData[key] !== 'null') {
+        localStorage.setItem(key, importedData[key]);
+        console.log(`✅ Imported ${key}`);
+    }
+});
+
+console.log('✅ Data berhasil di-import!');
+location.reload();
+        </div>
+    </div>
+
+    <div class="step">
+        <h3>3. FORCE SYNC KE SUPABASE</h3>
+        <p>Setelah data ter-import, paksa sinkronisasi ke Supabase:</p>
+        <div class="code">
+// Force sync semua data ke Supabase
+async function forceSyncToSupabase() {
+    try {
+        // Ambil data dari localStorage
+        const localData = JSON.parse(localStorage.getItem('local-database') || '{}');
+        
+        console.log('🔄 Memulai sync ke Supabase...');
+        
+        // Sync activities
+        if (localData.activities) {
+            for (const activity of localData.activities) {
+                const response = await fetch('/api/activities', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(activity)
+                });
+                console.log('✅ Activity synced:', activity.id);
+            }
+        }
+        
+        // Sync supervisions
+        if (localData.supervisions) {
+            for (const supervision of localData.supervisions) {
+                const response = await fetch('/api/supervisions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(supervision)
+                });
+                console.log('✅ Supervision synced:', supervision.id);
+            }
+        }
+        
+        // Sync tasks
+        if (localData.tasks) {
+            for (const task of localData.tasks) {
+                const response = await fetch('/api/tasks', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(task)
+                });
+                console.log('✅ Task synced:', task.id);
+            }
+        }
+        
+        console.log('🎉 Semua data berhasil di-sync ke Supabase!');
+        
+        // Refresh halaman untuk load data dari Supabase
+        setTimeout(() => location.reload(), 2000);
+        
+    } catch (error) {
+        console.error('❌ Error sync:', error);
+    }
+}
+
+// Jalankan sync
+forceSyncToSupabase();
+        </div>
+        <button onclick="forceSyncToSupabase()">Jalankan Force Sync</button>
+    </div>
+
+    <div class="step">
+        <h3>4. CLEAR CACHE & RELOAD</h3>
+        <p>Setelah sync selesai:</p>
+        <div class="code">
+// Clear semua cache
+localStorage.clear();
+sessionStorage.clear();
+
+// Hard reload
+location.reload(true);
+        </div>
+        <button onclick="clearCacheAndReload()">Clear Cache & Reload</button>
+    </div>
+
+    <div class="success">
+        <h3>✅ VERIFIKASI HASIL:</h3>
+        <ul>
+            <li>Login ulang di domain baru</li>
+            <li>Cek apakah data terbaru sudah muncul</li>
+            <li>Cek dashboard, aktivitas, supervisi, dan tugas</li>
+            <li>Pastikan semua data sesuai dengan yang terakhir diinput</li>
+        </ul>
+    </div>
+
+    <h2>🔧 ALTERNATIF JIKA DOMAIN LAMA TIDAK BISA DIAKSES:</h2>
+
+    <div class="step">
+        <h3>MANUAL INPUT ULANG</h3>
+        <p>Jika domain lama sudah tidak bisa diakses:</p>
+        <ol>
+            <li>Login di domain baru</li>
+            <li>Input ulang data yang hilang</li>
+            <li>Pastikan data tersimpan dengan klik "Simpan"</li>
+            <li>Refresh halaman untuk verifikasi</li>
+        </ol>
+    </div>
+
+    <script>
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Script berhasil di-copy!');
+            });
+        }
+
+        async function forceSyncToSupabase() {
+            try {
+                const localData = JSON.parse(localStorage.getItem('local-database') || '{}');
+                
+                console.log('🔄 Memulai sync ke Supabase...');
+                
+                if (localData.activities) {
+                    for (const activity of localData.activities) {
+                        const response = await fetch('/api/activities', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(activity)
+                        });
+                        console.log('✅ Activity synced:', activity.id);
+                    }
+                }
+                
+                if (localData.supervisions) {
+                    for (const supervision of localData.supervisions) {
+                        const response = await fetch('/api/supervisions', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(supervision)
+                        });
+                        console.log('✅ Supervision synced:', supervision.id);
+                    }
+                }
+                
+                if (localData.tasks) {
+                    for (const task of localData.tasks) {
+                        const response = await fetch('/api/tasks', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(task)
+                        });
+                        console.log('✅ Task synced:', task.id);
+                    }
+                }
+                
+                console.log('🎉 Semua data berhasil di-sync ke Supabase!');
+                setTimeout(() => location.reload(), 2000);
+                
+            } catch (error) {
+                console.error('❌ Error sync:', error);
+            }
+        }
+
+        function clearCacheAndReload() {
+            localStorage.clear();
+            sessionStorage.clear();
+            location.reload(true);
+        }
+    </script>
+</body>
+</html>

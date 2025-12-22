@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Template Input Cepat Data</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f8f9fa; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .section { background: #f8f9fa; padding: 20px; margin: 15px 0; border-radius: 8px; border-left: 4px solid #007bff; }
+        .form-group { margin: 15px 0; }
+        .form-control { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; }
+        .btn { background: #007bff; color: white; padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; margin: 5px; }
+        .btn:hover { background: #0056b3; }
+        .btn-success { background: #28a745; }
+        .btn-success:hover { background: #1e7e34; }
+        .alert { padding: 15px; margin: 15px 0; border-radius: 5px; }
+        .alert-info { background: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+        .alert-success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .alert-warning { background: #fff3cd; border: 1px solid #ffeaa7; color: #856404; }
+        h1 { color: #007bff; text-align: center; }
+        h2 { color: #28a745; border-bottom: 2px solid #28a745; padding-bottom: 10px; }
+        .data-list { background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        .data-item { background: white; padding: 10px; margin: 5px 0; border-radius: 5px; border-left: 3px solid #007bff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📝 TEMPLATE INPUT CEPAT DATA</h1>
+        
+        <div class="alert alert-info">
+            <strong>💡 CARA PAKAI:</strong>
+            <ol>
+                <li>Isi template di bawah dengan data yang hilang</li>
+                <li>Klik "Generate Script" untuk membuat script otomatis</li>
+                <li>Copy script dan jalankan di Console aplikasi</li>
+                <li>Data akan otomatis terinput ke sistem</li>
+            </ol>
+        </div>
+
+        <!-- TEMPLATE AKTIVITAS -->
+        <div class="section">
+            <h2>📋 TEMPLATE AKTIVITAS</h2>
+            <div class="form-group">
+                <label>Masukkan aktivitas yang hilang (satu per baris, format: TANGGAL | NAMA AKTIVITAS | DESKRIPSI):</label>
+                <textarea id="aktivitasTemplate" class="form-control" rows="8" placeholder="Contoh:
+2024-12-20 | Supervisi SDN 01 | Melakukan supervisi pembelajaran di kelas 1-6
+2024-12-19 | Rapat Koordinasi | Rapat dengan kepala sekolah binaan
+2024-12-18 | Monitoring Kurikulum | Cek implementasi kurikulum merdeka"></textarea>
+            </div>
+        </div>
+
+        <!-- TEMPLATE SUPERVISI -->
+        <div class="section">
+            <h2>🏫 TEMPLATE SUPERVISI</h2>
+            <div class="form-group">
+                <label>Masukkan supervisi yang hilang (satu per baris, format: TANGGAL | SEKOLAH | HASIL | CATATAN):</label>
+                <textarea id="supervisiTemplate" class="form-control" rows="8" placeholder="Contoh:
+2024-12-20 | SDN 01 Garut | Baik | Pembelajaran sudah sesuai standar
+2024-12-19 | SDN 02 Garut | Cukup | Perlu perbaikan media pembelajaran
+2024-12-18 | SDN 03 Garut | Baik | Guru sudah menerapkan metode aktif"></textarea>
+            </div>
+        </div>
+
+        <!-- TEMPLATE TUGAS TAMBAHAN -->
+        <div class="section">
+            <h2>📝 TEMPLATE TUGAS TAMBAHAN</h2>
+            <div class="form-group">
+                <label>Masukkan tugas tambahan yang hilang (satu per baris, format: TANGGAL | NAMA TUGAS | STATUS | KETERANGAN):</label>
+                <textarea id="tugasTemplate" class="form-control" rows="8" placeholder="Contoh:
+2024-12-20 | Laporan Bulanan | Selesai | Laporan supervisi bulan Desember
+2024-12-19 | Evaluasi Guru | Dalam Proses | Evaluasi kinerja guru binaan
+2024-12-18 | Workshop Kurikulum | Selesai | Menghadiri workshop kurikulum merdeka"></textarea>
+            </div>
+        </div>
+
+        <!-- GENERATE SCRIPT -->
+        <div class="section">
+            <h2>🔧 GENERATE SCRIPT</h2>
+            <button class="btn btn-success" onclick="generateScript()">Generate Script Input Otomatis</button>
+            
+            <div id="generatedScript" style="display: none; margin-top: 20px;">
+                <div class="alert alert-success">
+                    <strong>✅ Script berhasil di-generate!</strong> Copy script di bawah dan jalankan di Console aplikasi (F12).
+                </div>
+                <textarea id="scriptOutput" class="form-control" rows="20" readonly></textarea>
+                <button class="btn" onclick="copyScript()">Copy Script</button>
+            </div>
+        </div>
+
+        <!-- INSTRUKSI PENGGUNAAN -->
+        <div class="section">
+            <h2>📖 CARA MENGGUNAKAN SCRIPT</h2>
+            <div class="alert alert-warning">
+                <strong>LANGKAH-LANGKAH:</strong>
+                <ol>
+                    <li>Buka aplikasi di: https://sistem-informasi-pengawas-cd11.netlify.app/</li>
+                    <li>Login dengan akun Anda</li>
+                    <li>Tekan F12 untuk buka Console</li>
+                    <li>Paste script yang sudah di-generate</li>
+                    <li>Tekan Enter untuk menjalankan</li>
+                    <li>Tunggu sampai semua data terinput</li>
+                    <li>Refresh halaman untuk melihat hasilnya</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- BACKUP OTOMATIS -->
+        <div class="section">
+            <h2>💾 BACKUP OTOMATIS</h2>
+            <p>Setelah data berhasil diinput, buat backup otomatis:</p>
+            <button class="btn" onclick="generateBackupScript()">Generate Script Backup</button>
+            
+            <div id="backupScript" style="display: none; margin-top: 15px;">
+                <textarea id="backupOutput" class="form-control" rows="10" readonly></textarea>
+                <button class="btn" onclick="copyBackupScript()">Copy Script Backup</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function generateScript() {
+            const aktivitas = document.getElementById('aktivitasTemplate').value;
+            const supervisi = document.getElementById('supervisiTemplate').value;
+            const tugas = document.getElementById('tugasTemplate').value;
+
+            if (!aktivitas.trim() && !supervisi.trim() && !tugas.trim()) {
+                alert('❌ Masukkan minimal satu jenis data!');
+                return;
+            }
+
+            let script = `// SCRIPT INPUT OTOMATIS DATA RECOVERY
+console.log('🔄 Memulai input otomatis data...');
+
+async function inputDataOtomatis() {
+    try {
+        let successCount = 0;
+        let errorCount = 0;
+
+`;
+
+            // Generate script untuk aktivitas
+            if (aktivitas.trim()) {
+                const aktivitasList = aktivitas.trim().split('\n').filter(line => line.trim());
+                script += `        // INPUT AKTIVITAS
+        console.log('📋 Menginput ${aktivitasList.length} aktivitas...');
+        const aktivitasData = [
+`;
+                aktivitasList.forEach((line, index) => {
+                    const parts = line.split('|').map(part => part.trim());
+                    if (parts.length >= 3) {
+                        script += `            {
+                id: 'recovery_activity_${Date.now()}_${index}',
+                date: '${parts[0]}',
+                title: '${parts[1]}',
+                description: '${parts[2]}',
+                created_at: new Date().toISOString(),
+                user_id: 'current_user'
+            },
+`;
+                    }
+                });
+                script += `        ];
+
+        for (const activity of aktivitasData) {
+            try {
+                const response = await fetch('/api/activities', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(activity)
+                });
+                if (response.ok) {
+                    console.log('✅ Aktivitas berhasil:', activity.title);
+                    successCount++;
+                } else {
+                    console.log('❌ Gagal input aktivitas:', activity.title);
+                    errorCount++;
+                }
+                await new Promise(resolve => setTimeout(resolve, 500)); // Delay 500ms
+            } catch (error) {
+                console.log('❌ Error aktivitas:', error);
+                errorCount++;
+            }
+        }
+
+`;
+            }
+
+            // Generate script untuk supervisi
+            if (supervisi.trim()) {
+                const supervisiList = supervisi.trim().split('\n').filter(line => line.trim());
+                script += `        // INPUT SUPERVISI
+        console.log('🏫 Menginput ${supervisiList.length} supervisi...');
+        const supervisiData = [
+`;
+                supervisiList.forEach((line, index) => {
+                    const parts = line.split('|').map(part => part.trim());
+                    if (parts.length >= 4) {
+                        script += `            {
+                id: 'recovery_supervision_${Date.now()}_${index}',
+                date: '${parts[0]}',
+                school: '${parts[1]}',
+                result: '${parts[2]}',
+                notes: '${parts[3]}',
+                created_at: new Date().toISOString(),
+                user_id: 'current_user'
+            },
+`;
+                    }
+                });
+                script += `        ];
+
+        for (const supervision of supervisiData) {
+            try {
+                const response = await fetch('/api/supervisions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(supervision)
+                });
+                if (response.ok) {
+                    console.log('✅ Supervisi berhasil:', supervision.school);
+                    successCount++;
+                } else {
+                    console.log('❌ Gagal input supervisi:', supervision.school);
+                    errorCount++;
+                }
+                await new Promise(resolve => setTimeout(resolve, 500)); // Delay 500ms
+            } catch (error) {
+                console.log('❌ Error supervisi:', error);
+                errorCount++;
+            }
+        }
+
+`;
+            }
+
+            // Generate script untuk tugas
+            if (tugas.trim()) {
+                const tugasList = tugas.trim().split('\n').filter(line => line.trim());
+                script += `        // INPUT TUGAS TAMBAHAN
+        console.log('📝 Menginput ${tugasList.length} tugas tambahan...');
+        const tugasData = [
+`;
+                tugasList.forEach((line, index) => {
+                    const parts = line.split('|').map(part => part.trim());
+                    if (parts.length >= 4) {
+                        script += `            {
+                id: 'recovery_task_${Date.now()}_${index}',
+                date: '${parts[0]}',
+                title: '${parts[1]}',
+                status: '${parts[2]}',
+                description: '${parts[3]}',
+                created_at: new Date().toISOString(),
+                user_id: 'current_user'
+            },
+`;
+                    }
+                });
+                script += `        ];
+
+        for (const task of tugasData) {
+            try {
+                const response = await fetch('/api/tasks', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(task)
+                });
+                if (response.ok) {
+                    console.log('✅ Tugas berhasil:', task.title);
+                    successCount++;
+                } else {
+                    console.log('❌ Gagal input tugas:', task.title);
+                    errorCount++;
+                }
+                await new Promise(resolve => setTimeout(resolve, 500)); // Delay 500ms
+            } catch (error) {
+                console.log('❌ Error tugas:', error);
+                errorCount++;
+            }
+        }
+
+`;
+            }
+
+            script += `        console.log('🎉 INPUT SELESAI!');
+        console.log(\`✅ Berhasil: \${successCount} data\`);
+        console.log(\`❌ Gagal: \${errorCount} data\`);
+        
+        if (successCount > 0) {
+            console.log('🔄 Refresh halaman dalam 3 detik...');
+            setTimeout(() => location.reload(), 3000);
+        }
+        
+    } catch (error) {
+        console.error('❌ Error umum:', error);
+    }
+}
+
+// Jalankan input otomatis
+inputDataOtomatis();`;
+
+            document.getElementById('scriptOutput').value = script;
+            document.getElementById('generatedScript').style.display = 'block';
+        }
+
+        function copyScript() {
+            const script = document.getElementById('scriptOutput');
+            script.select();
+            document.execCommand('copy');
+            alert('✅ Script berhasil di-copy! Paste di Console aplikasi.');
+        }
+
+        function generateBackupScript() {
+            const backupScript = `// SCRIPT BACKUP OTOMATIS
+console.log('💾 Membuat backup data...');
+
+const backupData = {
+    auth_user: localStorage.getItem('auth_user'),
+    profile_data: localStorage.getItem('profile_data'),
+    local_database: localStorage.getItem('local-database'),
+    activities: localStorage.getItem('activities'),
+    supervisions: localStorage.getItem('supervisions'),
+    tasks: localStorage.getItem('tasks'),
+    backup_date: new Date().toISOString(),
+    domain: window.location.hostname
+};
+
+// Simpan backup ke localStorage
+localStorage.setItem('data_backup_' + Date.now(), JSON.stringify(backupData));
+
+// Download backup file
+const dataStr = JSON.stringify(backupData, null, 2);
+const dataBlob = new Blob([dataStr], {type: 'application/json'});
+const url = URL.createObjectURL(dataBlob);
+const link = document.createElement('a');
+link.href = url;
+link.download = \`backup_\${new Date().toISOString().split('T')[0]}.json\`;
+link.click();
+URL.revokeObjectURL(url);
+
+console.log('✅ Backup berhasil dibuat dan didownload!');`;
+
+            document.getElementById('backupOutput').value = backupScript;
+            document.getElementById('backupScript').style.display = 'block';
+        }
+
+        function copyBackupScript() {
+            const script = document.getElementById('backupOutput');
+            script.select();
+            document.execCommand('copy');
+            alert('✅ Script backup berhasil di-copy!');
+        }
+    </script>
+</body>
+</html>
