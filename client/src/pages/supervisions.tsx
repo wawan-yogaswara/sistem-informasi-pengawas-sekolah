@@ -207,6 +207,8 @@ export default function SupervisionsPage() {
 
   const handleAddSupervision = async () => {
     try {
+      console.log('🔄 Starting handleAddSupervision...');
+      
       // Validate required fields
       if (!newSupervision.school) {
         toast({
@@ -217,9 +219,9 @@ export default function SupervisionsPage() {
         return;
       }
 
-      if (!newSupervision.findings) {
+      if (!newSupervision.findings.trim()) {
         toast({
-          title: "Error",
+          title: "Error", 
           description: "Temuan harus diisi",
           variant: "destructive",
         });
@@ -237,6 +239,7 @@ export default function SupervisionsPage() {
         return;
       }
 
+      console.log('📝 Creating FormData for supervision...');
       const formData = new FormData();
       formData.append('schoolId', selectedSchool.id);
       formData.append('type', newSupervision.type);
@@ -246,19 +249,21 @@ export default function SupervisionsPage() {
       formData.append('recommendations', newSupervision.recommendations || '');
       formData.append('date', newSupervision.date || new Date().toISOString().split('T')[0]);
       
-      if (photo1) formData.append('photo1', photo1);
-      if (photo2) formData.append('photo2', photo2);
+      if (photo1) {
+        console.log('📸 Adding photo1 to FormData');
+        formData.append('photo1', photo1);
+      }
+      if (photo2) {
+        console.log('📸 Adding photo2 to FormData');
+        formData.append('photo2', photo2);
+      }
 
-      console.log('Submitting supervision:', {
-        schoolId: selectedSchool.id,
-        type: newSupervision.type,
-        hasPhoto1: !!photo1,
-        hasPhoto2: !!photo2
-      });
-
-      createSupervisionMutation.mutate(formData);
+      console.log('💾 Submitting supervision data...');
+      await createSupervisionMutation.mutateAsync(formData);
+      
+      console.log('✅ Supervision created successfully');
     } catch (error: any) {
-      console.error('Error in handleAddSupervision:', error);
+      console.error('❌ Error in handleAddSupervision:', error);
       toast({
         title: "Error",
         description: error.message || "Terjadi kesalahan saat menyimpan supervisi",
@@ -676,8 +681,22 @@ export default function SupervisionsPage() {
         </div>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
-            <Button data-testid="button-add-supervision">
-              <Plus className="h-4 w-4 mr-2" />
+            <Button 
+              data-testid="button-add-supervision"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                minHeight: '40px',
+                // Edge browser compatibility
+                WebkitAppearance: 'none',
+                MozAppearance: 'none',
+                msFlexAlign: 'center',
+                msFlexPack: 'center'
+              }}
+            >
+              <Plus className="h-4 w-4" style={{ marginRight: '8px' }} />
               Tambah Supervisi
             </Button>
           </DialogTrigger>
@@ -872,11 +891,26 @@ export default function SupervisionsPage() {
                 </div>
               </div>
               <div className="flex gap-2 justify-end">
-                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} data-testid="button-cancel-supervision">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setIsAddDialogOpen(false)} 
+                  data-testid="button-cancel-supervision"
+                  disabled={createSupervisionMutation.isPending}
+                >
                   Batal
                 </Button>
-                <Button onClick={handleAddSupervision} disabled={!newSupervision.school || !newSupervision.findings} data-testid="button-save-supervision">
-                  Simpan Supervisi
+                <Button 
+                  onClick={handleAddSupervision} 
+                  disabled={!newSupervision.school || !newSupervision.findings.trim() || createSupervisionMutation.isPending} 
+                  data-testid="button-save-supervision"
+                  style={{
+                    minHeight: '40px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  {createSupervisionMutation.isPending ? "Menyimpan..." : "Simpan Supervisi"}
                 </Button>
               </div>
             </div>

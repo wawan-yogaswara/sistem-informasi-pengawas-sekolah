@@ -1,25 +1,5 @@
 import { supabase } from "./supabase";
 
-import { supabase } from "./supabase";
-
-import { supabase } from "./supabase";
-
-import { supabase } from "./supabase";
-
-import { supabase } from "./supabase";
-
-import { supabase } from "./supabase";
-
-import { supabase } from "./supabase";
-
-import { supabase } from "./supabase";
-
-import { supabase } from "./supabase";
-
-import { supabase } from "./supabase";
-
-import { supabase } from "./supabase";
-
 // API client using local server
 const API_URL = 'http://localhost:5000/api';
 
@@ -322,68 +302,114 @@ export const tasksApi = {
   }
 };
 
-// Supervisions API - Direct Supabase
+// Supervisions API - Direct localStorage (Fixed for Edge compatibility)
 export const supervisionsApi = {
   getAll: async () => {
     try {
-      const { data, error } = await supabase
-        .from('supervisions')
-        .select(`
-          *,
-          users!supervisions_user_id_fkey (
-            username,
-            full_name
-          ),
-          schools!supervisions_school_id_fkey (
-            name,
-            principal_name
-          )
-        `)
-        .order('date', { ascending: false });
-      
-      if (error) throw error;
-      
-      console.log('✅ Data supervisions dari Supabase:', data?.length || 0, 'records');
-      return data || [];
-    } catch (error: any) {
-      console.error('Error fetching supervisions:', error);
-      
-      // Fallback to localStorage
-      const localData = localStorage.getItem('supervisions_data');
-      if (localData) {
-        const supervisions = JSON.parse(localData);
-        console.log('📦 Fallback ke localStorage supervisions:', supervisions.length, 'records');
-        return supervisions;
+      // Direct localStorage only - no API calls to prevent 405 errors
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const supervisionsData = localStorage.getItem('supervisions_data');
+        if (supervisionsData) {
+          const parsed = JSON.parse(supervisionsData);
+          console.log('📦 Supervisions dari localStorage:', Array.isArray(parsed) ? parsed.length : 0, 'records');
+          return Array.isArray(parsed) ? parsed : [];
+        }
       }
       
+      console.log('📦 No supervisions data found, returning empty array');
+      return [];
+    } catch (error: any) {
+      console.error('Error reading supervisions from localStorage:', error);
       return [];
     }
   },
 
-  create: async (supervisionData: any) => {
+  create: async (formData: FormData) => {
     try {
-      // Get current user to set user_id
-      const currentUser = await authApi.getCurrentUser();
+      console.log('🔄 Creating supervision with FormData...');
       
-      const { data, error } = await supabase
-        .from('supervisions')
-        .insert([{
-          user_id: currentUser.id,
-          school_id: supervisionData.school_id,
-          type: supervisionData.type || 'Akademik',
-          date: supervisionData.date,
-          findings: supervisionData.findings || '',
-          recommendations: supervisionData.recommendations || '',
-          photo1: supervisionData.photo1 || ''
-        }])
-        .select()
-        .single();
+      // Convert FormData to object with proper async file handling
+      const supervisionData: any = {};
+      const filePromises: Promise<void>[] = [];
       
-      if (error) throw error;
-      return data;
+      formData.forEach((value, key) => {
+        if (key.startsWith('photo') && value instanceof File) {
+          // Convert file to base64 for localStorage
+          const promise = new Promise<void>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+              supervisionData[key] = reader.result;
+              resolve();
+            };
+            reader.readAsDataURL(value);
+          });
+          filePromises.push(promise);
+        } else {
+          supervisionData[key] = value;
+        }
+      });
+      
+      // Wait for all file conversions to complete
+      await Promise.all(filePromises);
+      
+      // Get existing supervisions from localStorage
+      const existingData = localStorage.getItem('supervisions_data');
+      const supervisions = existingData ? JSON.parse(existingData) : [];
+      
+      // Find school name from schoolId
+      const schoolsData = localStorage.getItem('schools_data');
+      const schools = schoolsData ? JSON.parse(schoolsData) : [];
+      const selectedSchool = schools.find((s: any) => s.id === supervisionData.schoolId);
+      const schoolName = selectedSchool ? selectedSchool.name : supervisionData.schoolId;
+      
+      // Create new supervision object
+      const newSupervision = {
+        id: Date.now().toString(),
+        school: schoolName,
+        type: supervisionData.type || 'Akademik',
+        date: supervisionData.date || new Date().toISOString().split('T')[0],
+        teacherName: supervisionData.teacherName || '',
+        teacherNip: supervisionData.teacherNip || '',
+        findings: supervisionData.findings || '',
+        recommendations: supervisionData.recommendations || '',
+        photo1: supervisionData.photo1 || null,
+        photo2: supervisionData.photo2 || null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      
+      // Add to supervisions array
+      supervisions.push(newSupervision);
+      
+      // Save to localStorage with backup
+      localStorage.setItem('supervisions_data', JSON.stringify(supervisions));
+      localStorage.setItem('supervisions_data_backup', JSON.stringify(supervisions));
+      
+      console.log('✅ Supervisi berhasil disimpan:', newSupervision);
+      return newSupervision;
     } catch (error: any) {
-      console.error('Error creating supervision:', error);
-      throw new Error('Gagal membuat supervisi');
+      console.error('❌ Error creating supervision:', error);
+      throw new Error('Gagal menyimpan supervisi: ' + error.message);
+    }
+  },
+
+  delete: async (id: string) => {
+    try {
+      console.log('🗑️ Deleting supervision:', id);
+      
+      const existingData = localStorage.getItem('supervisions_data');
+      const supervisions = existingData ? JSON.parse(existingData) : [];
+      
+      const filteredSupervisions = supervisions.filter((s: any) => s.id !== id);
+      
+      localStorage.setItem('supervisions_data', JSON.stringify(filteredSupervisions));
+      localStorage.setItem('supervisions_data_backup', JSON.stringify(filteredSupervisions));
+      
+      console.log('✅ Supervisi berhasil dihapus');
+      return { success: true, id };
+    } catch (error: any) {
+      console.error('❌ Error deleting supervision:', error);
+      throw new Error('Gagal menghapus supervisi');
     }
   }
 };

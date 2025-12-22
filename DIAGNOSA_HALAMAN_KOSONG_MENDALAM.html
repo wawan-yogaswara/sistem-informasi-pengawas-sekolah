@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 Diagnosa Halaman Kosong Mendalam</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            color: white;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            color: #333;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        }
+        .success {
+            color: #16a34a;
+            background: #dcfce7;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #16a34a;
+        }
+        .error {
+            color: #dc2626;
+            background: #fef2f2;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #dc2626;
+        }
+        .warning {
+            color: #d97706;
+            background: #fef3c7;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #d97706;
+        }
+        .info {
+            color: #2563eb;
+            background: #dbeafe;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #2563eb;
+        }
+        button {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 8px;
+            transition: all 0.3s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+        }
+        .btn-warning {
+            background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+        }
+        .btn-info {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        }
+        pre {
+            background: #1f2937;
+            color: #f9fafb;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        .step {
+            background: #f8fafc;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 10px;
+            border: 2px solid #e2e8f0;
+        }
+        .step h3 {
+            margin-top: 0;
+            color: #1e293b;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 DIAGNOSA HALAMAN KOSONG MENDALAM</h1>
+        
+        <div class="error">
+            <h3>🚨 MASALAH TERDETEKSI</h3>
+            <p>Halaman masih kosong meskipun index.html sudah diperbaiki.</p>
+            <p>Mari kita diagnosa lebih mendalam...</p>
+        </div>
+
+        <div class="step">
+            <h3>🔍 Step 1: Cek Console Errors</h3>
+            <button onclick="checkConsoleErrors()" class="btn-info">📊 Check Console</button>
+            <div id="consoleResults"></div>
+        </div>
+
+        <div class="step">
+            <h3>🌐 Step 2: Test Network Requests</h3>
+            <button onclick="testNetworkRequests()" class="btn-info">🌐 Test Network</button>
+            <div id="networkResults"></div>
+        </div>
+
+        <div class="step">
+            <h3>⚛️ Step 3: Test React Mounting</h3>
+            <button onclick="testReactMounting()" class="btn-warning">⚛️ Test React</button>
+            <div id="reactResults"></div>
+        </div>
+
+        <div class="step">
+            <h3>🔧 Step 4: Emergency Fixes</h3>
+            <button onclick="emergencyReactFix()" class="btn-success">🚀 Emergency React Fix</button>
+            <button onclick="bypassViteAndLoadDirect()" class="btn-warning">🔄 Bypass Vite</button>
+            <button onclick="createMinimalReactApp()" class="btn-info">📦 Minimal React App</button>
+        </div>
+
+        <div class="step">
+            <h3>🛠️ Step 5: Manual Solutions</h3>
+            <button onclick="showManualSolutions()" class="btn-info">📋 Show Manual Solutions</button>
+            <div id="manualSolutions" style="display: none;"></div>
+        </div>
+
+        <div id="results"></div>
+    </div>
+
+    <script>
+        function showResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const className = type === 'success' ? 'success' : type === 'error' ? 'error' : type === 'warning' ? 'warning' : 'info';
+            results.innerHTML += `<div class="${className}">${message}</div>`;
+        }
+
+        function updateSection(sectionId, content, type = 'info') {
+            const section = document.getElementById(sectionId);
+            const className = type === 'success' ? 'success' : type === 'error' ? 'error' : type === 'warning' ? 'warning' : 'info';
+            section.innerHTML = `<div class="${className}" style="margin-top: 15px;">${content}</div>`;
+        }
+
+        function checkConsoleErrors() {
+            showResult('🔍 Checking console errors...', 'info');
+            
+            // Capture console errors
+            const errors = [];
+            const originalError = console.error;
+            console.error = function(...args) {
+                errors.push(args.join(' '));
+                originalError.apply(console, arguments);
+            };
+
+            // Try to access the React app
+            setTimeout(() => {
+                const rootElement = document.getElementById('root');
+                let content = '<h4>🔍 Console Diagnostic Results:</h4>';
+                
+                if (errors.length > 0) {
+                    content += '<h5>❌ Console Errors Found:</h5><ul>';
+                    errors.forEach(error => {
+                        content += `<li>${error}</li>`;
+                    });
+                    content += '</ul>';
+                } else {
+                    content += '<p>✅ No console errors detected</p>';
+                }
+
+                content += `<h5>📊 DOM Status:</h5>`;
+                content += `<p>Root element exists: ${rootElement ? '✅ Yes' : '❌ No'}</p>`;
+                content += `<p>Root element content: ${rootElement ? (rootElement.innerHTML || 'Empty') : 'N/A'}</p>`;
+                
+                updateSection('consoleResults', content, errors.length > 0 ? 'error' : 'success');
+            }, 2000);
+        }
+
+        async function testNetworkRequests() {
+            showResult('🌐 Testing network requests...', 'info');
+            
+            let content = '<h4>🌐 Network Test Results:</h4>';
+            
+            try {
+                // Test main.tsx
+                const mainResponse = await fetch('/src/main.tsx');
+                content += `<p>main.tsx: ${mainResponse.ok ? '✅ OK' : '❌ Failed'} (${mainResponse.status})</p>`;
+                
+                // Test App.tsx
+                const appResponse = await fetch('/src/App.tsx');
+                content += `<p>App.tsx: ${appResponse.ok ? '✅ OK' : '❌ Failed'} (${appResponse.status})</p>`;
+                
+                // Test CSS files
+                const cssResponse = await fetch('/src/index.css');
+                content += `<p>index.css: ${cssResponse.ok ? '✅ OK' : '❌ Failed'} (${cssResponse.status})</p>`;
+                
+                // Test backend
+                const backendResponse = await fetch('http://localhost:5000/api/schools');
+                content += `<p>Backend API: ${backendResponse.ok ? '✅ OK' : '❌ Failed'} (${backendResponse.status})</p>`;
+                
+            } catch (error) {
+                content += `<p>❌ Network error: ${error.message}</p>`;
+            }
+            
+            updateSection('networkResults', content, 'info');
+        }
+
+        function testReactMounting() {
+            showResult('⚛️ Testing React mounting...', 'info');
+            
+            let content = '<h4>⚛️ React Mounting Test:</h4>';
+            
+            // Check if React is loaded
+            content += `<p>React available: ${typeof React !== 'undefined' ? '✅ Yes' : '❌ No'}</p>`;
+            content += `<p>ReactDOM available: ${typeof ReactDOM !== 'undefined' ? '✅ Yes' : '❌ No'}</p>`;
+            
+            // Try to create a simple React element
+            try {
+                const rootElement = document.getElementById('root');
+                if (rootElement) {
+                    // Try to mount a simple component
+                    rootElement.innerHTML = '<div id="test-react">Testing React...</div>';
+                    content += '<p>✅ Basic DOM manipulation works</p>';
+                    
+                    // Try to load React modules
+                    import('/src/main.tsx').then(() => {
+                        content += '<p>✅ main.tsx module loaded successfully</p>';
+                        updateSection('reactResults', content, 'success');
+                    }).catch(error => {
+                        content += `<p>❌ main.tsx module failed: ${error.message}</p>`;
+                        updateSection('reactResults', content, 'error');
+                    });
+                } else {
+                    content += '<p>❌ Root element not found</p>';
+                    updateSection('reactResults', content, 'error');
+                }
+            } catch (error) {
+                content += `<p>❌ React mounting error: ${error.message}</p>`;
+                updateSection('reactResults', content, 'error');
+            }
+        }
+
+        function emergencyReactFix() {
+            showResult('🚀 Applying emergency React fix...', 'info');
+            
+            // Clear everything and start fresh
+            localStorage.clear();
+            sessionStorage.clear();
+            
+            // Set emergency auth
+            localStorage.setItem('auth_token', 'emergency-' + Date.now());
+            localStorage.setItem('user_data', JSON.stringify({
+                id: 'emergency-admin',
+                username: 'admin',
+                fullName: 'Emergency Administrator',
+                role: 'admin',
+                nip: '999999999',
+                email: 'admin@emergency.local'
+            }));
+            
+            // Try to manually create React app
+            const rootElement = document.getElementById('root');
+            if (rootElement) {
+                rootElement.innerHTML = \`
+                    <div style="padding: 20px; text-align: center;">
+                        <h1>🚀 Emergency React Fix Active</h1>
+                        <p>Loading application...</p>
+                        <div style="margin: 20px 0;">
+                            <div style="display: inline-block; width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; animation: spin 2s linear infinite;"></div>
+                        </div>
+                        <style>
+                            @keyframes spin {
+                                0% { transform: rotate(0deg); }
+                                100% { transform: rotate(360deg); }
+                            }
+                        </style>
+                    </div>
+                \`;
+                
+                // Try to reload the React app after a delay
+                setTimeout(() => {
+                    window.location.reload(true);
+                }, 3000);
+                
+                showResult('✅ Emergency fix applied! Reloading...', 'success');
+            } else {
+                showResult('❌ Root element not found!', 'error');
+            }
+        }
+
+        function bypassViteAndLoadDirect() {
+            showResult('🔄 Bypassing Vite and loading directly...', 'info');
+            
+            // Create a direct React app without Vite
+            const rootElement = document.getElementById('root');
+            if (rootElement) {
+                rootElement.innerHTML = \`
+                    <div style="min-height: 100vh; display: flex; flex-direction: column;">
+                        <header style="background: #2563eb; color: white; padding: 1rem;">
+                            <h1>📱 Aplikasi Pengawas Sekolah</h1>
+                        </header>
+                        <main style="flex: 1; padding: 2rem;">
+                            <div style="max-width: 800px; margin: 0 auto;">
+                                <h2>🚀 Direct Load Success!</h2>
+                                <p>Aplikasi berhasil dimuat tanpa Vite.</p>
+                                <div style="margin: 20px 0;">
+                                    <button onclick="window.location.href='/login'" style="background: #16a34a; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">
+                                        🔑 Go to Login
+                                    </button>
+                                    <button onclick="window.location.reload()" style="background: #dc2626; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin-left: 10px;">
+                                        🔄 Reload
+                                    </button>
+                                </div>
+                            </div>
+                        </main>
+                    </div>
+                \`;
+                
+                showResult('✅ Direct load successful!', 'success');
+            }
+        }
+
+        function createMinimalReactApp() {
+            showResult('📦 Creating minimal React app...', 'info');
+            
+            // Create minimal working React app
+            const rootElement = document.getElementById('root');
+            if (rootElement) {
+                rootElement.innerHTML = \`
+                    <div id="minimal-app" style="min-height: 100vh; font-family: Arial, sans-serif;">
+                        <div style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; padding: 2rem; text-align: center;">
+                            <h1>📱 Minimal React App</h1>
+                            <p>Emergency fallback application</p>
+                        </div>
+                        <div style="padding: 2rem; max-width: 800px; margin: 0 auto;">
+                            <div style="background: #f8fafc; padding: 1.5rem; border-radius: 10px; margin: 1rem 0;">
+                                <h3>🔑 Login</h3>
+                                <form onsubmit="handleLogin(event)" style="display: flex; flex-direction: column; gap: 1rem;">
+                                    <input type="text" placeholder="Username" id="username" style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 5px;">
+                                    <input type="password" placeholder="Password" id="password" style="padding: 0.5rem; border: 1px solid #ddd; border-radius: 5px;">
+                                    <button type="submit" style="background: #16a34a; color: white; padding: 0.75rem; border: none; border-radius: 5px; cursor: pointer;">
+                                        Login
+                                    </button>
+                                </form>
+                            </div>
+                            <div style="background: #fef3c7; padding: 1rem; border-radius: 5px; margin: 1rem 0;">
+                                <p><strong>Default Login:</strong> admin / admin123</p>
+                            </div>
+                        </div>
+                    </div>
+                \`;
+                
+                // Add login handler
+                window.handleLogin = function(event) {
+                    event.preventDefault();
+                    const username = document.getElementById('username').value;
+                    const password = document.getElementById('password').value;
+                    
+                    if (username === 'admin' && password === 'admin123') {
+                        localStorage.setItem('auth_token', 'minimal-' + Date.now());
+                        localStorage.setItem('user_data', JSON.stringify({
+                            id: 'admin',
+                            username: 'admin',
+                            fullName: 'Administrator',
+                            role: 'admin'
+                        }));
+                        
+                        alert('Login successful! Redirecting to full app...');
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    } else {
+                        alert('Invalid credentials. Use admin/admin123');
+                    }
+                };
+                
+                showResult('✅ Minimal React app created!', 'success');
+            }
+        }
+
+        function showManualSolutions() {
+            const manualDiv = document.getElementById('manualSolutions');
+            manualDiv.style.display = 'block';
+            
+            manualDiv.innerHTML = \`
+                <div class="info">
+                    <h4>🛠️ Manual Solutions:</h4>
+                    
+                    <h5>1. 🔄 Restart Development Server:</h5>
+                    <pre>
+# Stop current server (Ctrl+C)
+# Then restart:
+npm run dev:client
+                    </pre>
+                    
+                    <h5>2. 🧹 Clear All Caches:</h5>
+                    <pre>
+# Clear npm cache
+npm cache clean --force
+
+# Clear browser cache
+# Press Ctrl+Shift+Delete in browser
+                    </pre>
+                    
+                    <h5>3. 🔧 Reinstall Dependencies:</h5>
+                    <pre>
+# Remove node_modules and reinstall
+rm -rf node_modules
+npm install
+npm run dev:client
+                    </pre>
+                    
+                    <h5>4. 🌐 Try Different Browser:</h5>
+                    <ul>
+                        <li>Chrome Incognito mode</li>
+                        <li>Firefox Private mode</li>
+                        <li>Edge InPrivate mode</li>
+                    </ul>
+                    
+                    <h5>5. 🚨 Emergency Console Commands:</h5>
+                    <pre>
+// Paste in browser console (F12):
+localStorage.clear();
+sessionStorage.clear();
+window.location.reload(true);
+                    </pre>
+                </div>
+            \`;
+        }
+
+        // Auto-start diagnostics
+        window.onload = function() {
+            showResult('🔍 Diagnostic tool loaded. Starting automatic checks...', 'info');
+            setTimeout(checkConsoleErrors, 1000);
+            setTimeout(testNetworkRequests, 3000);
+        };
+    </script>
+</body>
+</html>

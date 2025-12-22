@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 Debug Additional Tasks Button</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            color: #333;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        }
+        .success {
+            color: #16a34a;
+            background: #dcfce7;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #16a34a;
+        }
+        .error {
+            color: #dc2626;
+            background: #fef2f2;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #dc2626;
+        }
+        .warning {
+            color: #d97706;
+            background: #fef3c7;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #d97706;
+        }
+        .info {
+            color: #2563eb;
+            background: #dbeafe;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #2563eb;
+        }
+        button {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 8px;
+            transition: all 0.3s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .btn-danger {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+        }
+        pre {
+            background: #1f2937;
+            color: #f9fafb;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        .step {
+            background: #f8fafc;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 10px;
+            border: 2px solid #e2e8f0;
+        }
+        .step h3 {
+            margin-top: 0;
+            color: #1e293b;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Debug Additional Tasks Button</h1>
+        
+        <div class="warning">
+            <h3>🚨 MASALAH: Tombol "Tambah Kegiatan" tidak muncul</h3>
+            <p>Kemungkinan penyebab:</p>
+            <ul>
+                <li>React component tidak ter-render dengan benar</li>
+                <li>CSS styling menyembunyikan tombol</li>
+                <li>JavaScript error yang memblokir rendering</li>
+                <li>Permission/role check yang salah</li>
+                <li>Dialog component tidak ter-import dengan benar</li>
+            </ul>
+        </div>
+
+        <div class="step">
+            <h3>🔍 Step 1: Cek Console Errors</h3>
+            <button onclick="checkConsoleErrors()">📋 Cek Console Errors</button>
+            <div id="consoleResult"></div>
+        </div>
+
+        <div class="step">
+            <h3>🔍 Step 2: Cek DOM Elements</h3>
+            <button onclick="checkDOMElements()">🔍 Cek DOM Elements</button>
+            <div id="domResult"></div>
+        </div>
+
+        <div class="step">
+            <h3>🔍 Step 3: Cek User Session</h3>
+            <button onclick="checkUserSession()">👤 Cek User Session</button>
+            <div id="sessionResult"></div>
+        </div>
+
+        <div class="step">
+            <h3>🔍 Step 4: Cek React Components</h3>
+            <button onclick="checkReactComponents()">⚛️ Cek React Components</button>
+            <div id="reactResult"></div>
+        </div>
+
+        <div class="step">
+            <h3>🛠️ Step 5: Force Inject Button</h3>
+            <button onclick="forceInjectButton()">💉 Force Inject Button</button>
+            <div id="injectResult"></div>
+        </div>
+
+        <div class="step">
+            <h3>📋 Manual Instructions</h3>
+            <div class="info">
+                <h4>🔧 Manual Debugging Steps:</h4>
+                <ol>
+                    <li><strong>Buka Developer Tools:</strong> F12 atau Ctrl+Shift+I</li>
+                    <li><strong>Pergi ke Console tab</strong></li>
+                    <li><strong>Refresh halaman</strong> dan lihat error messages</li>
+                    <li><strong>Pergi ke Elements tab</strong></li>
+                    <li><strong>Cari element dengan class "space-y-6"</strong> (container utama)</li>
+                    <li><strong>Cek apakah ada button dengan text "Tambah Kegiatan"</strong></li>
+                    <li><strong>Jika ada tapi tidak terlihat, cek CSS styles</strong></li>
+                </ol>
+            </div>
+        </div>
+
+        <div id="results"></div>
+    </div>
+
+    <script>
+        function showResult(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            const className = type === 'success' ? 'success' : type === 'error' ? 'error' : type === 'warning' ? 'warning' : 'info';
+            element.innerHTML += `<div class="${className}">${message}</div>`;
+        }
+
+        function checkConsoleErrors() {
+            const resultId = 'consoleResult';
+            document.getElementById(resultId).innerHTML = '';
+            
+            showResult(resultId, '🔍 Checking console errors...', 'info');
+            
+            // Override console.error to capture errors
+            const originalError = console.error;
+            const errors = [];
+            
+            console.error = function(...args) {
+                errors.push(args.join(' '));
+                originalError.apply(console, args);
+            };
+            
+            setTimeout(() => {
+                if (errors.length > 0) {
+                    showResult(resultId, '❌ Found console errors:', 'error');
+                    errors.forEach(error => {
+                        showResult(resultId, `<pre>${error}</pre>`, 'error');
+                    });
+                } else {
+                    showResult(resultId, '✅ No console errors detected', 'success');
+                }
+                
+                // Restore original console.error
+                console.error = originalError;
+            }, 2000);
+            
+            // Check for React errors
+            if (window.React) {
+                showResult(resultId, '✅ React is loaded', 'success');
+            } else {
+                showResult(resultId, '❌ React not found', 'error');
+            }
+            
+            // Check for common libraries
+            const libraries = ['React', 'ReactDOM', 'TanStackQuery'];
+            libraries.forEach(lib => {
+                if (window[lib]) {
+                    showResult(resultId, `✅ ${lib} is available`, 'success');
+                } else {
+                    showResult(resultId, `⚠️ ${lib} not found in window`, 'warning');
+                }
+            });
+        }
+
+        function checkDOMElements() {
+            const resultId = 'domResult';
+            document.getElementById(resultId).innerHTML = '';
+            
+            showResult(resultId, '🔍 Checking DOM elements...', 'info');
+            
+            // Check for main container
+            const mainContainer = document.querySelector('[class*="space-y-6"]');
+            if (mainContainer) {
+                showResult(resultId, '✅ Main container found', 'success');
+                showResult(resultId, `📊 Container HTML: <pre>${mainContainer.outerHTML.substring(0, 200)}...</pre>`, 'info');
+            } else {
+                showResult(resultId, '❌ Main container not found', 'error');
+            }
+            
+            // Check for button
+            const addButton = document.querySelector('button:contains("Tambah Kegiatan")') || 
+                             Array.from(document.querySelectorAll('button')).find(btn => btn.textContent.includes('Tambah Kegiatan'));
+            
+            if (addButton) {
+                showResult(resultId, '✅ "Tambah Kegiatan" button found!', 'success');
+                showResult(resultId, `📊 Button styles: <pre>${getComputedStyle(addButton).display}, visibility: ${getComputedStyle(addButton).visibility}</pre>`, 'info');
+                
+                if (getComputedStyle(addButton).display === 'none') {
+                    showResult(resultId, '⚠️ Button is hidden with display: none', 'warning');
+                }
+                if (getComputedStyle(addButton).visibility === 'hidden') {
+                    showResult(resultId, '⚠️ Button is hidden with visibility: hidden', 'warning');
+                }
+            } else {
+                showResult(resultId, '❌ "Tambah Kegiatan" button NOT found', 'error');
+            }
+            
+            // Check all buttons
+            const allButtons = document.querySelectorAll('button');
+            showResult(resultId, `📊 Total buttons found: ${allButtons.length}`, 'info');
+            
+            if (allButtons.length > 0) {
+                showResult(resultId, '📋 Button texts:', 'info');
+                Array.from(allButtons).forEach((btn, index) => {
+                    showResult(resultId, `  ${index + 1}. "${btn.textContent.trim()}"`, 'info');
+                });
+            }
+        }
+
+        function checkUserSession() {
+            const resultId = 'sessionResult';
+            document.getElementById(resultId).innerHTML = '';
+            
+            showResult(resultId, '🔍 Checking user session...', 'info');
+            
+            // Check localStorage for user data
+            const currentUser = localStorage.getItem('currentUser');
+            const token = localStorage.getItem('token');
+            const authToken = localStorage.getItem('auth_token');
+            
+            if (currentUser) {
+                try {
+                    const user = JSON.parse(currentUser);
+                    showResult(resultId, '✅ User session found', 'success');
+                    showResult(resultId, `👤 User: ${user.fullName || user.username || 'Unknown'}`, 'success');
+                    showResult(resultId, `🔑 Role: ${user.role || 'Unknown'}`, 'success');
+                    
+                    if (user.role === 'admin') {
+                        showResult(resultId, '✅ User has admin role - should see button', 'success');
+                    } else {
+                        showResult(resultId, '⚠️ User is not admin - might not see button', 'warning');
+                    }
+                } catch (error) {
+                    showResult(resultId, '❌ Error parsing user data: ' + error.message, 'error');
+                }
+            } else {
+                showResult(resultId, '❌ No user session found', 'error');
+            }
+            
+            if (token || authToken) {
+                showResult(resultId, '✅ Auth token found', 'success');
+            } else {
+                showResult(resultId, '⚠️ No auth token found', 'warning');
+            }
+            
+            // Check URL
+            showResult(resultId, `🌐 Current URL: ${window.location.href}`, 'info');
+            
+            if (window.location.pathname.includes('additional-tasks')) {
+                showResult(resultId, '✅ On correct page (additional-tasks)', 'success');
+            } else {
+                showResult(resultId, '⚠️ Not on additional-tasks page', 'warning');
+            }
+        }
+
+        function checkReactComponents() {
+            const resultId = 'reactResult';
+            document.getElementById(resultId).innerHTML = '';
+            
+            showResult(resultId, '🔍 Checking React components...', 'info');
+            
+            // Check if React DevTools is available
+            if (window.__REACT_DEVTOOLS_GLOBAL_HOOK__) {
+                showResult(resultId, '✅ React DevTools detected', 'success');
+            } else {
+                showResult(resultId, '⚠️ React DevTools not available', 'warning');
+            }
+            
+            // Check for React Query
+            if (window.__REACT_QUERY_DEVTOOLS_GLOBAL_HOOK__) {
+                showResult(resultId, '✅ React Query DevTools detected', 'success');
+            } else {
+                showResult(resultId, '⚠️ React Query DevTools not available', 'warning');
+            }
+            
+            // Check for common React errors
+            const reactRoot = document.getElementById('root');
+            if (reactRoot) {
+                showResult(resultId, '✅ React root element found', 'success');
+                
+                if (reactRoot.innerHTML.trim() === '') {
+                    showResult(resultId, '❌ React root is empty - app not mounted', 'error');
+                } else {
+                    showResult(resultId, '✅ React app appears to be mounted', 'success');
+                }
+            } else {
+                showResult(resultId, '❌ React root element not found', 'error');
+            }
+            
+            // Check for hydration errors
+            const hydrationErrors = document.querySelectorAll('[data-reactroot]');
+            if (hydrationErrors.length > 0) {
+                showResult(resultId, '⚠️ Possible hydration issues detected', 'warning');
+            }
+        }
+
+        function forceInjectButton() {
+            const resultId = 'injectResult';
+            document.getElementById(resultId).innerHTML = '';
+            
+            showResult(resultId, '💉 Force injecting button...', 'info');
+            
+            try {
+                // Find the header container
+                const headerContainer = document.querySelector('h1')?.parentElement?.parentElement;
+                
+                if (headerContainer) {
+                    showResult(resultId, '✅ Found header container', 'success');
+                    
+                    // Create button
+                    const button = document.createElement('button');
+                    button.innerHTML = `
+                        <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                        Tambah Kegiatan (INJECTED)
+                    `;
+                    button.style.cssText = `
+                        background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+                        color: white;
+                        padding: 12px 24px;
+                        border: none;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        font-size: 16px;
+                        display: flex;
+                        align-items: center;
+                        margin-left: auto;
+                    `;
+                    
+                    button.onclick = function() {
+                        alert('Button clicked! This proves the button can work. The issue is with React rendering.');
+                        showResult(resultId, '✅ Injected button works!', 'success');
+                        showResult(resultId, '💡 Issue is with React component rendering, not button functionality', 'info');
+                    };
+                    
+                    // Inject button
+                    headerContainer.style.display = 'flex';
+                    headerContainer.style.justifyContent = 'space-between';
+                    headerContainer.style.alignItems = 'flex-start';
+                    headerContainer.appendChild(button);
+                    
+                    showResult(resultId, '✅ Button injected successfully!', 'success');
+                    showResult(resultId, '🧪 Try clicking the injected button to test functionality', 'info');
+                    
+                } else {
+                    showResult(resultId, '❌ Could not find header container to inject button', 'error');
+                }
+                
+            } catch (error) {
+                showResult(resultId, '❌ Error injecting button: ' + error.message, 'error');
+            }
+        }
+
+        // Auto-run checks on load
+        window.onload = function() {
+            setTimeout(() => {
+                checkConsoleErrors();
+                setTimeout(() => checkDOMElements(), 1000);
+                setTimeout(() => checkUserSession(), 2000);
+                setTimeout(() => checkReactComponents(), 3000);
+            }, 500);
+        };
+    </script>
+</body>
+</html>

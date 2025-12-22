@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 FORCE FIX: Additional Tasks Button</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            color: white;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            color: #333;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        }
+        .success {
+            color: #16a34a;
+            background: #dcfce7;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #16a34a;
+        }
+        .error {
+            color: #dc2626;
+            background: #fef2f2;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #dc2626;
+        }
+        .warning {
+            color: #d97706;
+            background: #fef3c7;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #d97706;
+        }
+        .info {
+            color: #2563eb;
+            background: #dbeafe;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #2563eb;
+        }
+        button {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 8px;
+            transition: all 0.3s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+        }
+        pre {
+            background: #1f2937;
+            color: #f9fafb;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 FORCE FIX: Additional Tasks Button</h1>
+        
+        <div class="error">
+            <h3>🚨 EMERGENCY SOLUTION</h3>
+            <p>Jika tombol "Tambah Kegiatan" tidak muncul, gunakan solusi darurat ini:</p>
+        </div>
+
+        <div class="info">
+            <h3>📋 LANGKAH-LANGKAH:</h3>
+            <ol>
+                <li><strong>Buka halaman Additional Tasks:</strong> <code>http://localhost:5173/additional-tasks</code></li>
+                <li><strong>Buka Developer Tools:</strong> F12 atau Ctrl+Shift+I</li>
+                <li><strong>Pergi ke Console tab</strong></li>
+                <li><strong>Copy-paste script di bawah ini</strong></li>
+                <li><strong>Tekan Enter untuk menjalankan</strong></li>
+            </ol>
+        </div>
+
+        <div class="success">
+            <h3>💉 FORCE INJECT SCRIPT:</h3>
+            <p>Copy script ini ke browser console:</p>
+            <pre id="injectScript">
+// 🚀 FORCE INJECT ADDITIONAL TASKS BUTTON
+console.log('🚀 Force injecting Additional Tasks button...');
+
+try {
+    // Find the main container
+    const mainContainer = document.querySelector('[class*="space-y-6"]') || document.querySelector('main') || document.querySelector('#root > div');
+    
+    if (!mainContainer) {
+        console.error('❌ Could not find main container');
+        alert('❌ Could not find main container. Make sure you are on the Additional Tasks page.');
+        throw new Error('Main container not found');
+    }
+    
+    console.log('✅ Found main container');
+    
+    // Remove existing injected button if any
+    const existingButton = document.getElementById('force-injected-button');
+    if (existingButton) {
+        existingButton.remove();
+    }
+    
+    // Create header section if not exists
+    let headerSection = mainContainer.querySelector('.flex.items-center.justify-between');
+    if (!headerSection) {
+        headerSection = document.createElement('div');
+        headerSection.className = 'flex items-center justify-between';
+        headerSection.style.cssText = 'display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px;';
+        
+        // Create header content
+        const headerContent = document.createElement('div');
+        headerContent.innerHTML = `
+            <h1 style="font-size: 2rem; font-weight: bold; margin: 0;">Tugas Tambahan</h1>
+            <p style="color: #6b7280; margin: 4px 0 0 0;">Catat kegiatan dan tugas tambahan di luar supervisi</p>
+        `;
+        
+        headerSection.appendChild(headerContent);
+        mainContainer.insertBefore(headerSection, mainContainer.firstChild);
+        console.log('✅ Created header section');
+    }
+    
+    // Create the button
+    const button = document.createElement('button');
+    button.id = 'force-injected-button';
+    button.innerHTML = `
+        <svg style="width: 16px; height: 16px; margin-right: 8px; display: inline-block;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+        </svg>
+        Tambah Kegiatan
+    `;
+    
+    button.style.cssText = `
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: white;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+        transition: all 0.3s;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    `;
+    
+    // Add hover effect
+    button.onmouseover = function() {
+        this.style.transform = 'translateY(-2px)';
+        this.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
+    };
+    
+    button.onmouseout = function() {
+        this.style.transform = 'translateY(0)';
+        this.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+    };
+    
+    // Add click handler
+    button.onclick = function() {
+        console.log('🎯 Button clicked! Opening form...');
+        
+        // Create modal overlay
+        const overlay = document.createElement('div');
+        overlay.id = 'modal-overlay';
+        overlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        `;
+        
+        // Create modal content
+        const modal = document.createElement('div');
+        modal.style.cssText = `
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        `;
+        
+        modal.innerHTML = `
+            <div style="margin-bottom: 20px;">
+                <h2 style="font-size: 1.5rem; font-weight: bold; margin: 0 0 8px 0;">Tambah Tugas Tambahan</h2>
+                <p style="color: #6b7280; margin: 0;">Catat kegiatan tambahan yang Anda ikuti</p>
+            </div>
+            
+            <form id="additional-task-form" style="display: flex; flex-direction: column; gap: 16px;">
+                <div>
+                    <label style="display: block; font-weight: 500; margin-bottom: 4px;">Nama Kegiatan</label>
+                    <input type="text" id="task-name" placeholder="Contoh: Rapat Koordinasi" required
+                           style="width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
+                </div>
+                
+                <div>
+                    <label style="display: block; font-weight: 500; margin-bottom: 4px;">Tanggal Kegiatan</label>
+                    <input type="date" id="task-date" required
+                           style="width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
+                </div>
+                
+                <div>
+                    <label style="display: block; font-weight: 500; margin-bottom: 4px;">Tempat Kegiatan</label>
+                    <input type="text" id="task-location" placeholder="Lokasi kegiatan" required
+                           style="width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
+                </div>
+                
+                <div>
+                    <label style="display: block; font-weight: 500; margin-bottom: 4px;">Penyelenggara Kegiatan</label>
+                    <input type="text" id="task-organizer" placeholder="Nama penyelenggara" required
+                           style="width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;">
+                </div>
+                
+                <div>
+                    <label style="display: block; font-weight: 500; margin-bottom: 4px;">Deskripsi atau Hasil Kegiatan</label>
+                    <textarea id="task-description" placeholder="Catatan hasil atau deskripsi kegiatan" rows="4"
+                              style="width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; resize: vertical;"></textarea>
+                </div>
+                
+                <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px;">
+                    <button type="button" id="cancel-btn" style="padding: 12px 24px; border: 1px solid #d1d5db; background: white; border-radius: 6px; cursor: pointer;">
+                        Batal
+                    </button>
+                    <button type="submit" style="padding: 12px 24px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                        Simpan Kegiatan
+                    </button>
+                </div>
+            </form>
+        `;
+        
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+        
+        // Set today's date as default
+        document.getElementById('task-date').value = new Date().toISOString().split('T')[0];
+        
+        // Handle form submission
+        document.getElementById('additional-task-form').onsubmit = function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                id: Date.now().toString(),
+                name: document.getElementById('task-name').value,
+                date: document.getElementById('task-date').value,
+                location: document.getElementById('task-location').value,
+                organizer: document.getElementById('task-organizer').value,
+                description: document.getElementById('task-description').value,
+                createdAt: new Date().toISOString()
+            };
+            
+            console.log('💾 Saving task:', formData);
+            
+            try {
+                // Save to localStorage
+                const existingData = localStorage.getItem('additional_tasks_data');
+                const currentTasks = existingData ? JSON.parse(existingData) : [];
+                const updatedTasks = [...currentTasks, formData];
+                
+                localStorage.setItem('additional_tasks_data', JSON.stringify(updatedTasks));
+                localStorage.setItem('additional_tasks_data_backup', JSON.stringify(updatedTasks));
+                localStorage.setItem('additional_tasks_data_timestamp', Date.now().toString());
+                
+                console.log('✅ Task saved successfully!');
+                alert('✅ Tugas tambahan berhasil disimpan!');
+                
+                // Close modal
+                document.body.removeChild(overlay);
+                
+                // Refresh page to show new data
+                window.location.reload();
+                
+            } catch (error) {
+                console.error('❌ Error saving task:', error);
+                alert('❌ Terjadi kesalahan saat menyimpan: ' + error.message);
+            }
+        };
+        
+        // Handle cancel
+        document.getElementById('cancel-btn').onclick = function() {
+            document.body.removeChild(overlay);
+        };
+        
+        // Handle overlay click to close
+        overlay.onclick = function(e) {
+            if (e.target === overlay) {
+                document.body.removeChild(overlay);
+            }
+        };
+    };
+    
+    // Add button to header
+    headerSection.appendChild(button);
+    
+    console.log('✅ Button injected successfully!');
+    alert('✅ Button "Tambah Kegiatan" berhasil ditambahkan! Silakan klik untuk menambah kegiatan.');
+    
+} catch (error) {
+    console.error('❌ Error injecting button:', error);
+    alert('❌ Error: ' + error.message);
+}
+            </pre>
+        </div>
+
+        <div class="warning">
+            <h3>⚠️ CATATAN PENTING:</h3>
+            <ul>
+                <li>Script ini adalah solusi darurat sementara</li>
+                <li>Button akan hilang jika halaman di-refresh</li>
+                <li>Data akan tetap tersimpan di localStorage</li>
+                <li>Gunakan ini sambil menunggu perbaikan permanent</li>
+            </ul>
+        </div>
+
+        <button onclick="copyScript()" class="btn-success">📋 Copy Script ke Clipboard</button>
+        <button onclick="openConsoleInstructions()">📖 Cara Buka Console</button>
+
+        <div id="results"></div>
+    </div>
+
+    <script>
+        function copyScript() {
+            const script = document.getElementById('injectScript').textContent;
+            navigator.clipboard.writeText(script).then(() => {
+                alert('✅ Script berhasil di-copy ke clipboard!\n\nSekarang:\n1. Buka halaman Additional Tasks\n2. Buka Console (F12)\n3. Paste script (Ctrl+V)\n4. Tekan Enter');
+            }).catch(err => {
+                console.error('Error copying script:', err);
+                alert('❌ Gagal copy script. Silakan copy manual dari kotak di atas.');
+            });
+        }
+
+        function openConsoleInstructions() {
+            const instructions = `
+📖 CARA BUKA BROWSER CONSOLE:
+
+🔧 CHROME / EDGE:
+1. Tekan F12 ATAU
+2. Klik kanan → "Inspect" ATAU  
+3. Ctrl + Shift + I
+4. Klik tab "Console"
+
+🔧 FIREFOX:
+1. Tekan F12 ATAU
+2. Ctrl + Shift + K
+3. Klik tab "Console"
+
+🔧 SAFARI:
+1. Cmd + Option + I (Mac)
+2. Klik tab "Console"
+
+📋 LANGKAH SELANJUTNYA:
+1. Buka console
+2. Copy script dari kotak di atas
+3. Paste ke console (Ctrl+V)
+4. Tekan Enter
+5. Button akan muncul!
+            `;
+            
+            alert(instructions);
+        }
+    </script>
+</body>
+</html>

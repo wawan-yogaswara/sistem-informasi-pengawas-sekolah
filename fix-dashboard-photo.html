@@ -1,0 +1,60 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fix Dashboard Profile Photo</title>
+</head>
+<body>
+    <h1>Fix Dashboard Profile Photo</h1>
+    <p>Klik tombol di bawah untuk memperbaiki foto profil dashboard:</p>
+    <button onclick="fixPhoto()">🔧 Perbaiki Foto Profil Dashboard</button>
+    
+    <script>
+        function fixPhoto() {
+            
+// Script untuk memperbaiki foto profil dashboard
+console.log('📷 Fixing dashboard profile photo...');
+
+// Data user wawan dengan foto
+const wawanUserData = {"id":"1762696525337","username":"wawan","password":"$2b$10$iYXB1TALPmUeWdmfwXoMlulbEAMhPK1iMmBUlWUEmmRI30GCPxusK","fullName":"H. Wawan Yogaswara, S.Pd, M.Pd","role":"pengawas","createdAt":"2025-11-09T13:55:25.337Z","photoUrl":"/uploads/1762830374284-750171039.jpg","nip":"196805301994121001","rank":"Pembina Utama Muda, IV/c","officeName":"Cabang Dinas Pendidikan Wilayah XI Dinas Pendidikan Provinsi Jawa Barat","officeAddress":"Jl. A.Yani No. 23 Kel. Paminggir Kec. Garut Kota Kabupaten Garut","homeAddress":"Griya Surya Indah No. 50 Kel. Sukagalih Kec. Tarogong Kidul Garut","phone":"087733438282"};
+
+// Simpan ke berbagai key localStorage yang digunakan dashboard
+localStorage.setItem('auth_user', JSON.stringify(wawanUserData));
+localStorage.setItem('currentUser', JSON.stringify(wawanUserData));
+localStorage.setItem('user_data', JSON.stringify(wawanUserData));
+localStorage.setItem('profile_data', JSON.stringify({
+    fullName: wawanUserData.fullName,
+    nip: wawanUserData.nip,
+    photoUrl: wawanUserData.photoUrl,
+    role: wawanUserData.role
+}));
+localStorage.setItem('dashboard_photo', wawanUserData.photoUrl);
+
+console.log('✅ Foto profil berhasil disimpan ke localStorage');
+console.log('📷 Photo URL length:', wawanUserData.photoUrl.length, 'characters');
+
+// Trigger event untuk refresh dashboard
+window.dispatchEvent(new Event('photoUpdated'));
+window.dispatchEvent(new StorageEvent('storage', {
+    key: 'profile_data',
+    newValue: JSON.stringify({
+        fullName: wawanUserData.fullName,
+        nip: wawanUserData.nip,
+        photoUrl: wawanUserData.photoUrl,
+        role: wawanUserData.role
+    })
+}));
+
+console.log('🔄 Dashboard refresh events triggered');
+alert('✅ Foto profil dashboard berhasil diperbaiki! Refresh halaman jika perlu.');
+            
+        }
+        
+        // Auto-run when page loads
+        window.onload = function() {
+            fixPhoto();
+        };
+    </script>
+</body>
+</html>
+            

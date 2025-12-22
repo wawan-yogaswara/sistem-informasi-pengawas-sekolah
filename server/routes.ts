@@ -114,6 +114,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Simple test endpoint (no auth required)
+  app.get("/api/test", (req, res) => {
+    res.json({ 
+      message: "Server is running!", 
+      status: "success",
+      timestamp: new Date().toISOString(),
+      version: "1.0.0"
+    });
+  });
+
   // Test endpoints (no auth required) - for testing purposes
   app.get("/api/test/additional-tasks", async (req, res) => {
     try {

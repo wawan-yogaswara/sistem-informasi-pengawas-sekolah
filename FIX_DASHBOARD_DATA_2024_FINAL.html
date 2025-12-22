@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fix Dashboard - Hapus Data 2024</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.2em;
+        }
+        
+        .btn {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            display: block;
+            margin: 20px auto;
+            min-width: 200px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
+        }
+        
+        .console-output {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin: 20px 0;
+            display: none;
+        }
+        
+        .success-box {
+            background: #d4edda;
+            border: 2px solid #28a745;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧹 Fix Dashboard - Hapus Data Dummy 2024</h1>
+        
+        <button class="btn" onclick="fixDashboard()">
+            🗑️ Hapus Data Dummy 2024 Sekarang
+        </button>
+        
+        <div class="console-output" id="consoleOutput"></div>
+        
+        <div class="success-box" id="successBox">
+            <h3>✅ Berhasil!</h3>
+            <p>Data dummy tahun 2024 telah dihapus. Dashboard sekarang bersih dan hanya menampilkan aktivitas user yang sebenarnya.</p>
+        </div>
+    </div>
+
+    <script>
+        function log(message) {
+            const output = document.getElementById('consoleOutput');
+            output.style.display = 'block';
+            output.innerHTML += message + '\n';
+            output.scrollTop = output.scrollHeight;
+            console.log(message);
+        }
+
+        function fixDashboard() {
+            log('🧹 Memulai pembersihan data dummy tahun 2024...');
+            
+            try {
+                let totalRemoved = 0;
+                let cleaned = false;
+                
+                // 1. Bersihkan local-database
+                log('📂 Membersihkan local-database...');
+                const localData = JSON.parse(localStorage.getItem('local-database') || '{}');
+                
+                // Filter tasks
+                if (localData.tasks) {
+                    const originalCount = localData.tasks.length;
+                    localData.tasks = localData.tasks.filter(task => {
+                        const taskDate = new Date(task.date || task.createdAt || task.created_at);
+                        return taskDate.getFullYear() !== 2024;
+                    });
+                    const removed = originalCount - localData.tasks.length;
+                    if (removed > 0) {
+                        log(`🗑️ Menghapus ${removed} tugas dummy tahun 2024`);
+                        totalRemoved += removed;
+                        cleaned = true;
+                    }
+                }
+                
+                // Filter supervisions
+                if (localData.supervisions) {
+                    const originalCount = localData.supervisions.length;
+                    localData.supervisions = localData.supervisions.filter(supervision => {
+                        const supervisionDate = new Date(supervision.date || supervision.createdAt || supervision.created_at);
+                        return supervisionDate.getFullYear() !== 2024;
+                    });
+                    const removed = originalCount - localData.supervisions.length;
+                    if (removed > 0) {
+                        log(`🗑️ Menghapus ${removed} supervisi dummy tahun 2024`);
+                        totalRemoved += removed;
+                        cleaned = true;
+                    }
+                }
+                
+                // Filter additional tasks
+                if (localData.additionalTasks) {
+                    const originalCount = localData.additionalTasks.length;
+                    localData.additionalTasks = localData.additionalTasks.filter(task => {
+                        const taskDate = new Date(task.date || task.createdAt || task.created_at);
+                        return taskDate.getFullYear() !== 2024;
+                    });
+                    const removed = originalCount - localData.additionalTasks.length;
+                    if (removed > 0) {
+                        log(`🗑️ Menghapus ${removed} tugas tambahan dummy tahun 2024`);
+                        totalRemoved += removed;
+                        cleaned = true;
+                    }
+                }
+                
+                // Filter schools (created in 2024)
+                if (localData.schools) {
+                    const originalCount = localData.schools.length;
+                    localData.schools = localData.schools.filter(school => {
+                        const schoolDate = new Date(school.createdAt || school.created_at);
+                        return schoolDate.getFullYear() !== 2024;
+                    });
+                    const removed = originalCount - localData.schools.length;
+                    if (removed > 0) {
+                        log(`🗑️ Menghapus ${removed} sekolah dummy tahun 2024`);
+                        totalRemoved += removed;
+                        cleaned = true;
+                    }
+                }
+                
+                // Simpan local-database yang sudah dibersihkan
+                if (cleaned) {
+                    localStorage.setItem('local-database', JSON.stringify(localData));
+                    log('💾 local-database berhasil dibersihkan');
+                }
+                
+                // 2. Bersihkan individual localStorage keys
+                log('🧹 Membersihkan individual localStorage keys...');
+                
+                const keys = ['tasks_data', 'supervisions_data', 'additional_tasks_data', 'schools_data'];
+                
+                keys.forEach(key => {
+                    try {
+                        const data = JSON.parse(localStorage.getItem(key) || '[]');
+                        if (Array.isArray(data)) {
+                            const originalCount = data.length;
+                            const cleanedData = data.filter(item => {
+                                const itemDate = new Date(item.date || item.createdAt || item.created_at);
+                                return itemDate.getFullYear() !== 2024;
+                            });
+                            
+                            if (cleanedData.length !== originalCount) {
+                                localStorage.setItem(key, JSON.stringify(cleanedData));
+                                const removed = originalCount - cleanedData.length;
+                                log(`🗑️ Membersihkan ${removed} item dummy dari ${key}`);
+                                totalRemoved += removed;
+                                cleaned = true;
+                            }
+                        }
+                    } catch (error) {
+                        log(`⚠️ Error membersihkan ${key}: ${error.message}`);
+                    }
+                });
+                
+                // 3. Update localStorage untuk memastikan dashboard refresh
+                if (cleaned) {
+                    // Force refresh dashboard data
+                    localStorage.setItem('dashboard_last_update', Date.now().toString());
+                    
+                    log(`✅ Total ${totalRemoved} data dummy tahun 2024 berhasil dihapus!`);
+                    log('📊 Data tersisa:');
+                    log(`   - Tugas: ${localData.tasks?.length || 0}`);
+                    log(`   - Supervisi: ${localData.supervisions?.length || 0}`);
+                    log(`   - Tugas Tambahan: ${localData.additionalTasks?.length || 0}`);
+                    log(`   - Sekolah: ${localData.schools?.length || 0}`);
+                    
+                    log('🎉 Dashboard sekarang bersih dari data dummy tahun 2024!');
+                    log('📅 Hanya menampilkan aktivitas user yang sebenarnya dengan tahun dinamis');
+                    
+                    // Tampilkan success box
+                    document.getElementById('successBox').style.display = 'block';
+                    
+                    // Refresh halaman setelah 3 detik
+                    setTimeout(() => {
+                        if (confirm('Data dummy tahun 2024 telah dihapus. Refresh halaman untuk melihat perubahan?')) {
+                            window.location.reload();
+                        }
+                    }, 3000);
+                    
+                } else {
+                    log('✅ Tidak ada data dummy tahun 2024 yang ditemukan');
+                    log('📅 Dashboard sudah bersih dari data dummy');
+                }
+                
+            } catch (error) {
+                log(`❌ Error saat membersihkan data: ${error.message}`);
+                console.error('Error detail:', error);
+            }
+        }
+    </script>
+</body>
+</html>

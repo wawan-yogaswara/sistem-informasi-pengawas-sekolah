@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test React Mount - Simple</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .success { color: #16a34a; background: #dcfce7; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        .error { color: #dc2626; background: #fef2f2; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        .info { color: #2563eb; background: #dbeafe; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        button {
+            background: #2563eb;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover { background: #1d4ed8; }
+        pre { background: #f8f9fa; padding: 15px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test React Mount - Simple</h1>
+        
+        <div class="info">
+            <h3>🎯 Tujuan:</h3>
+            <p>Test apakah React bisa mounting dengan benar di localhost:5000</p>
+        </div>
+
+        <div>
+            <button onclick="testDirectAccess()">🌐 Test Direct Access</button>
+            <button onclick="testWithAuth()">🔑 Test With Auth</button>
+            <button onclick="injectTestContent()">💉 Inject Test Content</button>
+            <button onclick="checkDOMState()">🔍 Check DOM State</button>
+        </div>
+
+        <div id="results"></div>
+
+        <div class="info">
+            <h3>📋 Manual Steps:</h3>
+            <ol>
+                <li>Buka <a href="http://localhost:5000" target="_blank">http://localhost:5000</a></li>
+                <li>Tekan F12 untuk buka Developer Tools</li>
+                <li>Cek tab Console untuk error</li>
+                <li>Cek tab Elements untuk melihat DOM</li>
+                <li>Cek tab Network untuk melihat request</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        function showResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const className = type === 'success' ? 'success' : type === 'error' ? 'error' : 'info';
+            results.innerHTML += `<div class="${className}">${message}</div>`;
+        }
+
+        async function testDirectAccess() {
+            showResult('🔄 Testing direct access to localhost:5000...', 'info');
+            
+            try {
+                const response = await fetch('http://localhost:5000/');
+                const html = await response.text();
+                
+                if (response.ok) {
+                    showResult(`✅ Server accessible! Status: ${response.status}`, 'success');
+                    
+                    // Check HTML content
+                    if (html.includes('<div id="root">')) {
+                        showResult('✅ HTML contains root div', 'success');
+                    } else {
+                        showResult('❌ HTML missing root div', 'error');
+                    }
+                    
+                    if (html.includes('React')) {
+                        showResult('✅ HTML mentions React', 'success');
+                    }
+                    
+                    // Show HTML preview
+                    const preview = html.substring(0, 1000);
+                    showResult(`<strong>HTML Preview:</strong><pre>${preview}...</pre>`, 'info');
+                    
+                } else {
+                    showResult(`❌ Server error: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                showResult(`❌ Connection failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testWithAuth() {
+            showResult('🔄 Testing with authentication...', 'info');
+            
+            // Set auth data
+            localStorage.setItem('auth_token', 'test-token-' + Date.now());
+            localStorage.setItem('user_data', JSON.stringify({
+                id: 'test-user',
+                username: 'testuser',
+                fullName: 'Test User',
+                role: 'admin'
+            }));
+            
+            showResult('✅ Auth data set in localStorage', 'success');
+            showResult('🌐 Opening localhost:5000 in new tab...', 'info');
+            
+            // Open in new tab
+            window.open('http://localhost:5000', '_blank');
+        }
+
+        function injectTestContent() {
+            showResult('🔄 Injecting test content...', 'info');
+            
+            // Create test content
+            const testHTML = `
+                <div style="padding: 50px; text-align: center; background: #f0f9ff; border: 2px solid #0ea5e9; border-radius: 10px; margin: 20px;">
+                    <h1 style="color: #0ea5e9;">🎉 TEST BERHASIL!</h1>
+                    <p style="font-size: 18px; color: #374151;">Jika Anda melihat ini, berarti HTML injection berhasil.</p>
+                    <p style="color: #6b7280;">Timestamp: ${new Date().toLocaleString()}</p>
+                    <button onclick="alert('Button works!')" style="background: #0ea5e9; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">Test Button</button>
+                </div>
+            `;
+            
+            // Try to inject into current page first
+            document.body.innerHTML += testHTML;
+            showResult('✅ Test content injected into current page', 'success');
+            
+            // Also try to inject via console command for localhost:5000
+            const consoleCommand = `
+                // Paste this in localhost:5000 console:
+                document.body.innerHTML = '${testHTML.replace(/'/g, "\\'")}';
+            `;
+            
+            showResult(`<strong>Console Command for localhost:5000:</strong><pre>${consoleCommand}</pre>`, 'info');
+        }
+
+        function checkDOMState() {
+            showResult('🔄 Checking DOM state...', 'info');
+            
+            // Check current page DOM
+            const rootExists = document.getElementById('root');
+            if (rootExists) {
+                showResult('✅ Root element exists in current page', 'success');
+                showResult(`Root content: ${rootExists.innerHTML.length} characters`, 'info');
+            } else {
+                showResult('❌ No root element in current page', 'error');
+            }
+            
+            // Check localStorage
+            const authToken = localStorage.getItem('auth_token');
+            const userData = localStorage.getItem('user_data');
+            
+            if (authToken) {
+                showResult('✅ Auth token exists in localStorage', 'success');
+            } else {
+                showResult('❌ No auth token in localStorage', 'error');
+            }
+            
+            if (userData) {
+                showResult('✅ User data exists in localStorage', 'success');
+                try {
+                    const user = JSON.parse(userData);
+                    showResult(`User: ${user.fullName || user.username}`, 'info');
+                } catch (e) {
+                    showResult('⚠️ User data corrupted', 'error');
+                }
+            } else {
+                showResult('❌ No user data in localStorage', 'error');
+            }
+            
+            // Show all localStorage keys
+            const keys = Object.keys(localStorage);
+            showResult(`LocalStorage keys: ${keys.join(', ')}`, 'info');
+        }
+
+        // Auto-run basic test
+        window.onload = function() {
+            setTimeout(() => {
+                checkDOMState();
+            }, 1000);
+        };
+    </script>
+</body>
+</html>

@@ -157,57 +157,26 @@ export default function Dashboard() {
       let schools: any[] = [];
       let additionalTasks: any[] = [];
 
-      // Try development endpoint first (no auth required)
-      try {
-        console.log('🌐 Trying to fetch data from backend...');
-        
-        // Try to get data directly from backend file
-        const backendResponse = await fetch('/local-database.json');
-        if (backendResponse.ok) {
-          const backendData = await backendResponse.json();
-          tasks = backendData.tasks || [];
-          supervisions = backendData.supervisions || [];
-          schools = backendData.schools || [];
-          additionalTasks = backendData.additionalTasks || [];
-          
-          console.log('📊 Backend Data received:', {
-            tasks: tasks.length,
-            supervisions: supervisions.length,
-            schools: schools.length,
-            additionalTasks: additionalTasks.length
-          });
-          
-          // Also save to localStorage for future use
-          localStorage.setItem('local-database', JSON.stringify(backendData));
-          console.log('💾 Data saved to localStorage for future use');
-        }
-      } catch (backendError) {
-        console.log('⚠️ Backend file access failed, trying localStorage...');
-      }
+      // Try to get data from localStorage first
+      console.log('🔄 Loading from localStorage...');
+      const localData = JSON.parse(localStorage.getItem('local-database') || '{}');
+      
+      tasks = localData.tasks || [];
+      supervisions = localData.supervisions || [];
+      schools = localData.schools || [];
+      additionalTasks = localData.additionalTasks || [];
+      
+      console.log('📊 Raw data loaded:', {
+        tasks: tasks.length,
+        supervisions: supervisions.length,
+        schools: schools.length,
+        additionalTasks: additionalTasks.length
+      });
 
-      // If no dev API data, try localStorage
-      if (tasks.length === 0 && supervisions.length === 0 && schools.length === 0) {
-        console.log('🔄 Loading from localStorage...');
-        const localData = JSON.parse(localStorage.getItem('local-database') || '{}');
-        
-        tasks = localData.tasks || [];
-        supervisions = localData.supervisions || [];
-        schools = localData.schools || [];
-        additionalTasks = localData.additionalTasks || [];
-        
-        console.log('📊 localStorage Data loaded:', {
-          tasks: tasks.length,
-          supervisions: supervisions.length,
-          schools: schools.length,
-          additionalTasks: additionalTasks.length
-        });
-      }
-
-      // If still no data, try to get from individual localStorage keys
+      // If no data, try individual localStorage keys
       if (tasks.length === 0 && supervisions.length === 0 && schools.length === 0) {
         console.log('🔄 Loading from individual localStorage keys...');
         
-        // Get data from individual localStorage keys
         const tasksData = localStorage.getItem('tasks_data');
         const supervisionsData = localStorage.getItem('supervisions_data');
         const schoolsData = localStorage.getItem('schools_data');
@@ -234,24 +203,7 @@ export default function Dashboard() {
         }
       }
 
-      // If still no data, show message instead of dummy data
-      if (tasks.length === 0 && supervisions.length === 0 && schools.length === 0) {
-        console.log('📝 No real data found');
-        setStats({
-          totalTasks: 0,
-          completedTasks: 0,
-          totalSchools: 0,
-          monthlySupervisions: 0,
-          totalSupervisions: 0,
-          totalAdditionalTasks: 0
-        });
-        
-        setRecentActivities([]);
-        setLoading(false);
-        return;
-      }
-
-      // Filter for current user dan hapus data dummy 2024
+      // Filter for current user
       let userTasks = tasks;
       let userSupervisions = supervisions;
       let userAdditionalTasks = additionalTasks;
@@ -264,7 +216,7 @@ export default function Dashboard() {
       });
 
       if (currentUser.role !== 'admin' && (currentUser.username || currentUser.id)) {
-        console.log('🔍 Filtering data for non-admin user...');
+        console.log('🔍 Filtering data for user:', currentUser.username);
         
         userTasks = tasks.filter((task: any) => {
           const matches = task.username === currentUser.username || 
@@ -329,7 +281,7 @@ export default function Dashboard() {
         return isNotDummy2024;
       });
 
-      console.log('📊 Filtered data counts (excluding 2024 dummy):', {
+      console.log('📊 Final filtered data counts (excluding 2024 dummy):', {
         userTasks: userTasks.length,
         userSupervisions: userSupervisions.length,
         userAdditionalTasks: userAdditionalTasks.length
@@ -796,7 +748,7 @@ export default function Dashboard() {
                     <a href="/supervisions" className="inline-flex items-center px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors text-sm font-medium">
                       👁️ Buat Supervisi
                     </a>
-                    <a href="/additional-tasks" className="inline-flex items-center px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors text-sm font-medium">
+                    <a href="/additional" className="inline-flex items-center px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors text-sm font-medium">
                       ➕ Tugas Tambahan
                     </a>
                   </div>

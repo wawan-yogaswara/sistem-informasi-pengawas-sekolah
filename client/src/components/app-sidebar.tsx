@@ -24,6 +24,7 @@ import {
 import { Link, useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
 
 const menuItems = [
   {
@@ -71,18 +72,60 @@ const menuItems = [
 export function AppSidebar() {
   const [location, setLocation] = useLocation();
   const { toast } = useToast();
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
-  // Get current user from localStorage (client-side auth)
+  // Get current user from localStorage (client-side auth) - menggunakan sumber yang sama dengan dashboard
   const getCurrentUser = () => {
     try {
-      const userData = localStorage.getItem('user_data');
-      return userData ? JSON.parse(userData) : null;
-    } catch {
+      // Try auth_user first (from Supabase login)
+      let currentUser = JSON.parse(localStorage.getItem('auth_user') || '{}');
+      
+      // Fallback to other possible keys
+      if (!currentUser.username) {
+        currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+      }
+      if (!currentUser.username) {
+        currentUser = JSON.parse(localStorage.getItem('user_data') || '{}');
+      }
+      
+      console.log('👤 Sidebar - Current user data:', currentUser);
+      console.log('🔐 Sidebar - User role:', currentUser.role);
+      
+      return currentUser.username ? currentUser : null;
+    } catch (error) {
+      console.error('❌ Sidebar - Error getting user data:', error);
       return null;
     }
   };
 
-  const currentUser = getCurrentUser();
+  // Load user data on component mount and listen for changes
+  useEffect(() => {
+    const loadUser = () => {
+      const user = getCurrentUser();
+      setCurrentUser(user);
+    };
+
+    // Load initially
+    loadUser();
+
+    // Listen for localStorage changes
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'auth_user' || e.key === 'currentUser' || e.key === 'user_data') {
+        console.log('🔄 Sidebar - User data changed, reloading...');
+        loadUser();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    // Also check periodically in case of same-tab changes
+    const interval = setInterval(loadUser, 5000);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, []);
 
   const handleLogout = () => {
     // Clear auth data

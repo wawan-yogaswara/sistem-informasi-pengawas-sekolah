@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bersihkan Data Dummy Tahun 2024</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.2em;
+        }
+        
+        .info-box {
+            background: #e8f4fd;
+            border: 2px solid #3498db;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .warning-box {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .success-box {
+            background: #d4edda;
+            border: 2px solid #28a745;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            display: none;
+        }
+        
+        .btn {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            display: block;
+            margin: 20px auto;
+            min-width: 200px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+        }
+        
+        .btn-danger:hover {
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
+        }
+        
+        .console-output {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 20px 0;
+            display: none;
+        }
+        
+        .step {
+            margin: 15px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .emoji {
+            font-size: 1.2em;
+            margin-right: 8px;
+        }
+        
+        ul {
+            padding-left: 20px;
+        }
+        
+        li {
+            margin: 8px 0;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><span class="emoji">🧹</span>Bersihkan Data Dummy Tahun 2024</h1>
+        
+        <div class="info-box">
+            <h3><span class="emoji">ℹ️</span>Informasi</h3>
+            <p>Tool ini akan membersihkan semua data dummy dengan tahun 2024 dari sistem, sehingga dashboard hanya menampilkan aktivitas user yang sebenarnya dengan tahun dinamis (tahun saat ini).</p>
+        </div>
+        
+        <div class="warning-box">
+            <h3><span class="emoji">⚠️</span>Peringatan</h3>
+            <p><strong>Proses ini akan menghapus:</strong></p>
+            <ul>
+                <li>Semua tugas dengan tanggal tahun 2024</li>
+                <li>Semua supervisi dengan tanggal tahun 2024</li>
+                <li>Semua tugas tambahan dengan tanggal tahun 2024</li>
+                <li>Semua sekolah yang dibuat pada tahun 2024 (jika ada)</li>
+            </ul>
+            <p><strong>Data user yang sebenarnya akan tetap aman!</strong></p>
+        </div>
+        
+        <div class="step">
+            <h3><span class="emoji">📋</span>Langkah-langkah:</h3>
+            <ol>
+                <li>Klik tombol "Bersihkan Data Dummy" di bawah</li>
+                <li>Script akan menganalisis dan menghapus data dummy tahun 2024</li>
+                <li>Lihat hasil di console output</li>
+                <li>Dashboard akan di-refresh untuk menampilkan data yang bersih</li>
+            </ol>
+        </div>
+        
+        <button class="btn btn-danger" onclick="cleanDummyData()">
+            <span class="emoji">🧹</span>Bersihkan Data Dummy Tahun 2024
+        </button>
+        
+        <div class="console-output" id="consoleOutput"></div>
+        
+        <div class="success-box" id="successBox">
+            <h3><span class="emoji">✅</span>Berhasil!</h3>
+            <p>Data dummy tahun 2024 telah berhasil dibersihkan. Dashboard sekarang hanya menampilkan aktivitas user yang sebenarnya dengan tahun dinamis.</p>
+            <button class="btn" onclick="window.location.href='/client/src/pages/dashboard.tsx'">
+                <span class="emoji">📊</span>Lihat Dashboard
+            </button>
+        </div>
+    </div>
+
+    <script>
+        function log(message) {
+            const output = document.getElementById('consoleOutput');
+            output.style.display = 'block';
+            output.innerHTML += message + '\n';
+            output.scrollTop = output.scrollHeight;
+            console.log(message);
+        }
+
+        function cleanDummyData() {
+            log('🧹 Memulai pembersihan data dummy tahun 2024...');
+            
+            try {
+                // Ambil data dari localStorage
+                const localData = JSON.parse(localStorage.getItem('local-database') || '{}');
+                
+                let cleaned = false;
+                let totalRemoved = 0;
+                
+                // Bersihkan tasks dengan tahun 2024
+                if (localData.tasks) {
+                    const originalTasksCount = localData.tasks.length;
+                    localData.tasks = localData.tasks.filter(task => {
+                        const taskDate = new Date(task.date || task.createdAt || task.created_at);
+                        const isDummy2024 = taskDate.getFullYear() === 2024;
+                        return !isDummy2024;
+                    });
+                    
+                    if (localData.tasks.length !== originalTasksCount) {
+                        const removed = originalTasksCount - localData.tasks.length;
+                        log(`🗑️ Menghapus ${removed} tugas dummy tahun 2024`);
+                        totalRemoved += removed;
+                        cleaned = true;
+                    }
+                }
+                
+                // Bersihkan supervisions dengan tahun 2024
+                if (localData.supervisions) {
+                    const originalSupervisionsCount = localData.supervisions.length;
+                    localData.supervisions = localData.supervisions.filter(supervision => {
+                        const supervisionDate = new Date(supervision.date || supervision.createdAt || supervision.created_at);
+                        const isDummy2024 = supervisionDate.getFullYear() === 2024;
+                        return !isDummy2024;
+                    });
+                    
+                    if (localData.supervisions.length !== originalSupervisionsCount) {
+                        const removed = originalSupervisionsCount - localData.supervisions.length;
+                        log(`🗑️ Menghapus ${removed} supervisi dummy tahun 2024`);
+                        totalRemoved += removed;
+                        cleaned = true;
+                    }
+                }
+                
+                // Bersihkan additional tasks dengan tahun 2024
+                if (localData.additionalTasks) {
+                    const originalAdditionalTasksCount = localData.additionalTasks.length;
+                    localData.additionalTasks = localData.additionalTasks.filter(task => {
+                        const taskDate = new Date(task.date || task.createdAt || task.created_at);
+                        const isDummy2024 = taskDate.getFullYear() === 2024;
+                        return !isDummy2024;
+                    });
+                    
+                    if (localData.additionalTasks.length !== originalAdditionalTasksCount) {
+                        const removed = originalAdditionalTasksCount - localData.additionalTasks.length;
+                        log(`🗑️ Menghapus ${removed} tugas tambahan dummy tahun 2024`);
+                        totalRemoved += removed;
+                        cleaned = true;
+                    }
+                }
+                
+                // Bersihkan schools dengan created_at tahun 2024 (jika ada)
+                if (localData.schools) {
+                    const originalSchoolsCount = localData.schools.length;
+                    localData.schools = localData.schools.filter(school => {
+                        const schoolDate = new Date(school.createdAt || school.created_at);
+                        const isDummy2024 = schoolDate.getFullYear() === 2024;
+                        return !isDummy2024;
+                    });
+                    
+                    if (localData.schools.length !== originalSchoolsCount) {
+                        const removed = originalSchoolsCount - localData.schools.length;
+                        log(`🗑️ Menghapus ${removed} sekolah dummy tahun 2024`);
+                        totalRemoved += removed;
+                        cleaned = true;
+                    }
+                }
+                
+                if (cleaned) {
+                    // Simpan data yang sudah dibersihkan
+                    localStorage.setItem('local-database', JSON.stringify(localData));
+                    
+                    // Update individual localStorage keys juga
+                    if (localData.tasks) {
+                        localStorage.setItem('tasks_data', JSON.stringify(localData.tasks));
+                    }
+                    if (localData.supervisions) {
+                        localStorage.setItem('supervisions_data', JSON.stringify(localData.supervisions));
+                    }
+                    if (localData.additionalTasks) {
+                        localStorage.setItem('additional_tasks_data', JSON.stringify(localData.additionalTasks));
+                    }
+                    if (localData.schools) {
+                        localStorage.setItem('schools_data', JSON.stringify(localData.schools));
+                    }
+                    
+                    log(`✅ Total ${totalRemoved} data dummy tahun 2024 berhasil dibersihkan!`);
+                    log('📊 Data tersisa:');
+                    log(`   - Tugas: ${localData.tasks?.length || 0}`);
+                    log(`   - Supervisi: ${localData.supervisions?.length || 0}`);
+                    log(`   - Tugas Tambahan: ${localData.additionalTasks?.length || 0}`);
+                    log(`   - Sekolah: ${localData.schools?.length || 0}`);
+                    
+                    // Bersihkan juga individual localStorage keys
+                    log('🧹 Membersihkan individual localStorage keys...');
+                    
+                    ['tasks_data', 'supervisions_data', 'additional_tasks_data', 'schools_data'].forEach(key => {
+                        try {
+                            const data = JSON.parse(localStorage.getItem(key) || '[]');
+                            if (Array.isArray(data)) {
+                                const originalCount = data.length;
+                                const cleanedData = data.filter(item => {
+                                    const itemDate = new Date(item.date || item.createdAt || item.created_at);
+                                    const isDummy2024 = itemDate.getFullYear() === 2024;
+                                    return !isDummy2024;
+                                });
+                                
+                                if (cleanedData.length !== originalCount) {
+                                    localStorage.setItem(key, JSON.stringify(cleanedData));
+                                    log(`🗑️ Membersihkan ${originalCount - cleanedData.length} item dummy dari ${key}`);
+                                }
+                            }
+                        } catch (error) {
+                            log(`⚠️ Error membersihkan ${key}: ${error.message}`);
+                        }
+                    });
+                    
+                    log('🎉 Pembersihan data dummy tahun 2024 selesai!');
+                    log('📅 Dashboard sekarang hanya menampilkan aktivitas user yang sebenarnya dengan tahun dinamis');
+                    
+                    // Tampilkan success box
+                    document.getElementById('successBox').style.display = 'block';
+                    
+                    // Refresh halaman setelah 3 detik
+                    setTimeout(() => {
+                        if (confirm('Data dummy tahun 2024 telah dibersihkan. Refresh halaman untuk melihat perubahan?')) {
+                            window.location.reload();
+                        }
+                    }, 3000);
+                    
+                } else {
+                    log('✅ Tidak ada data dummy tahun 2024 yang ditemukan');
+                    log('📅 Dashboard sudah bersih dari data dummy tahun 2024');
+                }
+                
+            } catch (error) {
+                log(`❌ Error saat membersihkan data dummy: ${error.message}`);
+                console.error('Error detail:', error);
+            }
+        }
+    </script>
+</body>
+</html>

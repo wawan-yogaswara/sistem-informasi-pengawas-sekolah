@@ -26,6 +26,9 @@
   ],
   "scripts": {
     "dev": "tsx server/index.ts",
+    "dev:client": "vite --config vite.config.ts",
+    "dev:server": "tsx server/index.ts",
+    "dev:full": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "build": "vite build",
     "vercel-build": "vite build",
     "build:client": "vite build",

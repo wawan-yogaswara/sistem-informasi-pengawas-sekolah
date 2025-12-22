@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fix Dashboard Data - Sistem Kepengawasan</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.2em;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        
+        button {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 10px 5px;
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        
+        .step {
+            background: #f8f9fa;
+            border-left: 4px solid #007bff;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .data-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .data-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            border: 2px solid #e9ecef;
+        }
+        
+        .data-card h3 {
+            margin: 0 0 10px 0;
+            color: #495057;
+        }
+        
+        .data-card .count {
+            font-size: 2em;
+            font-weight: bold;
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Fix Dashboard Data</h1>
+        
+        <div class="info">
+            <strong>ℹ️ Informasi:</strong><br>
+            Script ini akan memperbaiki masalah dashboard yang menampilkan statistik nol dengan menambahkan data sample untuk user "wawan".
+        </div>
+
+        <div class="step">
+            <h3>📋 Langkah-langkah:</h3>
+            <ol>
+                <li>Klik tombol "Periksa Data Saat Ini" untuk melihat status data</li>
+                <li>Klik tombol "Tambah Data Sample" untuk menambahkan data</li>
+                <li>Refresh halaman dashboard untuk melihat perubahan</li>
+            </ol>
+        </div>
+
+        <div style="text-align: center; margin: 30px 0;">
+            <button onclick="checkCurrentData()">🔍 Periksa Data Saat Ini</button>
+            <button onclick="addSampleData()">➕ Tambah Data Sample</button>
+            <button onclick="clearAllData()">🗑️ Hapus Semua Data</button>
+            <button onclick="openDashboard()">📊 Buka Dashboard</button>
+        </div>
+
+        <div id="status"></div>
+        <div id="log" class="log" style="display: none;"></div>
+        <div id="dataSummary" class="data-summary" style="display: none;"></div>
+    </div>
+
+    <script>
+        let logElement = document.getElementById('log');
+        let statusElement = document.getElementById('status');
+        let dataSummaryElement = document.getElementById('dataSummary');
+
+        function log(message, type = 'info') {
+            console.log(message);
+            logElement.style.display = 'block';
+            logElement.innerHTML += message + '\n';
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function showStatus(message, type = 'info') {
+            statusElement.innerHTML = `<div class="${type}">${message}</div>`;
+        }
+
+        function clearLog() {
+            logElement.innerHTML = '';
+            logElement.style.display = 'none';
+        }
+
+        function checkCurrentData() {
+            clearLog();
+            log('🔍 Memeriksa data saat ini...');
+            
+            try {
+                const localData = JSON.parse(localStorage.getItem('local-database') || '{}');
+                const authUser = JSON.parse(localStorage.getItem('auth_user') || '{}');
+                
+                log('📊 Status Data:');
+                log(`- Users: ${localData.users ? localData.users.length : 0}`);
+                log(`- Schools: ${localData.schools ? localData.schools.length : 0}`);
+                log(`- Tasks: ${localData.tasks ? localData.tasks.length : 0}`);
+                log(`- Supervisions: ${localData.supervisions ? localData.supervisions.length : 0}`);
+                log(`- Additional Tasks: ${localData.additionalTasks ? localData.additionalTasks.length : 0}`);
+                log(`- Current User: ${authUser.username || 'tidak ada'}`);
+                
+                if (!localData.tasks || localData.tasks.length === 0) {
+                    showStatus('⚠️ Data kosong! Perlu menambahkan data sample.', 'warning');
+                } else {
+                    showStatus('✅ Data tersedia di localStorage.', 'success');
+                }
+                
+                updateDataSummary(localData);
+                
+            } catch (error) {
+                log(`❌ Error: ${error.message}`);
+                showStatus('❌ Error saat memeriksa data!', 'error');
+            }
+        }
+
+        function updateDataSummary(data) {
+            dataSummaryElement.style.display = 'grid';
+            dataSummaryElement.innerHTML = `
+                <div class="data-card">
+                    <h3>👥 Users</h3>
+                    <div class="count">${data.users ? data.users.length : 0}</div>
+                </div>
+                <div class="data-card">
+                    <h3>🏫 Schools</h3>
+                    <div class="count">${data.schools ? data.schools.length : 0}</div>
+                </div>
+                <div class="data-card">
+                    <h3>📋 Tasks</h3>
+                    <div class="count">${data.tasks ? data.tasks.length : 0}</div>
+                </div>
+                <div class="data-card">
+                    <h3>👁️ Supervisions</h3>
+                    <div class="count">${data.supervisions ? data.supervisions.length : 0}</div>
+                </div>
+                <div class="data-card">
+                    <h3>➕ Additional Tasks</h3>
+                    <div class="count">${data.additionalTasks ? data.additionalTasks.length : 0}</div>
+                </div>
+            `;
+        }
+
+        function createSampleData() {
+            const currentDate = new Date();
+            const currentYear = currentDate.getFullYear();
+            const currentMonth = currentDate.getMonth();
+            
+            return {
+                users: [
+                    {
+                        id: "1762696424712",
+                        username: "admin",
+                        password: "$2b$10$iM4m2MQgxLSX2HuTXMjbLOTXMLMde0pJyO3dIyF.MoP6tgqVz4UGe",
+                        fullName: "Administrator",
+                        role: "admin",
+                        createdAt: "2025-11-09T13:53:44.712Z",
+                        nip: "",
+                        photoUrl: null
+                    },
+                    {
+                        id: "1762696525337",
+                        username: "wawan",
+                        password: "$2b$10$hashedpassword",
+                        fullName: "Wawan Setiawan",
+                        role: "user",
+                        createdAt: "2025-01-15T10:00:00.000Z",
+                        nip: "196801011990031001",
+                        rank: "Pengawas Sekolah",
+                        officeName: "Dinas Pendidikan Kabupaten Garut",
+                        photoUrl: null
+                    }
+                ],
+                schools: [
+                    {
+                        id: "school_001",
+                        name: "SDN 1 Garut Kota",
+                        address: "Jl. Raya Garut No. 1",
+                        headmaster: "Drs. Ahmad Suryadi",
+                        phone: "0262-123456",
+                        email: "sdn1garut@gmail.com",
+                        createdAt: currentDate.toISOString()
+                    },
+                    {
+                        id: "school_002", 
+                        name: "SDN 2 Garut Kota",
+                        address: "Jl. Raya Garut No. 2",
+                        headmaster: "Hj. Siti Nurhasanah, S.Pd",
+                        phone: "0262-123457",
+                        email: "sdn2garut@gmail.com",
+                        createdAt: currentDate.toISOString()
+                    },
+                    {
+                        id: "school_003",
+                        name: "SDN 3 Garut Kota", 
+                        address: "Jl. Raya Garut No. 3",
+                        headmaster: "Drs. Bambang Sutrisno",
+                        phone: "0262-123458",
+                        email: "sdn3garut@gmail.com",
+                        createdAt: currentDate.toISOString()
+                    }
+                ],
+                tasks: [
+                    {
+                        id: "task_001",
+                        title: "Supervisi Pembelajaran Kelas 1-3",
+                        description: "Melakukan supervisi pembelajaran di kelas rendah untuk memastikan kualitas pembelajaran",
+                        userId: "1762696525337",
+                        username: "wawan",
+                        schoolId: "school_001",
+                        schoolName: "SDN 1 Garut Kota",
+                        status: "completed",
+                        completed: true,
+                        date: new Date(currentYear, currentMonth, 5).toISOString(),
+                        createdAt: new Date(currentYear, currentMonth, 1).toISOString()
+                    },
+                    {
+                        id: "task_002",
+                        title: "Evaluasi Kurikulum Merdeka",
+                        description: "Mengevaluasi implementasi kurikulum merdeka di sekolah binaan",
+                        userId: "1762696525337", 
+                        username: "wawan",
+                        schoolId: "school_002",
+                        schoolName: "SDN 2 Garut Kota",
+                        status: "in_progress",
+                        completed: false,
+                        date: new Date(currentYear, currentMonth, 10).toISOString(),
+                        createdAt: new Date(currentYear, currentMonth, 3).toISOString()
+                    },
+                    {
+                        id: "task_003",
+                        title: "Monitoring Administrasi Sekolah",
+                        description: "Memantau kelengkapan administrasi sekolah dan memberikan bimbingan",
+                        userId: "1762696525337",
+                        username: "wawan", 
+                        schoolId: "school_003",
+                        schoolName: "SDN 3 Garut Kota",
+                        status: "pending",
+                        completed: false,
+                        date: new Date(currentYear, currentMonth, 15).toISOString(),
+                        createdAt: new Date(currentYear, currentMonth, 5).toISOString()
+                    }
+                ],
+                supervisions: [
+                    {
+                        id: "supervision_001",
+                        title: "Supervisi Akademik Semester 1",
+                        schoolId: "school_001",
+                        schoolName: "SDN 1 Garut Kota",
+                        userId: "1762696525337",
+                        username: "wawan",
+                        date: new Date(currentYear, currentMonth, 8).toISOString(),
+                        notes: "Pembelajaran sudah berjalan dengan baik, perlu peningkatan media pembelajaran",
+                        recommendations: "Menambah media pembelajaran interaktif",
+                        createdAt: new Date(currentYear, currentMonth, 8).toISOString()
+                    },
+                    {
+                        id: "supervision_002", 
+                        title: "Supervisi Manajerial",
+                        schoolId: "school_002",
+                        schoolName: "SDN 2 Garut Kota",
+                        userId: "1762696525337",
+                        username: "wawan",
+                        date: new Date(currentYear, currentMonth, 12).toISOString(),
+                        notes: "Manajemen sekolah perlu diperbaiki dalam hal administrasi",
+                        recommendations: "Melengkapi dokumen administrasi sekolah",
+                        createdAt: new Date(currentYear, currentMonth, 12).toISOString()
+                    }
+                ],
+                additionalTasks: [
+                    {
+                        id: "additional_001",
+                        title: "Pelatihan Guru Kurikulum Merdeka",
+                        description: "Memberikan pelatihan kepada guru-guru tentang implementasi kurikulum merdeka",
+                        userId: "1762696525337",
+                        username: "wawan",
+                        schoolId: "school_001", 
+                        schoolName: "SDN 1 Garut Kota",
+                        date: new Date(currentYear, currentMonth, 20).toISOString(),
+                        status: "completed",
+                        createdAt: new Date(currentYear, currentMonth, 18).toISOString()
+                    },
+                    {
+                        id: "additional_002",
+                        title: "Workshop Penilaian Autentik",
+                        description: "Mengadakan workshop tentang penilaian autentik untuk guru-guru",
+                        userId: "1762696525337",
+                        username: "wawan", 
+                        schoolId: "school_002",
+                        schoolName: "SDN 2 Garut Kota",
+                        date: new Date(currentYear, currentMonth, 25).toISOString(),
+                        status: "scheduled",
+                        createdAt: new Date(currentYear, currentMonth, 20).toISOString()
+                    }
+                ]
+            };
+        }
+
+        function addSampleData() {
+            clearLog();
+            log('➕ Menambahkan data sample...');
+            
+            try {
+                const sampleData = createSampleData();
+                
+                // Simpan ke local-database
+                localStorage.setItem('local-database', JSON.stringify(sampleData));
+                log('✅ Data berhasil disimpan ke local-database');
+                
+                // Simpan juga ke individual keys untuk kompatibilitas
+                localStorage.setItem('tasks_data', JSON.stringify(sampleData.tasks));
+                localStorage.setItem('supervisions_data', JSON.stringify(sampleData.supervisions));
+                localStorage.setItem('schools_data', JSON.stringify(sampleData.schools));
+                localStorage.setItem('additional_tasks_data', JSON.stringify(sampleData.additionalTasks));
+                
+                log('✅ Data berhasil disimpan ke individual keys');
+                
+                // Set user session untuk wawan
+                const wawaUser = {
+                    id: "1762696525337",
+                    username: "wawan",
+                    fullName: "Wawan Setiawan",
+                    role: "user",
+                    nip: "196801011990031001"
+                };
+                
+                localStorage.setItem('auth_user', JSON.stringify(wawaUser));
+                localStorage.setItem('currentUser', JSON.stringify(wawaUser));
+                localStorage.setItem('user_data', JSON.stringify(wawaUser));
+                
+                log('✅ User session berhasil diset untuk wawan');
+                
+                // Tampilkan ringkasan data
+                log('📊 Ringkasan data yang ditambahkan:');
+                log(`- Users: ${sampleData.users.length}`);
+                log(`- Schools: ${sampleData.schools.length}`);
+                log(`- Tasks: ${sampleData.tasks.length}`);
+                log(`- Supervisions: ${sampleData.supervisions.length}`);
+                log(`- Additional Tasks: ${sampleData.additionalTasks.length}`);
+                
+                showStatus('✅ Data sample berhasil ditambahkan! Silakan refresh dashboard.', 'success');
+                updateDataSummary(sampleData);
+                
+            } catch (error) {
+                log(`❌ Error: ${error.message}`);
+                showStatus('❌ Error saat menambahkan data!', 'error');
+            }
+        }
+
+        function clearAllData() {
+            if (confirm('⚠️ Yakin ingin menghapus semua data? Tindakan ini tidak dapat dibatalkan!')) {
+                clearLog();
+                log('🗑️ Menghapus semua data...');
+                
+                try {
+                    localStorage.removeItem('local-database');
+                    localStorage.removeItem('tasks_data');
+                    localStorage.removeItem('supervisions_data');
+                    localStorage.removeItem('schools_data');
+                    localStorage.removeItem('additional_tasks_data');
+                    localStorage.removeItem('auth_user');
+                    localStorage.removeItem('currentUser');
+                    localStorage.removeItem('user_data');
+                    
+                    log('✅ Semua data berhasil dihapus');
+                    showStatus('✅ Semua data berhasil dihapus!', 'success');
+                    updateDataSummary({});
+                    
+                } catch (error) {
+                    log(`❌ Error: ${error.message}`);
+                    showStatus('❌ Error saat menghapus data!', 'error');
+                }
+            }
+        }
+
+        function openDashboard() {
+            window.open('/dashboard', '_blank');
+        }
+
+        // Auto check data saat halaman dimuat
+        window.onload = function() {
+            checkCurrentData();
+        };
+    </script>
+</body>
+</html>

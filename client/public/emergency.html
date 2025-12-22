@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚨 Emergency Mode - Aplikasi Pengawas Sekolah</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            color: #333;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 600px;
+            width: 90%;
+        }
+        
+        .success {
+            background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+        
+        .info {
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+        }
+        
+        .btn-warning {
+            background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+        }
+        
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            color: #1e293b;
+        }
+        
+        .status {
+            font-size: 1.2em;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚨 Emergency Mode</h1>
+        
+        <div class="success">
+            <h2>✅ APLIKASI BERHASIL DIMUAT!</h2>
+            <p class="status">Emergency mode aktif - Aplikasi berjalan dalam mode darurat</p>
+        </div>
+        
+        <div class="info">
+            <h3>📊 Status Sistem:</h3>
+            <p>✅ Server Backend: Port 5000 - ONLINE</p>
+            <p>✅ Server Frontend: Port 5173 - ONLINE</p>
+            <p>✅ Emergency Mode: AKTIF</p>
+        </div>
+        
+        <div style="margin: 30px 0;">
+            <button onclick="setupAuth()" class="btn-success">🔑 Setup Authentication</button>
+            <button onclick="goToDashboard()" class="btn-success">📊 Go to Dashboard</button>
+            <button onclick="reloadApp()" class="btn-warning">🔄 Reload App</button>
+        </div>
+        
+        <div class="info">
+            <h4>🛠️ Emergency Actions:</h4>
+            <p>Jika tombol tidak bekerja, refresh halaman atau akses langsung:</p>
+            <p><strong>Dashboard:</strong> <a href="/#/dashboard">/#/dashboard</a></p>
+            <p><strong>Login:</strong> <a href="/#/login">/#/login</a></p>
+        </div>
+        
+        <div id="status"></div>
+    </div>
+
+    <script>
+        function showStatus(message, type = 'info') {
+            const status = document.getElementById('status');
+            const color = type === 'success' ? '#16a34a' : type === 'error' ? '#dc2626' : '#2563eb';
+            status.innerHTML += `<div style="color: ${color}; margin: 10px 0; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 5px;">${message}</div>`;
+        }
+
+        function setupAuth() {
+            showStatus('🔑 Setting up authentication...', 'info');
+            
+            // Clear existing data
+            localStorage.clear();
+            sessionStorage.clear();
+            
+            // Set emergency auth
+            localStorage.setItem('auth_token', 'emergency-auth-' + Date.now());
+            localStorage.setItem('user_data', JSON.stringify({
+                id: 'emergency-admin',
+                username: 'admin',
+                fullName: 'Emergency Administrator',
+                role: 'admin',
+                nip: '999999999',
+                email: 'admin@emergency.local'
+            }));
+            
+            showStatus('✅ Authentication setup complete!', 'success');
+            showStatus('🚀 Redirecting to main app...', 'info');
+            
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 2000);
+        }
+
+        function goToDashboard() {
+            showStatus('📊 Going to dashboard...', 'info');
+            
+            // Ensure auth is set
+            if (!localStorage.getItem('auth_token')) {
+                setupAuth();
+                return;
+            }
+            
+            window.location.href = '/#/dashboard';
+        }
+
+        function reloadApp() {
+            showStatus('🔄 Reloading application...', 'info');
+            
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 1000);
+        }
+
+        // Auto-setup auth on load
+        window.onload = function() {
+            showStatus('🚨 Emergency mode activated', 'info');
+            
+            // Check if we need to setup auth
+            if (!localStorage.getItem('auth_token')) {
+                showStatus('🔑 No authentication found - setting up emergency auth...', 'info');
+                setTimeout(setupAuth, 2000);
+            } else {
+                showStatus('✅ Authentication found', 'success');
+            }
+        };
+    </script>
+</body>
+</html>

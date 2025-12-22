@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Supervisi Edge Fixed</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: #333;
+            line-height: 1.6;
+        }
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 5px solid #007bff;
+        }
+        .success {
+            background: #d4edda;
+            border-left-color: #28a745;
+            color: #155724;
+        }
+        .warning {
+            background: #fff3cd;
+            border-left-color: #ffc107;
+            color: #856404;
+        }
+        .error {
+            background: #f8d7da;
+            border-left-color: #dc3545;
+            color: #721c24;
+        }
+        .button {
+            background: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+            transition: all 0.3s;
+        }
+        .button:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+        }
+        .test-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            background: white;
+        }
+        .status {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+        }
+        .status.success { background: #28a745; }
+        .status.pending { background: #ffc107; }
+        .status.error { background: #dc3545; }
+        .browser-info {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Supervisi Edge Fixed</h1>
+        
+        <div class="browser-info">
+            <h3>🌐 Informasi Browser:</h3>
+            <p><strong>User Agent:</strong> <span id="userAgent"></span></p>
+            <p><strong>Browser:</strong> <span id="browserName"></span></p>
+            <p><strong>Versi:</strong> <span id="browserVersion"></span></p>
+            <p><strong>Platform:</strong> <span id="platform"></span></p>
+        </div>
+
+        <div class="test-section">
+            <h3>🔍 Test Checklist Supervisi:</h3>
+            
+            <div class="test-item">
+                <div class="status pending" id="status-1">?</div>
+                <div>
+                    <strong>Tombol "Tambah Supervisi" terlihat</strong>
+                    <br><small>Periksa apakah tombol muncul di halaman supervisi</small>
+                </div>
+            </div>
+            
+            <div class="test-item">
+                <div class="status pending" id="status-2">?</div>
+                <div>
+                    <strong>Dialog form terbuka dengan benar</strong>
+                    <br><small>Klik tombol dan pastikan dialog muncul</small>
+                </div>
+            </div>
+            
+            <div class="test-item">
+                <div class="status pending" id="status-3">?</div>
+                <div>
+                    <strong>Dropdown sekolah berfungsi</strong>
+                    <br><small>Pilih sekolah dari dropdown</small>
+                </div>
+            </div>
+            
+            <div class="test-item">
+                <div class="status pending" id="status-4">?</div>
+                <div>
+                    <strong>Form bisa diisi lengkap</strong>
+                    <br><small>Isi semua field yang diperlukan</small>
+                </div>
+            </div>
+            
+            <div class="test-item">
+                <div class="status pending" id="status-5">?</div>
+                <div>
+                    <strong>Upload foto berfungsi</strong>
+                    <br><small>Test upload 1-2 foto</small>
+                </div>
+            </div>
+            
+            <div class="test-item">
+                <div class="status pending" id="status-6">?</div>
+                <div>
+                    <strong>Tombol "Simpan Supervisi" aktif</strong>
+                    <br><small>Tombol tidak disabled setelah form diisi</small>
+                </div>
+            </div>
+            
+            <div class="test-item">
+                <div class="status pending" id="status-7">?</div>
+                <div>
+                    <strong>Data tersimpan ke localStorage</strong>
+                    <br><small>Periksa di Developer Tools > Application > Local Storage</small>
+                </div>
+            </div>
+            
+            <div class="test-item">
+                <div class="status pending" id="status-8">?</div>
+                <div>
+                    <strong>Data muncul di daftar supervisi</strong>
+                    <br><small>Supervisi baru tampil di halaman</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>🛠️ Langkah Testing:</h3>
+            <ol>
+                <li><strong>Buka halaman Supervisi</strong> - Klik menu "Kegiatan Supervisi"</li>
+                <li><strong>Periksa tombol</strong> - Pastikan tombol "Tambah Supervisi" terlihat</li>
+                <li><strong>Klik tombol</strong> - Dialog form harus terbuka</li>
+                <li><strong>Isi form:</strong>
+                    <ul>
+                        <li>Pilih sekolah dari dropdown</li>
+                        <li>Pilih jenis supervisi (Akademik/Manajerial)</li>
+                        <li>Isi tanggal kegiatan</li>
+                        <li>Isi nama guru (opsional)</li>
+                        <li>Isi NIP guru (opsional)</li>
+                        <li>Isi temuan (wajib)</li>
+                        <li>Isi rekomendasi (opsional)</li>
+                        <li>Upload foto (opsional)</li>
+                    </ul>
+                </li>
+                <li><strong>Klik "Simpan Supervisi"</strong> - Data harus tersimpan</li>
+                <li><strong>Verifikasi</strong> - Data muncul di daftar supervisi</li>
+            </ol>
+        </div>
+
+        <div class="test-section warning">
+            <h3>⚠️ Khusus untuk Edge Browser:</h3>
+            <ul>
+                <li>Pastikan CSS flexbox berfungsi dengan benar</li>
+                <li>Periksa apakah dialog component render dengan baik</li>
+                <li>Test file upload compatibility</li>
+                <li>Verifikasi localStorage access</li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <h3>🔧 Troubleshooting:</h3>
+            <p><strong>Jika tombol tidak muncul:</strong></p>
+            <ul>
+                <li>Refresh halaman (Ctrl+F5)</li>
+                <li>Clear browser cache</li>
+                <li>Periksa console untuk error JavaScript</li>
+            </ul>
+            
+            <p><strong>Jika tombol simpan tidak berfungsi:</strong></p>
+            <ul>
+                <li>Pastikan field "Temuan" sudah diisi</li>
+                <li>Periksa console untuk error API</li>
+                <li>Coba tanpa upload foto dulu</li>
+            </ul>
+        </div>
+
+        <div class="test-section success">
+            <h3>✅ Hasil yang Diharapkan:</h3>
+            <ul>
+                <li>Tombol "Tambah Supervisi" muncul di semua browser</li>
+                <li>Form bisa diisi dan disimpan tanpa error</li>
+                <li>Data tersimpan ke localStorage</li>
+                <li>Supervisi baru muncul di daftar</li>
+                <li>Upload foto berfungsi normal</li>
+            </ul>
+        </div>
+
+        <button class="button" onclick="openSupervisionPage()">🔗 Buka Halaman Supervisi</button>
+        <button class="button" onclick="checkLocalStorage()">📦 Cek localStorage</button>
+        <button class="button" onclick="clearTestData()">🗑️ Clear Test Data</button>
+    </div>
+
+    <script>
+        // Detect browser info
+        function detectBrowser() {
+            const ua = navigator.userAgent;
+            document.getElementById('userAgent').textContent = ua;
+            document.getElementById('platform').textContent = navigator.platform;
+            
+            let browserName = 'Unknown';
+            let browserVersion = 'Unknown';
+            
+            if (ua.indexOf('Edg') > -1) {
+                browserName = 'Microsoft Edge (Chromium)';
+                browserVersion = ua.match(/Edg\/([0-9.]+)/)?.[1] || 'Unknown';
+            } else if (ua.indexOf('Edge') > -1) {
+                browserName = 'Microsoft Edge (Legacy)';
+                browserVersion = ua.match(/Edge\/([0-9.]+)/)?.[1] || 'Unknown';
+            } else if (ua.indexOf('Chrome') > -1) {
+                browserName = 'Google Chrome';
+                browserVersion = ua.match(/Chrome\/([0-9.]+)/)?.[1] || 'Unknown';
+            } else if (ua.indexOf('Firefox') > -1) {
+                browserName = 'Mozilla Firefox';
+                browserVersion = ua.match(/Firefox\/([0-9.]+)/)?.[1] || 'Unknown';
+            } else if (ua.indexOf('Safari') > -1) {
+                browserName = 'Safari';
+                browserVersion = ua.match(/Version\/([0-9.]+)/)?.[1] || 'Unknown';
+            }
+            
+            document.getElementById('browserName').textContent = browserName;
+            document.getElementById('browserVersion').textContent = browserVersion;
+            
+            // Special handling for Edge
+            if (browserName.includes('Edge')) {
+                console.log('🌐 Edge browser detected - running compatibility checks');
+                checkEdgeCompatibility();
+            }
+        }
+        
+        function checkEdgeCompatibility() {
+            // Test CSS flexbox support
+            const testDiv = document.createElement('div');
+            testDiv.style.display = 'flex';
+            if (testDiv.style.display === 'flex') {
+                console.log('✅ Flexbox supported');
+            } else {
+                console.log('❌ Flexbox not supported');
+            }
+            
+            // Test localStorage
+            try {
+                localStorage.setItem('test', 'test');
+                localStorage.removeItem('test');
+                console.log('✅ localStorage supported');
+            } catch (e) {
+                console.log('❌ localStorage not supported');
+            }
+        }
+        
+        function openSupervisionPage() {
+            // Try to open in same tab
+            window.location.href = '/supervisions';
+        }
+        
+        function checkLocalStorage() {
+            const supervisions = localStorage.getItem('supervisions_data');
+            const schools = localStorage.getItem('schools_data');
+            
+            console.log('📦 Supervisions data:', supervisions ? JSON.parse(supervisions) : 'None');
+            console.log('📦 Schools data:', schools ? JSON.parse(schools) : 'None');
+            
+            alert(`
+Supervisions: ${supervisions ? JSON.parse(supervisions).length : 0} records
+Schools: ${schools ? JSON.parse(schools).length : 0} records
+
+Check console for details.
+            `);
+        }
+        
+        function clearTestData() {
+            if (confirm('Hapus semua data test supervisi?')) {
+                localStorage.removeItem('supervisions_data');
+                localStorage.removeItem('supervisions_data_backup');
+                alert('Data test supervisi telah dihapus');
+            }
+        }
+        
+        // Auto-detect browser on load
+        detectBrowser();
+        
+        console.log('🧪 Test Supervisi Edge Fixed loaded');
+        console.log('🔧 Perbaikan yang diterapkan:');
+        console.log('  - CSS compatibility untuk Edge browser');
+        console.log('  - localStorage API untuk supervisions');
+        console.log('  - Error handling yang lebih baik');
+        console.log('  - Loading state untuk tombol simpan');
+    </script>
+</body>
+</html>

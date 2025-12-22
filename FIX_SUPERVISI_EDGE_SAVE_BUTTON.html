@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fix Supervisi Edge & Save Button</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            line-height: 1.6;
+        }
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        .problem {
+            background: #ffebee;
+            border-left: 5px solid #f44336;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .solution {
+            background: #e8f5e8;
+            border-left: 5px solid #4caf50;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .code {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        .step {
+            background: #fff3e0;
+            border-left: 5px solid #ff9800;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+        .success {
+            background: #e8f5e8;
+            border: 2px solid #4caf50;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .button {
+            background: #2196f3;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+            transition: background 0.3s;
+        }
+        .button:hover {
+            background: #1976d2;
+        }
+        .warning {
+            background: #fff3cd;
+            border-left: 5px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Fix Supervisi Edge & Save Button</h1>
+        
+        <div class="problem">
+            <h3>🚨 Masalah yang Ditemukan:</h3>
+            <ul>
+                <li><strong>Tombol "Tambah Supervisi" tidak muncul di Edge</strong> - Masalah CSS compatibility</li>
+                <li><strong>Tombol "Simpan Supervisi" tidak berfungsi</strong> - Error dalam API call atau form validation</li>
+                <li><strong>Browser compatibility issue</strong> - Edge memiliki rendering yang berbeda</li>
+            </ul>
+        </div>
+
+        <div class="solution">
+            <h3>✅ Solusi Komprehensif:</h3>
+            <p>Saya akan memperbaiki kedua masalah dengan:</p>
+            <ul>
+                <li>Menambahkan CSS fallback untuk Edge browser</li>
+                <li>Memperbaiki API call untuk penyimpanan supervisi</li>
+                <li>Menambahkan error handling yang lebih baik</li>
+                <li>Memastikan form validation bekerja di semua browser</li>
+            </ul>
+        </div>
+
+        <div class="step">
+            <h4>🔍 Analisis Masalah:</h4>
+            <p><strong>1. Tombol Tambah Supervisi tidak muncul di Edge:</strong></p>
+            <ul>
+                <li>Kemungkinan masalah CSS flexbox atau grid compatibility</li>
+                <li>Dialog component mungkin tidak render dengan benar</li>
+                <li>JavaScript event handler tidak terpicu</li>
+            </ul>
+            
+            <p><strong>2. Tombol Simpan tidak berfungsi:</strong></p>
+            <ul>
+                <li>API supervisionsApi.create mungkin error</li>
+                <li>Form validation gagal</li>
+                <li>FormData tidak terbentuk dengan benar</li>
+            </ul>
+        </div>
+
+        <div class="step">
+            <h4>🛠️ Langkah Perbaikan:</h4>
+            <ol>
+                <li><strong>Perbaiki CSS untuk Edge compatibility</strong></li>
+                <li><strong>Update supervisionsApi untuk menggunakan localStorage</strong></li>
+                <li><strong>Tambahkan error handling yang lebih robust</strong></li>
+                <li><strong>Test di berbagai browser</strong></li>
+            </ol>
+        </div>
+
+        <div class="code">
+            <h4>📝 Kode Perbaikan supervisionsApi:</h4>
+            <pre>
+// Perbaikan supervisionsApi untuk menggunakan localStorage
+export const supervisionsApi = {
+  create: async (formData: FormData) => {
+    try {
+      // Convert FormData to object
+      const supervisionData: any = {};
+      const filePromises: Promise&lt;void&gt;[] = [];
+      
+      formData.forEach((value, key) => {
+        if (key.startsWith('photo') && value instanceof File) {
+          // Convert file to base64
+          const promise = new Promise&lt;void&gt;((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+              supervisionData[key] = reader.result;
+              resolve();
+            };
+            reader.readAsDataURL(value);
+          });
+          filePromises.push(promise);
+        } else {
+          supervisionData[key] = value;
+        }
+      });
+      
+      // Wait for all file conversions
+      await Promise.all(filePromises);
+      
+      // Get existing data
+      const existingData = localStorage.getItem('supervisions_data');
+      const supervisions = existingData ? JSON.parse(existingData) : [];
+      
+      // Create new supervision
+      const newSupervision = {
+        id: Date.now().toString(),
+        school: supervisionData.schoolId,
+        type: supervisionData.type || 'Akademik',
+        date: supervisionData.date || new Date().toISOString().split('T')[0],
+        teacherName: supervisionData.teacherName || '',
+        teacherNip: supervisionData.teacherNip || '',
+        findings: supervisionData.findings || '',
+        recommendations: supervisionData.recommendations || '',
+        photo1: supervisionData.photo1 || null,
+        photo2: supervisionData.photo2 || null,
+        createdAt: new Date().toISOString()
+      };
+      
+      supervisions.push(newSupervision);
+      
+      // Save to localStorage
+      localStorage.setItem('supervisions_data', JSON.stringify(supervisions));
+      localStorage.setItem('supervisions_data_backup', JSON.stringify(supervisions));
+      
+      console.log('✅ Supervisi berhasil disimpan:', newSupervision);
+      return newSupervision;
+    } catch (error: any) {
+      console.error('❌ Error saving supervision:', error);
+      throw new Error('Gagal menyimpan supervisi: ' + error.message);
+    }
+  },
+  
+  delete: async (id: string) => {
+    try {
+      const existingData = localStorage.getItem('supervisions_data');
+      const supervisions = existingData ? JSON.parse(existingData) : [];
+      
+      const filteredSupervisions = supervisions.filter((s: any) => s.id !== id);
+      
+      localStorage.setItem('supervisions_data', JSON.stringify(filteredSupervisions));
+      localStorage.setItem('supervisions_data_backup', JSON.stringify(filteredSupervisions));
+      
+      return { success: true };
+    } catch (error: any) {
+      throw new Error('Gagal menghapus supervisi');
+    }
+  }
+};
+            </pre>
+        </div>
+
+        <div class="warning">
+            <h4>⚠️ Penting untuk Edge Browser:</h4>
+            <ul>
+                <li>Pastikan menggunakan CSS yang kompatibel dengan Edge</li>
+                <li>Hindari CSS Grid yang kompleks, gunakan Flexbox</li>
+                <li>Test semua fitur di Edge setelah perbaikan</li>
+                <li>Gunakan polyfill jika diperlukan</li>
+            </ul>
+        </div>
+
+        <div class="step">
+            <h4>🧪 Testing Checklist:</h4>
+            <ol>
+                <li>✅ Buka aplikasi di Chrome - tombol muncul</li>
+                <li>🔄 Buka aplikasi di Edge - tombol harus muncul</li>
+                <li>🔄 Test form submission di Chrome</li>
+                <li>🔄 Test form submission di Edge</li>
+                <li>🔄 Test upload foto di kedua browser</li>
+                <li>🔄 Test validasi form</li>
+            </ol>
+        </div>
+
+        <div class="success">
+            <h3>🎯 Target Hasil:</h3>
+            <p><strong>Setelah perbaikan ini:</strong></p>
+            <ul style="text-align: left; display: inline-block;">
+                <li>✅ Tombol "Tambah Supervisi" muncul di semua browser</li>
+                <li>✅ Form bisa diisi dan disimpan dengan benar</li>
+                <li>✅ Upload foto berfungsi normal</li>
+                <li>✅ Data tersimpan ke localStorage</li>
+                <li>✅ Kompatibel dengan Chrome, Edge, Firefox</li>
+            </ul>
+        </div>
+
+        <button class="button" onclick="window.location.reload()">🔄 Refresh Halaman</button>
+        <button class="button" onclick="window.close()">❌ Tutup</button>
+    </div>
+
+    <script>
+        console.log('🔧 Fix Supervisi Edge & Save Button loaded');
+        console.log('📊 Browser:', navigator.userAgent);
+        
+        // Detect Edge browser
+        const isEdge = /Edge|Edg/.test(navigator.userAgent);
+        if (isEdge) {
+            console.log('🌐 Edge browser detected - applying compatibility fixes');
+            document.body.style.fontFamily = 'Segoe UI, Arial, sans-serif';
+        }
+    </script>
+</body>
+</html>

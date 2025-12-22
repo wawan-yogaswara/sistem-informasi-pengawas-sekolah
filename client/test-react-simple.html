@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test React Simple</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin: 20px 0;
+        }
+        .success { color: green; }
+        .error { color: red; }
+        .warning { color: orange; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 Test React Simple</h1>
+        <p>Jika halaman kosong tapi title muncul, kemungkinan masalah di React rendering.</p>
+        
+        <h2>📋 Checklist Diagnosa:</h2>
+        <div id="checklist">
+            <div id="check-root">❓ Root element: <span id="root-status">Checking...</span></div>
+            <div id="check-react">❓ React mount: <span id="react-status">Checking...</span></div>
+            <div id="check-console">❓ Console errors: <span id="console-status">Checking...</span></div>
+            <div id="check-css">❓ CSS loaded: <span id="css-status">Checking...</span></div>
+        </div>
+
+        <h2>🔧 Quick Fixes:</h2>
+        <button onclick="injectTestReact()">Inject Test React</button>
+        <button onclick="clearAndReload()">Clear & Reload</button>
+        <button onclick="forceLogin()">Force Login</button>
+        <button onclick="testLocalhost()">Test Localhost</button>
+
+        <h2>📊 Results:</h2>
+        <div id="results"></div>
+    </div>
+
+    <script>
+        function addResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = type;
+            div.innerHTML = `[${new Date().toLocaleTimeString()}] ${message}`;
+            results.appendChild(div);
+        }
+
+        function checkRoot() {
+            const root = document.getElementById('root');
+            const status = document.getElementById('root-status');
+            
+            if (!root) {
+                status.innerHTML = '<span class="error">❌ NOT FOUND</span>';
+                return false;
+            }
+            
+            if (root.children.length === 0) {
+                status.innerHTML = '<span class="warning">⚠️ EMPTY</span>';
+                return false;
+            }
+            
+            status.innerHTML = `<span class="success">✅ OK (${root.children.length} children)</span>`;
+            return true;
+        }
+
+        function checkReact() {
+            const status = document.getElementById('react-status');
+            
+            // Check if React is loaded
+            if (typeof React !== 'undefined') {
+                status.innerHTML = '<span class="success">✅ React loaded</span>';
+                return true;
+            }
+            
+            // Check if there's any React-like content
+            const reactElements = document.querySelectorAll('[data-reactroot], [data-react-helmet]');
+            if (reactElements.length > 0) {
+                status.innerHTML = '<span class="success">✅ React elements found</span>';
+                return true;
+            }
+            
+            status.innerHTML = '<span class="error">❌ React not detected</span>';
+            return false;
+        }
+
+        function checkConsole() {
+            const status = document.getElementById('console-status');
+            
+            // This is a simple check - in real scenario, we'd need to capture console
+            const hasErrors = window.console && console.error;
+            if (hasErrors) {
+                status.innerHTML = '<span class="success">✅ Console available</span>';
+                return true;
+            }
+            
+            status.innerHTML = '<span class="warning">⚠️ Console issues</span>';
+            return false;
+        }
+
+        function checkCSS() {
+            const status = document.getElementById('css-status');
+            
+            // Check if Tailwind classes are working
+            const testDiv = document.createElement('div');
+            testDiv.className = 'bg-blue-500 text-white p-4';
+            testDiv.style.display = 'none';
+            document.body.appendChild(testDiv);
+            
+            const computed = window.getComputedStyle(testDiv);
+            const hasBackground = computed.backgroundColor !== 'rgba(0, 0, 0, 0)' && computed.backgroundColor !== 'transparent';
+            
+            document.body.removeChild(testDiv);
+            
+            if (hasBackground) {
+                status.innerHTML = '<span class="success">✅ CSS working</span>';
+                return true;
+            }
+            
+            status.innerHTML = '<span class="warning">⚠️ CSS issues</span>';
+            return false;
+        }
+
+        function injectTestReact() {
+            addResult('📝 Injecting test React content...', 'info');
+            
+            const root = document.getElementById('root');
+            if (root) {
+                root.innerHTML = `
+                    <div style="padding: 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; min-height: 100vh;">
+                        <div style="max-width: 600px; margin: 0 auto; text-align: center;">
+                            <h1 style="font-size: 2.5em; margin-bottom: 20px;">🎉 REACT TEST SUCCESS!</h1>
+                            <p style="font-size: 1.2em; margin-bottom: 30px;">Jika Anda melihat ini, berarti DOM manipulation bekerja.</p>
+                            <p style="margin-bottom: 20px;">Masalah kemungkinan di:</p>
+                            <ul style="text-align: left; max-width: 400px; margin: 0 auto 30px;">
+                                <li>React components tidak mounting</li>
+                                <li>JavaScript error yang mencegah render</li>
+                                <li>CSS yang menyembunyikan konten</li>
+                                <li>Routing issue</li>
+                            </ul>
+                            <div>
+                                <button onclick="location.href='/login'" style="background: #4CAF50; color: white; border: none; padding: 15px 30px; border-radius: 25px; cursor: pointer; margin: 10px; font-size: 16px;">
+                                    🚪 Go to Login
+                                </button>
+                                <button onclick="location.reload()" style="background: #2196F3; color: white; border: none; padding: 15px 30px; border-radius: 25px; cursor: pointer; margin: 10px; font-size: 16px;">
+                                    🔄 Reload Page
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                addResult('✅ Test content injected successfully', 'success');
+            } else {
+                addResult('❌ Root element not found - serious DOM issue', 'error');
+            }
+        }
+
+        function clearAndReload() {
+            addResult('🗑️ Clearing storage and reloading...', 'warning');
+            localStorage.clear();
+            sessionStorage.clear();
+            setTimeout(() => {
+                window.location.reload(true);
+            }, 1000);
+        }
+
+        function forceLogin() {
+            addResult('🚪 Forcing login page...', 'info');
+            window.location.href = 'http://localhost:5000/login';
+        }
+
+        function testLocalhost() {
+            addResult('🌐 Testing localhost connection...', 'info');
+            
+            fetch('http://localhost:5000/api/test')
+                .then(response => response.json())
+                .then(data => {
+                    addResult(`✅ Server OK: ${data.message}`, 'success');
+                })
+                .catch(error => {
+                    addResult(`❌ Server Error: ${error.message}`, 'error');
+                    addResult('💡 Make sure server is running: npm run dev', 'warning');
+                });
+        }
+
+        // Run checks on load
+        setTimeout(() => {
+            addResult('🔍 Running automatic checks...', 'info');
+            
+            const rootOK = checkRoot();
+            const reactOK = checkReact();
+            const consoleOK = checkConsole();
+            const cssOK = checkCSS();
+            
+            if (!rootOK) {
+                addResult('🚨 CRITICAL: Root element issue detected!', 'error');
+                addResult('💡 Try "Inject Test React" to verify DOM access', 'warning');
+            } else if (!reactOK) {
+                addResult('⚠️ React mounting issue detected', 'warning');
+                addResult('💡 Check browser console for JavaScript errors', 'info');
+            } else {
+                addResult('✅ Basic checks passed - issue might be in routing or auth', 'success');
+            }
+        }, 500);
+    </script>
+</body>
+</html>

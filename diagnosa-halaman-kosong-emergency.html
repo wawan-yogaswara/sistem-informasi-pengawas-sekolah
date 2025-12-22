@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚨 Diagnosa Emergency: Halaman Kosong</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .success {
+            color: #16a34a;
+            background: #dcfce7;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .error {
+            color: #dc2626;
+            background: #fef2f2;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .warning {
+            color: #d97706;
+            background: #fef3c7;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .info {
+            color: #2563eb;
+            background: #dbeafe;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        button {
+            background: #2563eb;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #1d4ed8;
+        }
+        .btn-danger {
+            background: #dc2626;
+        }
+        .btn-danger:hover {
+            background: #b91c1c;
+        }
+        .btn-success {
+            background: #16a34a;
+        }
+        .btn-success:hover {
+            background: #15803d;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        .step {
+            border: 1px solid #e5e7eb;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .step h3 {
+            margin-top: 0;
+            color: #374151;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚨 DIAGNOSA EMERGENCY: HALAMAN KOSONG</h1>
+        
+        <div class="info">
+            <h3>🎯 Tujuan Diagnosa:</h3>
+            <p>Mengidentifikasi penyebab halaman kosong di localhost:5000 dan memberikan solusi langsung.</p>
+        </div>
+
+        <div class="step">
+            <h3>🔍 Step 1: Cek Status Server</h3>
+            <button onclick="checkServerStatus()">Test Server Connection</button>
+            <div id="serverResult"></div>
+        </div>
+
+        <div class="step">
+            <h3>🌐 Step 2: Cek Response HTML</h3>
+            <button onclick="checkHTMLResponse()">Cek HTML Response</button>
+            <div id="htmlResult"></div>
+        </div>
+
+        <div class="step">
+            <h3>📱 Step 3: Cek JavaScript Errors</h3>
+            <button onclick="checkJSErrors()">Cek Console Errors</button>
+            <div id="jsResult"></div>
+        </div>
+
+        <div class="step">
+            <h3>🔧 Step 4: Test React Mount</h3>
+            <button onclick="testReactMount()">Test React Mounting</button>
+            <div id="reactResult"></div>
+        </div>
+
+        <div class="step">
+            <h3>🔑 Step 5: Cek Authentication</h3>
+            <button onclick="checkAuth()">Cek Auth Status</button>
+            <button onclick="bypassAuth()" class="btn-success">Bypass Auth (Emergency)</button>
+            <div id="authResult"></div>
+        </div>
+
+        <div class="step">
+            <h3>🚀 Step 6: Force Fixes</h3>
+            <button onclick="clearAllCache()" class="btn-danger">Clear All Cache</button>
+            <button onclick="forceReload()" class="btn-success">Force Reload</button>
+            <button onclick="openAppDirect()" class="btn-success">Open App Direct</button>
+            <div id="fixResult"></div>
+        </div>
+
+        <div id="diagnosticResults"></div>
+    </div>
+
+    <script>
+        let diagnosticLog = [];
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            diagnosticLog.push(`[${timestamp}] ${message}`);
+            console.log(`[DIAGNOSA] ${message}`);
+        }
+
+        function showResult(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            const className = type === 'success' ? 'success' : type === 'error' ? 'error' : type === 'warning' ? 'warning' : 'info';
+            element.innerHTML = `<div class="${className}">${message}</div>`;
+        }
+
+        async function checkServerStatus() {
+            log('Checking server status...');
+            try {
+                const response = await fetch('http://localhost:5000/', {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+                    }
+                });
+                
+                if (response.ok) {
+                    showResult('serverResult', `✅ Server OK! Status: ${response.status}`, 'success');
+                    log(`Server responding with status ${response.status}`);
+                } else {
+                    showResult('serverResult', `⚠️ Server issue! Status: ${response.status}`, 'warning');
+                    log(`Server responding with error status ${response.status}`);
+                }
+            } catch (error) {
+                showResult('serverResult', `❌ Server tidak dapat diakses: ${error.message}`, 'error');
+                log(`Server connection failed: ${error.message}`);
+            }
+        }
+
+        async function checkHTMLResponse() {
+            log('Checking HTML response...');
+            try {
+                const response = await fetch('http://localhost:5000/');
+                const html = await response.text();
+                
+                if (html.includes('<div id="root">')) {
+                    showResult('htmlResult', '✅ HTML contains root div', 'success');
+                    log('HTML response contains root element');
+                } else {
+                    showResult('htmlResult', '❌ HTML tidak mengandung root div', 'error');
+                    log('HTML response missing root element');
+                }
+                
+                if (html.includes('script')) {
+                    showResult('htmlResult', showResult('htmlResult').innerHTML + '<br>✅ HTML contains scripts', 'success');
+                    log('HTML response contains script tags');
+                } else {
+                    showResult('htmlResult', showResult('htmlResult').innerHTML + '<br>❌ HTML tidak mengandung scripts', 'error');
+                    log('HTML response missing script tags');
+                }
+                
+                // Show partial HTML for debugging
+                const preview = html.substring(0, 500) + '...';
+                showResult('htmlResult', document.getElementById('htmlResult').innerHTML + `<br><pre>${preview}</pre>`, 'info');
+                
+            } catch (error) {
+                showResult('htmlResult', `❌ Error checking HTML: ${error.message}`, 'error');
+                log(`HTML check failed: ${error.message}`);
+            }
+        }
+
+        function checkJSErrors() {
+            log('Checking JavaScript errors...');
+            
+            // Check if there are any console errors
+            const errors = [];
+            
+            // Override console.error to capture errors
+            const originalError = console.error;
+            console.error = function(...args) {
+                errors.push(args.join(' '));
+                originalError.apply(console, args);
+            };
+            
+            // Check for React
+            if (typeof React !== 'undefined') {
+                showResult('jsResult', '✅ React is loaded', 'success');
+                log('React is available');
+            } else {
+                showResult('jsResult', '❌ React tidak ditemukan', 'error');
+                log('React is not available');
+            }
+            
+            // Check for common errors
+            setTimeout(() => {
+                if (errors.length > 0) {
+                    showResult('jsResult', document.getElementById('jsResult').innerHTML + `<br>❌ Errors found: <pre>${errors.join('\\n')}</pre>`, 'error');
+                    log(`JavaScript errors found: ${errors.length}`);
+                } else {
+                    showResult('jsResult', document.getElementById('jsResult').innerHTML + '<br>✅ No immediate JS errors', 'success');
+                    log('No immediate JavaScript errors detected');
+                }
+            }, 2000);
+        }
+
+        function testReactMount() {
+            log('Testing React mount...');
+            
+            // Try to access the root element
+            const rootElement = document.getElementById('root');
+            if (rootElement) {
+                showResult('reactResult', '✅ Root element found', 'success');
+                log('Root element exists');
+                
+                // Check if React has mounted anything
+                if (rootElement.children.length > 0) {
+                    showResult('reactResult', document.getElementById('reactResult').innerHTML + '<br>✅ React has mounted content', 'success');
+                    log('React content is mounted');
+                } else {
+                    showResult('reactResult', document.getElementById('reactResult').innerHTML + '<br>❌ Root element kosong - React tidak mounting', 'error');
+                    log('Root element is empty - React not mounting');
+                }
+            } else {
+                showResult('reactResult', '❌ Root element tidak ditemukan', 'error');
+                log('Root element not found');
+            }
+        }
+
+        function checkAuth() {
+            log('Checking authentication...');
+            
+            const token = localStorage.getItem('auth_token');
+            const userData = localStorage.getItem('user_data');
+            
+            let authStatus = '';
+            if (token) {
+                authStatus += '✅ Auth token exists<br>';
+                log('Auth token found');
+            } else {
+                authStatus += '❌ No auth token<br>';
+                log('No auth token found');
+            }
+            
+            if (userData) {
+                authStatus += '✅ User data exists<br>';
+                log('User data found');
+                try {
+                    const user = JSON.parse(userData);
+                    authStatus += `User: ${user.fullName || user.username || 'Unknown'}<br>`;
+                    log(`User: ${user.fullName || user.username || 'Unknown'}`);
+                } catch (e) {
+                    authStatus += '⚠️ User data corrupted<br>';
+                    log('User data is corrupted');
+                }
+            } else {
+                authStatus += '❌ No user data<br>';
+                log('No user data found');
+            }
+            
+            showResult('authResult', authStatus, token && userData ? 'success' : 'warning');
+        }
+
+        function bypassAuth() {
+            log('Bypassing authentication...');
+            
+            // Set emergency auth data
+            localStorage.setItem('auth_token', 'emergency-token-' + Date.now());
+            localStorage.setItem('user_data', JSON.stringify({
+                id: 'emergency-user',
+                username: 'admin',
+                fullName: 'Emergency Admin',
+                role: 'admin',
+                nip: '123456789',
+                email: 'admin@emergency.local'
+            }));
+            
+            showResult('authResult', '✅ Emergency auth set! Reloading...', 'success');
+            log('Emergency authentication data set');
+            
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        }
+
+        function clearAllCache() {
+            log('Clearing all cache...');
+            
+            // Clear localStorage
+            localStorage.clear();
+            
+            // Clear sessionStorage
+            sessionStorage.clear();
+            
+            // Clear cookies (if any)
+            document.cookie.split(";").forEach(function(c) { 
+                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+            });
+            
+            showResult('fixResult', '✅ All cache cleared! Setting emergency auth...', 'success');
+            log('All cache cleared');
+            
+            // Set emergency auth after clearing
+            setTimeout(() => {
+                bypassAuth();
+            }, 500);
+        }
+
+        function forceReload() {
+            log('Force reloading...');
+            showResult('fixResult', '🔄 Force reloading...', 'info');
+            window.location.reload(true);
+        }
+
+        function openAppDirect() {
+            log('Opening app directly...');
+            showResult('fixResult', '🌐 Opening app in new tab...', 'info');
+            window.open('http://localhost:5000', '_blank');
+        }
+
+        // Auto-start diagnosis
+        window.onload = function() {
+            log('Starting automatic diagnosis...');
+            setTimeout(() => {
+                checkServerStatus();
+                setTimeout(() => checkAuth(), 1000);
+                setTimeout(() => testReactMount(), 2000);
+            }, 500);
+        };
+
+        // Show diagnostic log
+        setInterval(() => {
+            const resultsDiv = document.getElementById('diagnosticResults');
+            if (diagnosticLog.length > 0) {
+                resultsDiv.innerHTML = `
+                    <div class="step">
+                        <h3>📋 Diagnostic Log:</h3>
+                        <pre>${diagnosticLog.join('\\n')}</pre>
+                    </div>
+                `;
+            }
+        }, 3000);
+    </script>
+</body>
+</html>

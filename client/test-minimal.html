@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Minimal React</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f0f9ff;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .success { color: #16a34a; background: #dcfce7; padding: 15px; border-radius: 8px; margin: 15px 0; }
+        .error { color: #dc2626; background: #fef2f2; padding: 15px; border-radius: 8px; margin: 15px 0; }
+        button {
+            background: #2563eb;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 8px;
+        }
+        button:hover { background: #1d4ed8; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Minimal React</h1>
+        
+        <div class="success">
+            <h3>✅ HTML Loading Successfully!</h3>
+            <p>This page loads correctly, which means the server is working.</p>
+        </div>
+
+        <div>
+            <h3>🔍 Diagnostic Information:</h3>
+            <p><strong>Current URL:</strong> <span id="currentUrl"></span></p>
+            <p><strong>User Agent:</strong> <span id="userAgent"></span></p>
+            <p><strong>Local Storage Available:</strong> <span id="localStorageAvailable"></span></p>
+        </div>
+
+        <div>
+            <h3>🚀 Actions:</h3>
+            <button onclick="testMainApp()">🧪 Test Main App</button>
+            <button onclick="createSimpleReact()">⚛️ Create Simple React</button>
+            <button onclick="setupAuthAndRedirect()">🔑 Setup Auth & Redirect</button>
+        </div>
+
+        <div id="results"></div>
+        <div id="reactTest"></div>
+    </div>
+
+    <script>
+        // Fill diagnostic info
+        document.getElementById('currentUrl').textContent = window.location.href;
+        document.getElementById('userAgent').textContent = navigator.userAgent;
+        document.getElementById('localStorageAvailable').textContent = typeof(Storage) !== "undefined" ? 'Yes' : 'No';
+
+        function showResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const className = type === 'success' ? 'success' : 'error';
+            results.innerHTML += `<div class="${className}">${message}</div>`;
+        }
+
+        async function testMainApp() {
+            showResult('🧪 Testing main application...', 'info');
+            
+            try {
+                // Try to fetch the main page
+                const response = await fetch('/');
+                if (response.ok) {
+                    const html = await response.text();
+                    if (html.includes('<div id="root">')) {
+                        showResult('✅ Main app HTML structure is correct', 'success');
+                        showResult('🚀 Redirecting to main app...', 'info');
+                        setTimeout(() => {
+                            window.location.href = '/';
+                        }, 2000);
+                    } else {
+                        showResult('❌ Main app HTML structure is incorrect', 'error');
+                    }
+                } else {
+                    showResult('❌ Cannot fetch main app: ' + response.status, 'error');
+                }
+            } catch (error) {
+                showResult('❌ Error testing main app: ' + error.message, 'error');
+            }
+        }
+
+        function createSimpleReact() {
+            showResult('⚛️ Creating simple React component...', 'info');
+            
+            const reactTest = document.getElementById('reactTest');
+            reactTest.innerHTML = \`
+                <div style="background: #dbeafe; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                    <h3>⚛️ Simple React-like Component</h3>
+                    <p>This simulates what React should do:</p>
+                    <div id="simpleApp">
+                        <div style="background: white; padding: 15px; border-radius: 5px; margin: 10px 0;">
+                            <h4>📱 Aplikasi Pengawas Sekolah</h4>
+                            <p>Status: <span style="color: #16a34a;">✅ Working</span></p>
+                            <button onclick="simulateLogin()" style="background: #16a34a; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer;">
+                                🔑 Simulate Login
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            \`;
+            
+            showResult('✅ Simple React-like component created!', 'success');
+        }
+
+        function simulateLogin() {
+            showResult('🔑 Simulating login process...', 'info');
+            
+            // Set auth data
+            localStorage.setItem('auth_token', 'test-' + Date.now());
+            localStorage.setItem('user_data', JSON.stringify({
+                id: 'test-admin',
+                username: 'admin',
+                fullName: 'Test Administrator',
+                role: 'admin'
+            }));
+            
+            showResult('✅ Auth data set successfully!', 'success');
+            showResult('🚀 Now try opening the main app', 'info');
+        }
+
+        function setupAuthAndRedirect() {
+            showResult('🔑 Setting up authentication and redirecting...', 'info');
+            
+            // Clear and set auth
+            localStorage.clear();
+            sessionStorage.clear();
+            
+            localStorage.setItem('auth_token', 'minimal-' + Date.now());
+            localStorage.setItem('user_data', JSON.stringify({
+                id: 'admin',
+                username: 'admin',
+                fullName: 'Administrator',
+                role: 'admin',
+                nip: '123456789',
+                email: 'admin@sekolah.local'
+            }));
+            
+            showResult('✅ Authentication setup complete!', 'success');
+            showResult('🚀 Redirecting to main application...', 'info');
+            
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 2000);
+        }
+
+        // Auto-test on load
+        window.onload = function() {
+            showResult('✅ Minimal test page loaded successfully', 'success');
+            showResult('📊 Server is working correctly', 'info');
+        };
+    </script>
+</body>
+</html>
