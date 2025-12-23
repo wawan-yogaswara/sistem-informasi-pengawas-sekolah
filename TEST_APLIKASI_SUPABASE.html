@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Aplikasi Supabase</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-item { margin: 10px 0; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .pending { background-color: #fff3cd; border-color: #ffeaa7; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        .btn-primary { background-color: #007bff; color: white; border: none; border-radius: 5px; }
+        .btn-success { background-color: #28a745; color: white; border: none; border-radius: 5px; }
+        .btn-danger { background-color: #dc3545; color: white; border: none; border-radius: 5px; }
+        pre { background-color: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Aplikasi dengan Supabase</h1>
+    <p><strong>Server:</strong> <a href="http://localhost:5000" target="_blank">http://localhost:5000</a></p>
+    
+    <h2>📋 Checklist Testing</h2>
+    
+    <div class="test-item pending" id="test-server">
+        <h3>1. ✅ Server Status</h3>
+        <p>Status: <span id="server-status">Checking...</span></p>
+        <button class="btn-primary" onclick="testServer()">Test Server</button>
+        <pre id="server-result"></pre>
+    </div>
+
+    <div class="test-item pending" id="test-login">
+        <h3>2. 🔐 Login Test</h3>
+        <p>Test login dengan user admin dan wawan</p>
+        <button class="btn-primary" onclick="testLogin()">Test Login</button>
+        <pre id="login-result"></pre>
+    </div>
+
+    <div class="test-item pending" id="test-users">
+        <h3>3. 👥 Users Data</h3>
+        <p>Verifikasi 10 users berhasil dimigrate</p>
+        <button class="btn-primary" onclick="testUsers()">Test Users</button>
+        <pre id="users-result"></pre>
+    </div>
+
+    <div class="test-item pending" id="test-schools">
+        <h3>4. 🏫 Schools Data</h3>
+        <p>Verifikasi 17 sekolah berhasil dimigrate</p>
+        <button class="btn-primary" onclick="testSchools()">Test Schools</button>
+        <pre id="schools-result"></pre>
+    </div>
+
+    <div class="test-item pending" id="test-tasks">
+        <h3>5. 📝 Tasks Data</h3>
+        <p>Verifikasi tasks berhasil dimigrate</p>
+        <button class="btn-primary" onclick="testTasks()">Test Tasks</button>
+        <pre id="tasks-result"></pre>
+    </div>
+
+    <div class="test-item pending" id="test-supervisions">
+        <h3>6. 📋 Supervisions Data</h3>
+        <p>Verifikasi supervisions berhasil dimigrate</p>
+        <button class="btn-primary" onclick="testSupervisions()">Test Supervisions</button>
+        <pre id="supervisions-result"></pre>
+    </div>
+
+    <div class="test-item pending" id="test-additional-tasks">
+        <h3>7. ➕ Additional Tasks Data</h3>
+        <p>Verifikasi 7 additional tasks berhasil dimigrate</p>
+        <button class="btn-primary" onclick="testAdditionalTasks()">Test Additional Tasks</button>
+        <pre id="additional-tasks-result"></pre>
+    </div>
+
+    <div class="test-item pending" id="test-crud">
+        <h3>8. 🔄 CRUD Operations</h3>
+        <p>Test Create, Read, Update, Delete</p>
+        <button class="btn-primary" onclick="testCRUD()">Test CRUD</button>
+        <pre id="crud-result"></pre>
+    </div>
+
+    <h2>🎯 Manual Testing</h2>
+    <div class="test-item">
+        <h3>Manual Tests (Buka di browser)</h3>
+        <ul>
+            <li><a href="http://localhost:5000" target="_blank">🏠 Homepage</a></li>
+            <li><a href="http://localhost:5000/login" target="_blank">🔐 Login Page</a></li>
+            <li><a href="http://localhost:5000/dashboard" target="_blank">📊 Dashboard</a></li>
+            <li><a href="http://localhost:5000/schools" target="_blank">🏫 Schools</a></li>
+            <li><a href="http://localhost:5000/tasks" target="_blank">📝 Tasks</a></li>
+            <li><a href="http://localhost:5000/supervisions" target="_blank">📋 Supervisions</a></li>
+            <li><a href="http://localhost:5000/additional-tasks" target="_blank">➕ Additional Tasks</a></li>
+        </ul>
+    </div>
+
+    <h2>📊 Test Results Summary</h2>
+    <div id="summary" class="test-item">
+        <p>Total Tests: <span id="total-tests">0</span></p>
+        <p>Passed: <span id="passed-tests">0</span></p>
+        <p>Failed: <span id="failed-tests">0</span></p>
+        <p>Pending: <span id="pending-tests">8</span></p>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+        let testResults = {
+            total: 8,
+            passed: 0,
+            failed: 0,
+            pending: 8
+        };
+
+        function updateSummary() {
+            document.getElementById('total-tests').textContent = testResults.total;
+            document.getElementById('passed-tests').textContent = testResults.passed;
+            document.getElementById('failed-tests').textContent = testResults.failed;
+            document.getElementById('pending-tests').textContent = testResults.pending;
+        }
+
+        function markTestResult(testId, success, message) {
+            const element = document.getElementById(testId);
+            const resultElement = document.getElementById(testId.replace('test-', '') + '-result');
+            
+            if (success) {
+                element.className = 'test-item success';
+                testResults.passed++;
+            } else {
+                element.className = 'test-item error';
+                testResults.failed++;
+            }
+            testResults.pending--;
+            
+            resultElement.textContent = message;
+            updateSummary();
+        }
+
+        async function testServer() {
+            try {
+                const response = await fetch('http://localhost:5000/');
+                if (response.ok) {
+                    markTestResult('test-server', true, '✅ Server is running and responding');
+                    document.getElementById('server-status').textContent = 'Online ✅';
+                } else {
+                    markTestResult('test-server', false, '❌ Server responded with error: ' + response.status);
+                }
+            } catch (error) {
+                markTestResult('test-server', false, '❌ Server is not accessible: ' + error.message);
+                document.getElementById('server-status').textContent = 'Offline ❌';
+            }
+        }
+
+        async function testLogin() {
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: 'admin', password: 'admin' })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    markTestResult('test-login', true, '✅ Login successful: ' + JSON.stringify(data, null, 2));
+                } else {
+                    const error = await response.text();
+                    markTestResult('test-login', false, '❌ Login failed: ' + error);
+                }
+            } catch (error) {
+                markTestResult('test-login', false, '❌ Login error: ' + error.message);
+            }
+        }
+
+        async function testUsers() {
+            try {
+                const response = await fetch(`${API_BASE}/users`);
+                if (response.ok) {
+                    const users = await response.json();
+                    const message = `✅ Found ${users.length} users:\n${users.map(u => `- ${u.username} (${u.role})`).join('\n')}`;
+                    markTestResult('test-users', users.length >= 10, message);
+                } else {
+                    markTestResult('test-users', false, '❌ Failed to fetch users: ' + response.status);
+                }
+            } catch (error) {
+                markTestResult('test-users', false, '❌ Users test error: ' + error.message);
+            }
+        }
+
+        async function testSchools() {
+            try {
+                const response = await fetch(`${API_BASE}/schools`);
+                if (response.ok) {
+                    const schools = await response.json();
+                    const message = `✅ Found ${schools.length} schools:\n${schools.slice(0, 5).map(s => `- ${s.name}`).join('\n')}${schools.length > 5 ? '\n... and more' : ''}`;
+                    markTestResult('test-schools', schools.length >= 17, message);
+                } else {
+                    markTestResult('test-schools', false, '❌ Failed to fetch schools: ' + response.status);
+                }
+            } catch (error) {
+                markTestResult('test-schools', false, '❌ Schools test error: ' + error.message);
+            }
+        }
+
+        async function testTasks() {
+            try {
+                const response = await fetch(`${API_BASE}/tasks`);
+                if (response.ok) {
+                    const tasks = await response.json();
+                    const message = `✅ Found ${tasks.length} tasks:\n${tasks.map(t => `- ${t.title}`).join('\n')}`;
+                    markTestResult('test-tasks', tasks.length >= 1, message);
+                } else {
+                    markTestResult('test-tasks', false, '❌ Failed to fetch tasks: ' + response.status);
+                }
+            } catch (error) {
+                markTestResult('test-tasks', false, '❌ Tasks test error: ' + error.message);
+            }
+        }
+
+        async function testSupervisions() {
+            try {
+                const response = await fetch(`${API_BASE}/supervisions`);
+                if (response.ok) {
+                    const supervisions = await response.json();
+                    const message = `✅ Found ${supervisions.length} supervisions:\n${supervisions.map(s => `- ${s.type} - ${s.date}`).join('\n')}`;
+                    markTestResult('test-supervisions', supervisions.length >= 1, message);
+                } else {
+                    markTestResult('test-supervisions', false, '❌ Failed to fetch supervisions: ' + response.status);
+                }
+            } catch (error) {
+                markTestResult('test-supervisions', false, '❌ Supervisions test error: ' + error.message);
+            }
+        }
+
+        async function testAdditionalTasks() {
+            try {
+                const response = await fetch(`${API_BASE}/additional-tasks`);
+                if (response.ok) {
+                    const additionalTasks = await response.json();
+                    const message = `✅ Found ${additionalTasks.length} additional tasks:\n${additionalTasks.map(t => `- ${t.title}`).join('\n')}`;
+                    markTestResult('test-additional-tasks', additionalTasks.length >= 7, message);
+                } else {
+                    markTestResult('test-additional-tasks', false, '❌ Failed to fetch additional tasks: ' + response.status);
+                }
+            } catch (error) {
+                markTestResult('test-additional-tasks', false, '❌ Additional tasks test error: ' + error.message);
+            }
+        }
+
+        async function testCRUD() {
+            try {
+                // Test Create
+                const createResponse = await fetch(`${API_BASE}/schools`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: 'Test School',
+                        address: 'Test Address',
+                        principal: 'Test Principal'
+                    })
+                });
+
+                if (createResponse.ok) {
+                    const newSchool = await createResponse.json();
+                    
+                    // Test Read
+                    const readResponse = await fetch(`${API_BASE}/schools/${newSchool.id}`);
+                    if (readResponse.ok) {
+                        // Test Delete
+                        const deleteResponse = await fetch(`${API_BASE}/schools/${newSchool.id}`, {
+                            method: 'DELETE'
+                        });
+                        
+                        if (deleteResponse.ok) {
+                            markTestResult('test-crud', true, '✅ CRUD operations working: Create ✅ Read ✅ Delete ✅');
+                        } else {
+                            markTestResult('test-crud', false, '❌ Delete operation failed');
+                        }
+                    } else {
+                        markTestResult('test-crud', false, '❌ Read operation failed');
+                    }
+                } else {
+                    markTestResult('test-crud', false, '❌ Create operation failed');
+                }
+            } catch (error) {
+                markTestResult('test-crud', false, '❌ CRUD test error: ' + error.message);
+            }
+        }
+
+        // Auto-run server test on page load
+        window.onload = function() {
+            testServer();
+        };
+    </script>
+</body>
+</html>
