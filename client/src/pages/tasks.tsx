@@ -33,7 +33,13 @@ export default function TasksPage() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
-  const [newTask, setNewTask] = useState({ title: "", category: "Perencanaan", description: "", completed: false });
+  const [newTask, setNewTask] = useState({ 
+    title: "", 
+    category: "Perencanaan", 
+    description: "", 
+    completed: false,
+    date: new Date().toISOString().split('T')[0] // Add default date
+  });
   const [photo1, setPhoto1] = useState<File | null>(null);
   const [photo2, setPhoto2] = useState<File | null>(null);
   const [photo1Preview, setPhoto1Preview] = useState<string | null>(null);
@@ -70,7 +76,7 @@ export default function TasksPage() {
         title: "Berhasil",
         description: "Tugas berhasil ditambahkan",
       });
-      setNewTask({ title: "", category: "Perencanaan", description: "", completed: false });
+      setNewTask({ title: "", category: "Perencanaan", description: "", completed: false, date: new Date().toISOString().split('T')[0] });
       setPhoto1(null);
       setPhoto2(null);
       setPhoto1Preview(null);
@@ -179,7 +185,7 @@ export default function TasksPage() {
         category: newTask.category,
         description: newTask.description,
         completed: newTask.completed,
-        date: new Date().toISOString().split('T')[0],
+        date: newTask.date,
         photo1: photo1Base64,
         photo2: photo2Base64,
         createdAt: new Date().toISOString()
@@ -194,7 +200,7 @@ export default function TasksPage() {
         title: "Berhasil",
         description: "Tugas berhasil ditambahkan",
       });
-      setNewTask({ title: "", category: "Perencanaan", description: "", completed: false });
+      setNewTask({ title: "", category: "Perencanaan", description: "", completed: false, date: new Date().toISOString().split('T')[0] });
       setPhoto1(null);
       setPhoto2(null);
       setPhoto1Preview(null);
@@ -222,6 +228,7 @@ export default function TasksPage() {
       category: task.category,
       description: task.description || "",
       completed: task.completed,
+      date: task.date || new Date().toISOString().split('T')[0],
     });
     // Set existing photos as preview
     if (task.photo1) {
@@ -284,7 +291,7 @@ export default function TasksPage() {
         description: "Tugas berhasil diupdate",
       });
       setEditingTask(null);
-      setNewTask({ title: "", category: "Perencanaan", description: "", completed: false });
+      setNewTask({ title: "", category: "Perencanaan", description: "", completed: false, date: new Date().toISOString().split('T')[0] });
       setPhoto1(null);
       setPhoto2(null);
       setPhoto1Preview(null);
@@ -308,9 +315,7 @@ export default function TasksPage() {
     formData.append('category', newTask.category);
     formData.append('description', newTask.description);
     formData.append('completed', newTask.completed.toString());
-    // Format date properly
-    const dateStr = editingTask.date ? new Date(editingTask.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
-    formData.append('date', dateStr);
+    formData.append('date', newTask.date);
     
     if (photo1) {
       formData.append('photo1', photo1);
@@ -506,6 +511,16 @@ export default function TasksPage() {
                 </Select>
               </div>
               <div className="space-y-2">
+                <Label htmlFor="task-date">Tanggal Kegiatan</Label>
+                <Input
+                  id="task-date"
+                  type="date"
+                  value={newTask.date}
+                  onChange={(e) => setNewTask({ ...newTask, date: e.target.value })}
+                  data-testid="input-task-date"
+                />
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="task-status">Status</Label>
                 <Select value={newTask.completed ? "true" : "false"} onValueChange={(value) => setNewTask({ ...newTask, completed: value === "true" })}>
                   <SelectTrigger id="task-status" data-testid="select-task-status">
@@ -670,6 +685,16 @@ export default function TasksPage() {
                     <SelectItem value="Pelaporan">Pelaporan</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-task-date">Tanggal Kegiatan</Label>
+                <Input
+                  id="edit-task-date"
+                  type="date"
+                  value={newTask.date}
+                  onChange={(e) => setNewTask({ ...newTask, date: e.target.value })}
+                  data-testid="input-edit-task-date"
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="edit-task-status">Status</Label>
