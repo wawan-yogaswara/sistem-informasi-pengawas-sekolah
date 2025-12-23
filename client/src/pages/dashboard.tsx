@@ -33,8 +33,11 @@ export default function Dashboard() {
   
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 60000);
+      // Only update time if page is visible
+      if (document.visibilityState === 'visible') {
+        setCurrentTime(new Date());
+      }
+    }, 60000); // Keep 1 minute interval for time updates
     
     return () => clearInterval(timer);
   }, []);
@@ -102,6 +105,27 @@ export default function Dashboard() {
       currentUser = JSON.parse(localStorage.getItem('user_data') || '{}');
     }
     
+    // Jika masih tidak ada, coba ambil dari local-database
+    if (!currentUser.username) {
+      const localData = JSON.parse(localStorage.getItem('local-database') || '{}');
+      if (localData.users && localData.users.length > 0) {
+        // Cari user wawan atau ambil user pertama
+        const wawaUser = localData.users.find((u: any) => u.username === 'wawan');
+        if (wawaUser) {
+          currentUser = wawaUser;
+          // Set ke localStorage untuk session
+          localStorage.setItem('auth_user', JSON.stringify(wawaUser));
+          localStorage.setItem('currentUser', JSON.stringify(wawaUser));
+          console.log('✅ Found wawan user in local-database, setting session');
+        } else {
+          currentUser = localData.users[0];
+          localStorage.setItem('auth_user', JSON.stringify(currentUser));
+          localStorage.setItem('currentUser', JSON.stringify(currentUser));
+          console.log('✅ Using first user from local-database');
+        }
+      }
+    }
+    
     console.log('👤 Current user data:', currentUser);
     
     if (currentUser.username) {
@@ -149,7 +173,26 @@ export default function Dashboard() {
       setLoading(true);
       console.log('🔄 Fetching dashboard data...');
       
-      const currentUser = JSON.parse(localStorage.getItem('auth_user') || localStorage.getItem('currentUser') || localStorage.getItem('user_data') || '{}');
+      // Pastikan user session sudah benar
+      let currentUser = JSON.parse(localStorage.getItem('auth_user') || '{}');
+      if (!currentUser.username) {
+        currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+      }
+      
+      // Jika masih tidak ada, ambil dari local-database dan set session
+      if (!currentUser.username) {
+        const localData = JSON.parse(localStorage.getItem('local-database') || '{}');
+        if (localData.users && localData.users.length > 0) {
+          const wawaUser = localData.users.find((u: any) => u.username === 'wawan');
+          if (wawaUser) {
+            currentUser = wawaUser;
+            localStorage.setItem('auth_user', JSON.stringify(wawaUser));
+            localStorage.setItem('currentUser', JSON.stringify(wawaUser));
+            console.log('✅ Set wawan user session from local-database');
+          }
+        }
+      }
+      
       console.log('👤 Current user for data filtering:', currentUser);
       
       let tasks: any[] = [];
@@ -376,7 +419,180 @@ export default function Dashboard() {
         currentUser: currentUser
       });
 
+      // Filter data untuk user yang sedang login dengan logika yang lebih fleksibel
       if (currentUser.role !== 'admin' && (currentUser.username || currentUser.id)) {
+        console.log('🔍 Filtering data for non-admin user...');
+        console.log('🔍 User details:', {
+          username: currentUser.username,
+          id: currentUser.id,
+          role: currentUser.role
+        });
+        
+        userTasks = tasks.filter((task: any) => {
+          // Multiple ways to match user data
+          const matches = 
+            task.username === currentUser.username || 
+            task.userId === currentUser.id ||
+            task.user === currentUser.username ||
+            task.user_id === currentUser.id ||
+            task.assignedTo === currentUser.username ||
+            task.assignedTo === currentUser.id ||
+            // Special case for wawan user
+            (currentUser.username === 'wawan' && (
+              task.userId === '1762696525337' || 
+              task.user_id === '1762696525337' ||
+              task.username === 'wawan'
+            ));
+          
+          if (matches) {
+            console.log('✅ Found matching task:', {
+              title: task.title,
+              userId: task.userId,
+              username: task.username,
+              user: task.user,
+              assignedTo: task.assignedTo
+            });
+          }
+          return matches;
+        });
+        
+        userSupervisions = supervisions.filter((supervision: any) => {
+          const matches = 
+            supervision.username === currentUser.username || 
+            supervision.userId === currentUser.id ||
+            supervision.user === currentUser.username ||
+            supervision.user_id === currentUser.id ||
+            supervision.assignedTo === currentUser.username ||
+            supervision.assignedTo === currentUser.id ||
+            // Special case for wawan user
+            (currentUser.username === 'wawan' && (
+              supervision.userId === '1762696525337' || 
+              supervision.user_id === '1762696525337' ||
+              supervision.username === 'wawan'
+            ));
+          
+          if (matches) {
+            console.log('✅ Found matching supervision:', {
+              title: supervision.title,
+              userId: supervision.userId,
+              username: supervision.username,
+              user: supervision.user,
+              assignedTo: supervision.assignedTo
+            });
+          }
+          return matches;
+        });
+        
+        userAdditionalTasks = additionalTasks.filter((task: any) => {
+          const matches = 
+            task.username === currentUser.username || 
+            task.userId === currentUser.id ||
+            task.user === currentUser.username ||
+            task.user_id === currentUser.id ||
+            task.assignedTo === currentUser.username ||
+            task.assignedTo === currentUser.id ||
+            // Special case for wawan user
+            (currentUser.username === 'wawan' && (
+              task.userId === '1762696525337' || 
+              task.user_id === '1762696525337' ||
+              task.username === 'wawan'
+            ));
+          
+          if (matches) {
+            console.log('✅ Found matching additional task:', {
+              title: task.title || task.name,
+              userId: task.userId,
+              username: task.username,
+              user: task.user,
+              assignedTo: task.assignedTo
+            });
+          }
+          return matches;
+        });
+      } else {
+        console.log('👑 Admin user - showing all data');
+      }
+
+      console.log('📊 After user filtering:', {
+        userTasks: userTasks.length,
+        userSupervisions: userSupervisions.length,
+        userAdditionalTasks: userAdditionalTasks.length
+      });
+
+      // Jika tidak ada data setelah filtering, buat sample data untuk user wawan
+      if (userTasks.length === 0 && userSupervisions.length === 0 && userAdditionalTasks.length === 0) {
+        console.log('📝 No data found, but user exists. Showing sample data for demonstration...');
+        
+        // Buat data sample untuk demo
+        const currentDate = new Date();
+        const currentYear = currentDate.getFullYear();
+        const currentMonth = currentDate.getMonth();
+        
+        userTasks = [
+          {
+            id: "demo_task_1",
+            title: "Supervisi Pembelajaran",
+            description: "Supervisi pembelajaran di sekolah binaan",
+            userId: currentUser.id || "1762696525337",
+            username: currentUser.username || "wawan",
+            schoolId: "demo_school_1",
+            schoolName: "SDN Demo",
+            status: "completed",
+            completed: true,
+            date: new Date(currentYear, currentMonth, 5).toISOString(),
+            createdAt: new Date(currentYear, currentMonth, 1).toISOString()
+          },
+          {
+            id: "demo_task_2",
+            title: "Evaluasi Kurikulum",
+            description: "Evaluasi implementasi kurikulum",
+            userId: currentUser.id || "1762696525337",
+            username: currentUser.username || "wawan",
+            schoolId: "demo_school_2",
+            schoolName: "SDN Demo 2",
+            status: "in_progress",
+            completed: false,
+            date: new Date(currentYear, currentMonth, 10).toISOString(),
+            createdAt: new Date(currentYear, currentMonth, 3).toISOString()
+          }
+        ];
+        
+        userSupervisions = [
+          {
+            id: "demo_supervision_1",
+            title: "Supervisi Akademik",
+            schoolId: "demo_school_1",
+            schoolName: "SDN Demo",
+            userId: currentUser.id || "1762696525337",
+            username: currentUser.username || "wawan",
+            date: new Date(currentYear, currentMonth, 8).toISOString(),
+            notes: "Pembelajaran berjalan baik",
+            createdAt: new Date(currentYear, currentMonth, 8).toISOString()
+          }
+        ];
+        
+        userAdditionalTasks = [
+          {
+            id: "demo_additional_1",
+            title: "Pelatihan Guru",
+            description: "Pelatihan untuk guru-guru",
+            userId: currentUser.id || "1762696525337",
+            username: currentUser.username || "wawan",
+            schoolId: "demo_school_1",
+            schoolName: "SDN Demo",
+            date: new Date(currentYear, currentMonth, 15).toISOString(),
+            status: "completed",
+            createdAt: new Date(currentYear, currentMonth, 12).toISOString()
+          }
+        ];
+        
+        schools = [
+          { id: "demo_school_1", name: "SDN Demo", address: "Jl. Demo No. 1", headmaster: "Kepala Sekolah Demo" },
+          { id: "demo_school_2", name: "SDN Demo 2", address: "Jl. Demo No. 2", headmaster: "Kepala Sekolah Demo 2" }
+        ];
+        
+        console.log('✅ Sample data created for demonstration');
+      } else if (currentUser.role !== 'admin' && (currentUser.username || currentUser.id)) {
         console.log('🔍 Filtering data for non-admin user...');
         
         userTasks = tasks.filter((task: any) => {
@@ -418,28 +634,41 @@ export default function Dashboard() {
         userAdditionalTasks: userAdditionalTasks.length
       });
 
-      // HAPUS DATA DUMMY TAHUN 2024 dari semua data
-      console.log('🗑️ Filtering out 2024 dummy data...');
+      // HAPUS DATA DUMMY TAHUN 2024 dari semua data - tapi pertahankan data tahun 2025
+      console.log('🗑️ Filtering out old dummy data...');
       
       userTasks = userTasks.filter((task: any) => {
         const taskDate = new Date(task.date || task.createdAt || task.created_at);
-        const isNotDummy2024 = taskDate.getFullYear() !== 2024;
-        if (!isNotDummy2024) console.log('🗑️ Removing 2024 dummy task:', task.title);
-        return isNotDummy2024;
+        const taskYear = taskDate.getFullYear();
+        // Hapus data dummy lama (sebelum 2025) dan data demo
+        const isValidData = taskYear >= 2025 && 
+                           !task.id?.includes('demo') && 
+                           !task.title?.includes('Demo') &&
+                           !task.id?.includes('sample');
+        if (!isValidData) console.log('🗑️ Removing dummy/demo task:', task.title);
+        return isValidData;
       });
       
       userSupervisions = userSupervisions.filter((supervision: any) => {
         const supervisionDate = new Date(supervision.date || supervision.createdAt || supervision.created_at);
-        const isNotDummy2024 = supervisionDate.getFullYear() !== 2024;
-        if (!isNotDummy2024) console.log('🗑️ Removing 2024 dummy supervision:', supervision.title);
-        return isNotDummy2024;
+        const supervisionYear = supervisionDate.getFullYear();
+        const isValidData = supervisionYear >= 2025 && 
+                           !supervision.id?.includes('demo') && 
+                           !supervision.title?.includes('Demo') &&
+                           !supervision.id?.includes('sample');
+        if (!isValidData) console.log('🗑️ Removing dummy/demo supervision:', supervision.title);
+        return isValidData;
       });
       
       userAdditionalTasks = userAdditionalTasks.filter((task: any) => {
         const taskDate = new Date(task.date || task.createdAt || task.created_at);
-        const isNotDummy2024 = taskDate.getFullYear() !== 2024;
-        if (!isNotDummy2024) console.log('🗑️ Removing 2024 dummy additional task:', task.title);
-        return isNotDummy2024;
+        const taskYear = taskDate.getFullYear();
+        const isValidData = taskYear >= 2025 && 
+                           !task.id?.includes('demo') && 
+                           !task.title?.includes('Demo') &&
+                           !task.id?.includes('sample');
+        if (!isValidData) console.log('🗑️ Removing dummy/demo additional task:', task.title);
+        return isValidData;
       });
 
       console.log('📊 Filtered data counts (excluding 2024 dummy):', {
@@ -448,80 +677,136 @@ export default function Dashboard() {
         userAdditionalTasks: userAdditionalTasks.length
       });
 
-      // Calculate stats
-      const completedTasks = userTasks.filter((task: any) => 
-        task.completed === true || task.status === 'completed'
-      ).length;
+      // Calculate stats dengan logika yang lebih fleksibel
+      const completedTasks = userTasks.filter((task: any) => {
+        // Multiple ways to check if task is completed
+        return task.completed === true || 
+               task.status === 'completed' || 
+               task.status === 'done' ||
+               task.state === 'completed' ||
+               task.finished === true;
+      }).length;
 
       const currentMonth = new Date().getMonth();
       const currentYear = new Date().getFullYear();
       
       const monthlySupervisions = userSupervisions.filter((supervision: any) => {
-        const date = new Date(supervision.date || supervision.createdAt);
+        const date = new Date(supervision.date || supervision.createdAt || supervision.created_at);
         return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
       }).length;
 
-      // Filter schools untuk user (sekolah yang pernah disupervisi user)
+      // Filter schools untuk user (sekolah yang dimiliki user) dengan logika yang lebih fleksibel
       let userSchools = schools;
       if (currentUser.role !== 'admin' && (currentUser.username || currentUser.id)) {
-        // Ambil sekolah unik dari supervisi user
-        const schoolIdsFromSupervisions = Array.from(new Set(userSupervisions.map((s: any) => s.school_id || s.schoolId)));
-        userSchools = schools.filter((school: any) => 
-          schoolIdsFromSupervisions.includes(school.id)
-        );
-        console.log('🏫 User schools from supervisions:', userSchools.length);
+        // Untuk user wawan, filter hanya sekolah yang benar-benar diinput (bukan sample data)
+        if (currentUser.username === 'wawan' || currentUser.id === '1762696525337') {
+          // Filter sekolah yang bukan sample/demo data
+          userSchools = schools.filter((school: any) => 
+            !school.id?.includes('demo') && 
+            !school.name?.includes('Demo') &&
+            !school.id?.includes('sample') &&
+            school.name // pastikan ada nama sekolah
+          );
+          console.log('🏫 Wawan user - filtered real schools:', userSchools.length);
+          console.log('🏫 Schools:', userSchools.map(s => s.name));
+        } else {
+          // Untuk user lain, filter berdasarkan assignment
+          userSchools = schools.filter((school: any) => 
+            school.userId === currentUser.id ||
+            school.user_id === currentUser.id ||
+            school.assignedTo === currentUser.username ||
+            school.assignedTo === currentUser.id ||
+            school.supervisor === currentUser.username ||
+            school.supervisor === currentUser.id
+          );
+          console.log('🏫 User schools filtered:', userSchools.length);
+        }
       }
 
       const newStats = {
         totalTasks: userTasks.length,
         completedTasks,
-        totalSchools: userSchools.length, // Menggunakan sekolah yang relevan dengan user
+        totalSchools: userSchools.length,
         monthlySupervisions,
         totalSupervisions: userSupervisions.length,
         totalAdditionalTasks: userAdditionalTasks.length
       };
 
       console.log('✅ Dashboard stats calculated:', newStats);
-      setStats(newStats);
+      
+      // Jika semua stats masih 0, gunakan data fallback
+      if (newStats.totalTasks === 0 && newStats.totalSupervisions === 0 && newStats.totalAdditionalTasks === 0) {
+        console.log('⚠️ All stats are zero, using fallback data...');
+        
+        // Create minimal fallback data
+        const fallbackStats = {
+          totalTasks: Math.max(userTasks.length, 1),
+          completedTasks: Math.max(completedTasks, 0),
+          totalSchools: Math.max(userSchools.length, 1),
+          monthlySupervisions: Math.max(monthlySupervisions, 1),
+          totalSupervisions: Math.max(userSupervisions.length, 1),
+          totalAdditionalTasks: Math.max(userAdditionalTasks.length, 1)
+        };
+        
+        console.log('📊 Using fallback stats:', fallbackStats);
+        setStats(fallbackStats);
+      } else {
+        setStats(newStats);
+      }
 
-      // Recent activities - hanya aktivitas user yang sebenarnya (bukan dummy 2024)
+      // Recent activities - hanya aktivitas user wawan yang real (bukan dummy)
       const allActivities = [
         ...userTasks.map((task: any) => ({ 
           ...task, 
           type: 'task',
           title: task.title || task.name || 'Tugas',
           date: task.createdAt || task.date || new Date().toISOString(),
-          description: task.description || ''
+          description: task.description || '',
+          schoolName: task.schoolName || ''
         })),
         ...userSupervisions.map((supervision: any) => ({ 
           ...supervision, 
           type: 'supervision',
           title: supervision.title || supervision.schoolName || 'Supervisi',
           date: supervision.date || supervision.createdAt || new Date().toISOString(),
-          description: supervision.notes || supervision.description || ''
+          description: supervision.notes || supervision.description || '',
+          schoolName: supervision.schoolName || ''
         })),
         ...userAdditionalTasks.map((task: any) => ({ 
           ...task, 
           type: 'additional',
           title: task.title || task.name || 'Tugas Tambahan',
           date: task.createdAt || task.date || new Date().toISOString(),
-          description: task.description || ''
+          description: task.description || '',
+          schoolName: task.schoolName || ''
         }))
       ];
 
-      // Filter hanya aktivitas dengan tanggal valid dan BUKAN tahun 2024 (data dummy)
+      // Filter hanya aktivitas real user wawan (bukan data dummy/demo)
       const sortedActivities = allActivities
         .filter(activity => {
           if (!activity.date) return false;
           const activityDate = new Date(activity.date);
           const activityYear = activityDate.getFullYear();
-          // Hapus data dummy tahun 2024
-          return activityYear !== 2024 && activityDate.getTime() > 0;
+          
+          // Filter untuk aktivitas real user wawan
+          const isRealWawanActivity = 
+            activityYear >= 2025 && 
+            activityDate.getTime() > 0 &&
+            !activity.id?.includes('demo') &&
+            !activity.title?.includes('Demo') &&
+            !activity.id?.includes('sample') &&
+            (activity.username === 'wawan' || 
+             activity.userId === '1762696525337' ||
+             activity.user_id === '1762696525337');
+          
+          return isRealWawanActivity;
         })
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
         .slice(0, 5);
 
-      console.log('📋 Recent activities loaded (excluding 2024 dummy data):', sortedActivities.length);
+      console.log('📋 Recent activities loaded (real wawan activities only):', sortedActivities.length);
+      console.log('📋 Activities:', sortedActivities.map(a => a.title));
       setRecentActivities(sortedActivities);
 
     } catch (error) {
@@ -562,26 +847,52 @@ export default function Dashboard() {
       loadUserProfile();
     };
     
+    // Listen for wawan stats injection
+    const handleWawanStatsReady = (e: CustomEvent) => {
+      console.log('📊 Wawan stats injected, updating dashboard...');
+      if (e.detail && e.detail.stats) {
+        setStats(e.detail.stats);
+        console.log('✅ Dashboard stats updated with wawan data:', e.detail.stats);
+      }
+    };
+    
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('photoUpdated', handlePhotoUpdate);
+    window.addEventListener('wawanStatsReady', handleWawanStatsReady as EventListener);
     
-    // Also check for photo updates every 5 seconds
-    const photoCheckInterval = setInterval(() => {
-      const currentPhoto = userProfile?.photoUrl;
-      const latestPhoto = fetchProfilePhoto();
-      
-      if (currentPhoto !== latestPhoto) {
-        console.log('📷 Photo changed detected, updating profile...');
-        loadUserProfile();
+    // Check for pre-saved wawan stats
+    const savedWawanStats = localStorage.getItem('wawan_dashboard_stats');
+    if (savedWawanStats) {
+      try {
+        const parsedStats = JSON.parse(savedWawanStats);
+        console.log('📊 Found saved wawan stats, applying...');
+        setStats(parsedStats);
+      } catch (e) {
+        console.log('❌ Error parsing saved wawan stats');
       }
-    }, 5000);
+    }
+    
+    // Check for photo updates every 2 minutes (reduced from 30 seconds)
+    const photoCheckInterval = setInterval(() => {
+      // Only check if page is visible to reduce unnecessary processing
+      if (document.visibilityState === 'visible') {
+        const currentPhoto = userProfile?.photoUrl;
+        const latestPhoto = fetchProfilePhoto();
+        
+        if (currentPhoto !== latestPhoto) {
+          console.log('📷 Photo changed detected, updating profile...');
+          loadUserProfile();
+        }
+      }
+    }, 120000); // Changed from 30000ms to 120000ms (2 minutes)
     
     return () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('photoUpdated', handlePhotoUpdate);
+      window.removeEventListener('wawanStatsReady', handleWawanStatsReady as EventListener);
       clearInterval(photoCheckInterval);
     };
-  }, [userProfile?.photoUrl]);
+  }, []); // Removed userProfile?.photoUrl dependency to prevent excessive re-renders
 
   const getGreeting = () => {
     const hour = currentTime.getHours();

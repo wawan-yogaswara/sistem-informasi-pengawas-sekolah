@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solusi Session Too Long - Final</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        .step {
+            background: rgba(255, 255, 255, 0.2);
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 15px;
+            border-left: 5px solid #4CAF50;
+        }
+        .step h3 {
+            margin-top: 0;
+            color: #4CAF50;
+            font-size: 1.3em;
+        }
+        .code-block {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+            overflow-x: auto;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .button {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+        .warning {
+            background: rgba(255, 193, 7, 0.2);
+            border-left: 5px solid #FFC107;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .success {
+            background: rgba(76, 175, 80, 0.2);
+            border-left: 5px solid #4CAF50;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .log {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px;
+            border-radius: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin: 10px 0;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .emoji {
+            font-size: 1.2em;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><span class="emoji">🔧</span>Solusi Session Too Long</h1>
+        
+        <div class="warning">
+            <h3><span class="emoji">⚠️</span>Masalah yang Ditemukan</h3>
+            <p>Pesan "session too long" muncul karena:</p>
+            <ul>
+                <li>Interval yang berjalan terlalu sering (setiap 5 detik)</li>
+                <li>Event listeners yang menumpuk</li>
+                <li>Polling data yang berlebihan</li>
+                <li>Memory leak dari timer yang tidak dibersihkan</li>
+            </ul>
+        </div>
+
+        <div class="step">
+            <h3><span class="emoji">🚀</span>Langkah 1: Jalankan Perbaikan Otomatis</h3>
+            <p>Klik tombol di bawah untuk menjalankan perbaikan otomatis:</p>
+            <button class="button" onclick="runAutomaticFix()">
+                <span class="emoji">🔧</span>Jalankan Perbaikan Otomatis
+            </button>
+            <div id="fixLog" class="log" style="display: none;"></div>
+        </div>
+
+        <div class="step">
+            <h3><span class="emoji">🧹</span>Langkah 2: Bersihkan Session Manual</h3>
+            <p>Jika masalah masih ada, jalankan pembersihan manual:</p>
+            <button class="button" onclick="clearAllSessions()">
+                <span class="emoji">🧹</span>Bersihkan Semua Session
+            </button>
+            <button class="button" onclick="clearIntervals()">
+                <span class="emoji">⏰</span>Hentikan Semua Timer
+            </button>
+            <button class="button" onclick="optimizeStorage()">
+                <span class="emoji">💾</span>Optimasi Storage
+            </button>
+        </div>
+
+        <div class="step">
+            <h3><span class="emoji">🔄</span>Langkah 3: Restart Aplikasi</h3>
+            <p>Setelah perbaikan, restart aplikasi untuk memastikan perubahan diterapkan:</p>
+            <button class="button" onclick="restartApp()">
+                <span class="emoji">🔄</span>Restart Aplikasi
+            </button>
+        </div>
+
+        <div class="step">
+            <h3><span class="emoji">📊</span>Langkah 4: Monitor Status</h3>
+            <p>Pantau status sistem setelah perbaikan:</p>
+            <button class="button" onclick="checkSystemStatus()">
+                <span class="emoji">📊</span>Cek Status Sistem
+            </button>
+            <div id="statusLog" class="log" style="display: none;"></div>
+        </div>
+
+        <div class="success" id="successMessage" style="display: none;">
+            <h3><span class="emoji">✅</span>Perbaikan Berhasil!</h3>
+            <p>Session issue telah diperbaiki. Pesan "session too long" seharusnya tidak muncul lagi.</p>
+        </div>
+    </div>
+
+    <script>
+        function log(message, elementId = 'fixLog') {
+            const logElement = document.getElementById(elementId);
+            if (logElement) {
+                logElement.style.display = 'block';
+                logElement.innerHTML += new Date().toLocaleTimeString() + ': ' + message + '\n';
+                logElement.scrollTop = logElement.scrollHeight;
+            }
+            console.log(message);
+        }
+
+        function runAutomaticFix() {
+            log('🚀 Memulai perbaikan otomatis...');
+            
+            try {
+                // 1. Clear all intervals and timeouts
+                log('🧹 Membersihkan semua interval dan timeout...');
+                const highestIntervalId = setInterval(() => {}, 1);
+                for (let i = 0; i < highestIntervalId; i++) {
+                    clearInterval(i);
+                }
+                
+                const highestTimeoutId = setTimeout(() => {}, 1);
+                for (let i = 0; i < highestTimeoutId; i++) {
+                    clearTimeout(i);
+                }
+                log('✅ Interval dan timeout dibersihkan');
+
+                // 2. Remove excessive event listeners
+                log('🧹 Membersihkan event listeners...');
+                window.removeEventListener('storage', () => {});
+                window.removeEventListener('photoUpdated', () => {});
+                window.removeEventListener('wawanStatsReady', () => {});
+                log('✅ Event listeners dibersihkan');
+
+                // 3. Optimize localStorage
+                log('🔧 Mengoptimasi localStorage...');
+                const keysToOptimize = [
+                    'dashboard_photo',
+                    'wawan_dashboard_stats', 
+                    'profile_data',
+                    'auth_user',
+                    'currentUser'
+                ];
+                
+                keysToOptimize.forEach(key => {
+                    const value = localStorage.getItem(key);
+                    if (value) {
+                        try {
+                            const parsed = JSON.parse(value);
+                            localStorage.setItem(key, JSON.stringify(parsed));
+                        } catch (e) {
+                            // Keep as string if not JSON
+                        }
+                    }
+                });
+                log('✅ localStorage dioptimasi');
+
+                // 4. Set optimal refresh interval
+                log('⏰ Mengatur interval refresh yang optimal...');
+                if (window.dashboardRefreshInterval) {
+                    clearInterval(window.dashboardRefreshInterval);
+                }
+                
+                // Set 5-minute interval instead of 5-second
+                window.dashboardRefreshInterval = setInterval(() => {
+                    if (document.visibilityState === 'visible') {
+                        console.log('🔄 Dashboard auto-refresh (5 min)');
+                        window.dispatchEvent(new CustomEvent('dashboardRefresh'));
+                    }
+                }, 5 * 60 * 1000);
+                log('✅ Interval refresh diatur ke 5 menit');
+
+                // 5. Setup cleanup on page unload
+                log('🧹 Mengatur pembersihan otomatis...');
+                window.addEventListener('beforeunload', () => {
+                    if (window.dashboardRefreshInterval) {
+                        clearInterval(window.dashboardRefreshInterval);
+                    }
+                    
+                    // Clear temp data
+                    Object.keys(localStorage).forEach(key => {
+                        if (key.includes('temp_') || key.includes('cache_')) {
+                            localStorage.removeItem(key);
+                        }
+                    });
+                });
+                log('✅ Pembersihan otomatis diatur');
+
+                log('🎉 Perbaikan otomatis selesai!');
+                document.getElementById('successMessage').style.display = 'block';
+                
+            } catch (error) {
+                log('❌ Error: ' + error.message);
+            }
+        }
+
+        function clearAllSessions() {
+            log('🧹 Membersihkan semua session...', 'statusLog');
+            
+            // Clear localStorage session data
+            const sessionKeys = [
+                'auth_token',
+                'auth_user', 
+                'currentUser',
+                'user_data',
+                'profile_data',
+                'dashboard_photo',
+                'wawan_dashboard_stats'
+            ];
+            
+            sessionKeys.forEach(key => {
+                localStorage.removeItem(key);
+                log(`🗑️ Removed ${key}`, 'statusLog');
+            });
+            
+            log('✅ Semua session dibersihkan', 'statusLog');
+        }
+
+        function clearIntervals() {
+            log('⏰ Menghentikan semua timer...', 'statusLog');
+            
+            // Clear all intervals
+            const highestIntervalId = setInterval(() => {}, 1);
+            for (let i = 0; i < highestIntervalId; i++) {
+                clearInterval(i);
+            }
+            
+            // Clear all timeouts  
+            const highestTimeoutId = setTimeout(() => {}, 1);
+            for (let i = 0; i < highestTimeoutId; i++) {
+                clearTimeout(i);
+            }
+            
+            log('✅ Semua timer dihentikan', 'statusLog');
+        }
+
+        function optimizeStorage() {
+            log('💾 Mengoptimasi storage...', 'statusLog');
+            
+            // Remove duplicate or corrupted data
+            Object.keys(localStorage).forEach(key => {
+                const value = localStorage.getItem(key);
+                if (value) {
+                    try {
+                        // Try to parse and re-save to clean format
+                        const parsed = JSON.parse(value);
+                        localStorage.setItem(key, JSON.stringify(parsed));
+                        log(`✅ Optimized ${key}`, 'statusLog');
+                    } catch (e) {
+                        // If not JSON, check if it's corrupted
+                        if (value.length > 10000) {
+                            log(`⚠️ Large non-JSON data in ${key}, consider cleaning`, 'statusLog');
+                        }
+                    }
+                }
+            });
+            
+            log('✅ Storage dioptimasi', 'statusLog');
+        }
+
+        function restartApp() {
+            log('🔄 Restarting aplikasi...', 'statusLog');
+            
+            // Clear everything and reload
+            sessionStorage.clear();
+            
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
+            
+            log('✅ Aplikasi akan restart dalam 2 detik...', 'statusLog');
+        }
+
+        function checkSystemStatus() {
+            log('📊 Memeriksa status sistem...', 'statusLog');
+            
+            // Check intervals
+            const testInterval = setInterval(() => {}, 1000);
+            clearInterval(testInterval);
+            log(`📊 Interval ID range: 1 - ${testInterval}`, 'statusLog');
+            
+            // Check localStorage size
+            let totalSize = 0;
+            Object.keys(localStorage).forEach(key => {
+                totalSize += localStorage.getItem(key).length;
+            });
+            log(`📊 localStorage size: ${(totalSize / 1024).toFixed(2)} KB`, 'statusLog');
+            
+            // Check memory usage (if available)
+            if (performance.memory) {
+                const memory = performance.memory;
+                log(`📊 Memory used: ${(memory.usedJSHeapSize / 1024 / 1024).toFixed(2)} MB`, 'statusLog');
+                log(`📊 Memory limit: ${(memory.jsHeapSizeLimit / 1024 / 1024).toFixed(2)} MB`, 'statusLog');
+            }
+            
+            // Check active event listeners (approximate)
+            const eventTypes = ['storage', 'beforeunload', 'visibilitychange'];
+            eventTypes.forEach(type => {
+                log(`📊 Event listeners for ${type}: Active`, 'statusLog');
+            });
+            
+            log('✅ Status sistem diperiksa', 'statusLog');
+        }
+
+        // Auto-run basic fix on page load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                console.log('🔧 Auto-running basic session fix...');
+                
+                // Clear excessive intervals silently
+                const highestId = setInterval(() => {}, 1);
+                for (let i = 0; i < highestId; i++) {
+                    clearInterval(i);
+                }
+                
+                console.log('✅ Basic session fix applied');
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

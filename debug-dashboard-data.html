@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Dashboard Data</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .data { background: #f5f5f5; padding: 10px; margin: 10px 0; border-radius: 3px; }
+        pre { white-space: pre-wrap; word-wrap: break-word; }
+        .stats { background: #e8f5e9; padding: 10px; margin: 10px 0; border-radius: 3px; }
+        .user-info { background: #e3f2fd; padding: 10px; margin: 10px 0; border-radius: 3px; }
+        .error { background: #ffebee; color: #c62828; padding: 10px; margin: 10px 0; border-radius: 3px; }
+        .success { background: #e8f5e9; color: #2e7d32; padding: 10px; margin: 10px 0; border-radius: 3px; }
+        button { padding: 10px 20px; margin: 5px; background: #2196F3; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background: #1976D2; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug Dashboard Data - User Wawan</h1>
+    
+    <div class="section">
+        <h2>📊 Current Dashboard Stats</h2>
+        <div id="currentStats" class="stats"></div>
+        <button onclick="refreshStats()">🔄 Refresh Stats</button>
+    </div>
+
+    <div class="section">
+        <h2>👤 User Information</h2>
+        <div id="userInfo" class="user-info"></div>
+    </div>
+
+    <div class="section">
+        <h2>📋 Raw Data Analysis</h2>
+        <div id="rawData" class="data"></div>
+        <button onclick="analyzeData()">🔍 Analyze Data</button>
+    </div>
+
+    <div class="section">
+        <h2>🛠️ Fix Dashboard Data</h2>
+        <button onclick="createSampleData()">➕ Create Sample Data for Wawan</button>
+        <button onclick="fixUserData()">🔧 Fix User Data</button>
+        <button onclick="clearAllData()">🗑️ Clear All Data</button>
+        <div id="fixResults"></div>
+    </div>
+
+    <script>
+        // Get current user info
+        function getCurrentUser() {
+            const authUser = JSON.parse(localStorage.getItem('auth_user') || '{}');
+            const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+            const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
+            
+            return authUser.username ? authUser : (currentUser.username ? currentUser : userData);
+        }
+
+        // Display user information
+        function displayUserInfo() {
+            const authUser = JSON.parse(localStorage.getItem('auth_user') || '{}');
+            const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+            const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
+            const profileData = JSON.parse(localStorage.getItem('profile_data') || '{}');
+            
+            document.getElementById('userInfo').innerHTML = `
+                <h3>Auth User (Supabase):</h3>
+                <pre>${JSON.stringify(authUser, null, 2)}</pre>
+                
+                <h3>Current User:</h3>
+                <pre>${JSON.stringify(currentUser, null, 2)}</pre>
+                
+                <h3>User Data:</h3>
+                <pre>${JSON.stringify(userData, null, 2)}</pre>
+                
+                <h3>Profile Data:</h3>
+                <pre>${JSON.stringify(profileData, null, 2)}</pre>
+            `;
+        }
+
+        // Calculate and display current stats
+        function refreshStats() {
+            console.log('🔄 Refreshing dashboard stats...');
+            
+            const currentUser = getCurrentUser();
+            console.log('👤 Current user:', currentUser);
+            
+            // Get data from localStorage
+            const localData = JSON.parse(localStorage.getItem('local-database') || '{}');
+            const tasksData = JSON.parse(localStorage.getItem('tasks_data') || '[]');
+            const supervisionsData = JSON.parse(localStorage.getItem('supervisions_data') || '[]');
+            const schoolsData = JSON.parse(localStorage.getItem('schools_data') || '[]');
+            const additionalTasksData = JSON.parse(localStorage.getItem('additional_tasks_data') || '[]');
+            
+            let tasks = localData.tasks || tasksData || [];
+            let supervisions = localData.supervisions || supervisionsData || [];
+            let schools = localData.schools || schoolsData || [];
+            let additionalTasks = localData.additionalTasks || additionalTasksData || [];
+            
+            console.log('📊 Raw data counts:', {
+                tasks: tasks.length,
+                supervisions: supervisions.length,
+                schools: schools.length,
+                additionalTasks: additionalTasks.length
+            });
+
+            // Filter for current user (wawan)
+            if (currentUser.username || currentUser.id) {
+                const userTasks = tasks.filter(task => {
+                    const matches = task.username === currentUser.username || 
+                                   task.userId === currentUser.id ||
+                                   task.user === currentUser.username ||
+                                   task.user_id === currentUser.id ||
+                                   (currentUser.username === 'wawan' && (task.userId === '1762696525337' || task.user_id === '1762696525337'));
+                    if (matches) console.log('✅ Found matching task:', task.title);
+                    return matches;
+                });
+                
+                const userSupervisions = supervisions.filter(supervision => {
+                    const matches = supervision.username === currentUser.username || 
+                                   supervision.userId === currentUser.id ||
+                                   supervision.user === currentUser.username ||
+                                   supervision.user_id === currentUser.id ||
+                                   (currentUser.username === 'wawan' && (supervision.userId === '1762696525337' || supervision.user_id === '1762696525337'));
+                    if (matches) console.log('✅ Found matching supervision:', supervision.title);
+                    return matches;
+                });
+                
+                const userAdditionalTasks = additionalTasks.filter(task => {
+                    const matches = task.username === currentUser.username || 
+                                   task.userId === currentUser.id ||
+                                   task.user === currentUser.username ||
+                                   task.user_id === currentUser.id ||
+                                   (currentUser.username === 'wawan' && (task.userId === '1762696525337' || task.user_id === '1762696525337'));
+                    if (matches) console.log('✅ Found matching additional task:', task.title);
+                    return matches;
+                });
+
+                tasks = userTasks;
+                supervisions = userSupervisions;
+                additionalTasks = userAdditionalTasks;
+            }
+
+            // Filter out 2024 dummy data
+            const currentYear = new Date().getFullYear();
+            tasks = tasks.filter(task => {
+                const taskDate = new Date(task.date || task.createdAt || task.created_at);
+                return taskDate.getFullYear() !== 2024;
+            });
+            
+            supervisions = supervisions.filter(supervision => {
+                const supervisionDate = new Date(supervision.date || supervision.createdAt || supervision.created_at);
+                return supervisionDate.getFullYear() !== 2024;
+            });
+            
+            additionalTasks = additionalTasks.filter(task => {
+                const taskDate = new Date(task.date || task.createdAt || task.created_at);
+                return taskDate.getFullYear() !== 2024;
+            });
+
+            // Calculate stats
+            const completedTasks = tasks.filter(task => 
+                task.completed === true || task.status === 'completed'
+            ).length;
+
+            const currentMonth = new Date().getMonth();
+            const monthlySupervisions = supervisions.filter(supervision => {
+                const date = new Date(supervision.date || supervision.createdAt);
+                return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+            }).length;
+
+            // Get schools for user
+            let userSchools = schools;
+            if (currentUser.role !== 'admin' && (currentUser.username || currentUser.id)) {
+                const schoolIdsFromSupervisions = Array.from(new Set(supervisions.map(s => s.school_id || s.schoolId)));
+                userSchools = schools.filter(school => 
+                    schoolIdsFromSupervisions.includes(school.id)
+                );
+            }
+
+            const stats = {
+                totalTasks: tasks.length,
+                completedTasks,
+                totalSchools: userSchools.length,
+                monthlySupervisions,
+                totalSupervisions: supervisions.length,
+                totalAdditionalTasks: additionalTasks.length
+            };
+
+            console.log('✅ Final stats:', stats);
+
+            document.getElementById('currentStats').innerHTML = `
+                <h3>📊 Dashboard Statistics for ${currentUser.fullName || currentUser.username || 'Unknown User'}</h3>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+                    <div style="background: #e3f2fd; padding: 10px; border-radius: 5px;">
+                        <strong>📋 Total Tugas:</strong> ${stats.totalTasks}
+                    </div>
+                    <div style="background: #e8f5e9; padding: 10px; border-radius: 5px;">
+                        <strong>✅ Tugas Selesai:</strong> ${stats.completedTasks}
+                    </div>
+                    <div style="background: #f3e5f5; padding: 10px; border-radius: 5px;">
+                        <strong>🏫 Sekolah Binaan:</strong> ${stats.totalSchools}
+                    </div>
+                    <div style="background: #fff3e0; padding: 10px; border-radius: 5px;">
+                        <strong>👁️ Supervisi Bulan Ini:</strong> ${stats.monthlySupervisions}
+                    </div>
+                    <div style="background: #ffebee; padding: 10px; border-radius: 5px;">
+                        <strong>📊 Total Supervisi:</strong> ${stats.totalSupervisions}
+                    </div>
+                    <div style="background: #e0f2f1; padding: 10px; border-radius: 5px;">
+                        <strong>➕ Tugas Tambahan:</strong> ${stats.totalAdditionalTasks}
+                    </div>
+                </div>
+                
+                <h4>🔍 Data Details:</h4>
+                <ul>
+                    <li><strong>User ID:</strong> ${currentUser.id || 'N/A'}</li>
+                    <li><strong>Username:</strong> ${currentUser.username || 'N/A'}</li>
+                    <li><strong>Role:</strong> ${currentUser.role || 'N/A'}</li>
+                    <li><strong>Filtered Tasks:</strong> ${tasks.length}</li>
+                    <li><strong>Filtered Supervisions:</strong> ${supervisions.length}</li>
+                    <li><strong>Filtered Additional Tasks:</strong> ${additionalTasks.length}</li>
+                </ul>
+            `;
+        }
+
+        // Analyze raw data
+        function analyzeData() {
+            const localData = JSON.parse(localStorage.getItem('local-database') || '{}');
+            const tasksData = JSON.parse(localStorage.getItem('tasks_data') || '[]');
+            const supervisionsData = JSON.parse(localStorage.getItem('supervisions_data') || '[]');
+            const schoolsData = JSON.parse(localStorage.getItem('schools_data') || '[]');
+            const additionalTasksData = JSON.parse(localStorage.getItem('additional_tasks_data') || '[]');
+            
+            document.getElementById('rawData').innerHTML = `
+                <h3>📊 Raw Data Analysis</h3>
+                
+                <h4>Local Database:</h4>
+                <pre>${JSON.stringify(localData, null, 2)}</pre>
+                
+                <h4>Individual Data Keys:</h4>
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+                    <div>
+                        <strong>Tasks Data (${tasksData.length} items):</strong>
+                        <pre style="max-height: 200px; overflow-y: auto;">${JSON.stringify(tasksData, null, 2)}</pre>
+                    </div>
+                    <div>
+                        <strong>Supervisions Data (${supervisionsData.length} items):</strong>
+                        <pre style="max-height: 200px; overflow-y: auto;">${JSON.stringify(supervisionsData, null, 2)}</pre>
+                    </div>
+                    <div>
+                        <strong>Schools Data (${schoolsData.length} items):</strong>
+                        <pre style="max-height: 200px; overflow-y: auto;">${JSON.stringify(schoolsData, null, 2)}</pre>
+                    </div>
+                    <div>
+                        <strong>Additional Tasks Data (${additionalTasksData.length} items):</strong>
+                        <pre style="max-height: 200px; overflow-y: auto;">${JSON.stringify(additionalTasksData, null, 2)}</pre>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Create sample data for Wawan
+        function createSampleData() {
+            const currentDate = new Date();
+            const currentYear = currentDate.getFullYear();
+            const currentMonth = currentDate.getMonth();
+            
+            const sampleData = {
+                users: [
+                    {
+                        id: "1762696525337",
+                        username: "wawan",
+                        fullName: "Wawan Setiawan",
+                        role: "user",
+                        nip: "196801011990031001"
+                    }
+                ],
+                schools: [
+                    {
+                        id: "school_001",
+                        name: "SDN 1 Garut Kota",
+                        address: "Jl. Raya Garut No. 1",
+                        headmaster: "Drs. Ahmad Suryadi"
+                    },
+                    {
+                        id: "school_002", 
+                        name: "SDN 2 Garut Kota",
+                        address: "Jl. Raya Garut No. 2",
+                        headmaster: "Hj. Siti Nurhasanah, S.Pd"
+                    },
+                    {
+                        id: "school_003",
+                        name: "SDN 3 Garut Kota", 
+                        address: "Jl. Raya Garut No. 3",
+                        headmaster: "Drs. Bambang Sutrisno"
+                    }
+                ],
+                tasks: [
+                    {
+                        id: "task_001",
+                        title: "Supervisi Pembelajaran Kelas 1-3",
+                        description: "Melakukan supervisi pembelajaran di kelas rendah",
+                        userId: "1762696525337",
+                        username: "wawan",
+                        schoolId: "school_001",
+                        schoolName: "SDN 1 Garut Kota",
+                        status: "completed",
+                        completed: true,
+                        date: new Date(currentYear, currentMonth, 5).toISOString(),
+                        createdAt: new Date(currentYear, currentMonth, 1).toISOString()
+                    },
+                    {
+                        id: "task_002",
+                        title: "Evaluasi Kurikulum Merdeka",
+                        description: "Mengevaluasi implementasi kurikulum merdeka",
+                        userId: "1762696525337", 
+                        username: "wawan",
+                        schoolId: "school_002",
+                        schoolName: "SDN 2 Garut Kota",
+                        status: "in_progress",
+                        completed: false,
+                        date: new Date(currentYear, currentMonth, 10).toISOString(),
+                        createdAt: new Date(currentYear, currentMonth, 3).toISOString()
+                    },
+                    {
+                        id: "task_003",
+                        title: "Monitoring Administrasi Sekolah",
+                        description: "Memantau kelengkapan administrasi sekolah",
+                        userId: "1762696525337",
+                        username: "wawan", 
+                        schoolId: "school_003",
+                        schoolName: "SDN 3 Garut Kota",
+                        status: "pending",
+                        completed: false,
+                        date: new Date(currentYear, currentMonth, 15).toISOString(),
+                        createdAt: new Date(currentYear, currentMonth, 5).toISOString()
+                    }
+                ],
+                supervisions: [
+                    {
+                        id: "supervision_001",
+                        title: "Supervisi Akademik Semester 1",
+                        schoolId: "school_001",
+                        schoolName: "SDN 1 Garut Kota",
+                        userId: "1762696525337",
+                        username: "wawan",
+                        date: new Date(currentYear, currentMonth, 8).toISOString(),
+                        notes: "Pembelajaran sudah berjalan dengan baik",
+                        createdAt: new Date(currentYear, currentMonth, 8).toISOString()
+                    },
+                    {
+                        id: "supervision_002", 
+                        title: "Supervisi Manajerial",
+                        schoolId: "school_002",
+                        schoolName: "SDN 2 Garut Kota",
+                        userId: "1762696525337",
+                        username: "wawan",
+                        date: new Date(currentYear, currentMonth, 12).toISOString(),
+                        notes: "Manajemen sekolah perlu diperbaiki",
+                        createdAt: new Date(currentYear, currentMonth, 12).toISOString()
+                    }
+                ],
+                additionalTasks: [
+                    {
+                        id: "additional_001",
+                        title: "Pelatihan Guru Kurikulum Merdeka",
+                        description: "Memberikan pelatihan kepada guru-guru",
+                        userId: "1762696525337",
+                        username: "wawan",
+                        schoolId: "school_001", 
+                        schoolName: "SDN 1 Garut Kota",
+                        date: new Date(currentYear, currentMonth, 20).toISOString(),
+                        status: "completed",
+                        createdAt: new Date(currentYear, currentMonth, 18).toISOString()
+                    },
+                    {
+                        id: "additional_002",
+                        title: "Workshop Penilaian Autentik",
+                        description: "Mengadakan workshop tentang penilaian autentik",
+                        userId: "1762696525337",
+                        username: "wawan", 
+                        schoolId: "school_002",
+                        schoolName: "SDN 2 Garut Kota",
+                        date: new Date(currentYear, currentMonth, 25).toISOString(),
+                        status: "scheduled",
+                        createdAt: new Date(currentYear, currentMonth, 20).toISOString()
+                    }
+                ]
+            };
+            
+            // Save sample data
+            localStorage.setItem('local-database', JSON.stringify(sampleData));
+            localStorage.setItem('tasks_data', JSON.stringify(sampleData.tasks));
+            localStorage.setItem('supervisions_data', JSON.stringify(sampleData.supervisions));
+            localStorage.setItem('schools_data', JSON.stringify(sampleData.schools));
+            localStorage.setItem('additional_tasks_data', JSON.stringify(sampleData.additionalTasks));
+            
+            document.getElementById('fixResults').innerHTML = `
+                <div class="success">
+                    ✅ Sample data created successfully!<br>
+                    - ${sampleData.tasks.length} tasks<br>
+                    - ${sampleData.supervisions.length} supervisions<br>
+                    - ${sampleData.schools.length} schools<br>
+                    - ${sampleData.additionalTasks.length} additional tasks
+                </div>
+            `;
+            
+            // Refresh stats
+            setTimeout(refreshStats, 500);
+        }
+
+        // Fix user data
+        function fixUserData() {
+            const wawaUser = {
+                id: "1762696525337",
+                username: "wawan",
+                fullName: "Wawan Setiawan",
+                role: "user",
+                nip: "196801011990031001"
+            };
+            
+            localStorage.setItem('auth_user', JSON.stringify(wawaUser));
+            localStorage.setItem('currentUser', JSON.stringify(wawaUser));
+            localStorage.setItem('user_data', JSON.stringify(wawaUser));
+            
+            document.getElementById('fixResults').innerHTML = `
+                <div class="success">
+                    ✅ User data fixed! User Wawan is now properly set.
+                </div>
+            `;
+            
+            // Refresh displays
+            setTimeout(() => {
+                displayUserInfo();
+                refreshStats();
+            }, 500);
+        }
+
+        // Clear all data
+        function clearAllData() {
+            if (confirm('Are you sure you want to clear all data? This cannot be undone.')) {
+                localStorage.removeItem('local-database');
+                localStorage.removeItem('tasks_data');
+                localStorage.removeItem('supervisions_data');
+                localStorage.removeItem('schools_data');
+                localStorage.removeItem('additional_tasks_data');
+                
+                document.getElementById('fixResults').innerHTML = `
+                    <div class="error">
+                        🗑️ All data cleared!
+                    </div>
+                `;
+                
+                setTimeout(() => {
+                    refreshStats();
+                    analyzeData();
+                }, 500);
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            displayUserInfo();
+            refreshStats();
+            analyzeData();
+        });
+    </script>
+</body>
+</html>

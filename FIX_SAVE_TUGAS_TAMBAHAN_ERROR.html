@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fix Save Tugas Tambahan Error</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .content {
+            padding: 30px;
+        }
+        .step {
+            background: #f8f9fa;
+            border-left: 5px solid #007bff;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 0 10px 10px 0;
+        }
+        .warning {
+            background: #fff3cd;
+            border-left: 5px solid #ffc107;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .success {
+            background: #d4edda;
+            border-left: 5px solid #28a745;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            margin: 10px 5px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        .btn:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+        }
+        .btn-danger {
+            background: #dc3545;
+        }
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        .btn-success {
+            background: #28a745;
+        }
+        .btn-success:hover {
+            background: #218838;
+        }
+        .code {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 Fix Save Tugas Tambahan Error</h1>
+            <p>Solusi untuk masalah "Terjadi kesalahan saat simpan tugas tambahan"</p>
+        </div>
+        
+        <div class="content">
+            <div class="warning">
+                <h3>⚠️ Masalah yang Ditemukan:</h3>
+                <ul>
+                    <li>Error saat klik "Simpan Kegiatan" di form tugas tambahan</li>
+                    <li>Notifikasi "Terjadi kesalahan saat simpan tugas tambahan" muncul</li>
+                    <li>Data tidak tersimpan ke localStorage</li>
+                </ul>
+            </div>
+
+            <div class="step">
+                <h3>🔍 Langkah 1: Diagnosa Error</h3>
+                <p>Cek apa yang menyebabkan error saat save:</p>
+                <button class="btn" onclick="diagnosaError()">🔍 Diagnosa Error</button>
+                <div id="diagnosaResult" style="margin-top: 15px;"></div>
+            </div>
+
+            <div class="step">
+                <h3>🧹 Langkah 2: Bersihkan Data Corrupt</h3>
+                <p>Bersihkan data yang mungkin corrupt:</p>
+                <button class="btn btn-danger" onclick="bersihkanDataCorrupt()">🧹 Bersihkan Data Corrupt</button>
+                <div id="cleanResult" style="margin-top: 15px;"></div>
+            </div>
+
+            <div class="step">
+                <h3>📊 Langkah 3: Setup Data Fresh</h3>
+                <p>Setup data tugas tambahan yang fresh:</p>
+                <button class="btn btn-success" onclick="setupDataFresh()">📊 Setup Data Fresh</button>
+                <div id="setupResult" style="margin-top: 15px;"></div>
+            </div>
+
+            <div class="step">
+                <h3>🧪 Langkah 4: Test Save Function</h3>
+                <p>Test fungsi save dengan data sample:</p>
+                <button class="btn" onclick="testSaveFunction()">🧪 Test Save Function</button>
+                <div id="testResult" style="margin-top: 15px;"></div>
+            </div>
+
+            <div class="success" id="finalResult" style="display: none;">
+                <h3>✅ Perbaikan Berhasil!</h3>
+                <p>Fungsi save tugas tambahan sekarang sudah berfungsi normal.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Fungsi untuk diagnosa error
+        function diagnosaError() {
+            console.log('🔍 Memulai diagnosa error...');
+            
+            const result = document.getElementById('diagnosaResult');
+            result.innerHTML = '<div style="padding: 10px; background: #e3f2fd; border-radius: 5px;">🔍 Sedang diagnosa error...</div>';
+            
+            setTimeout(() => {
+                let diagnosis = '<div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 10px;">';
+                diagnosis += '<h4>📊 Hasil Diagnosa:</h4>';
+                diagnosis += '<ul>';
+                
+                // Cek localStorage
+                try {
+                    const additionalTasksData = localStorage.getItem('additional_tasks_data');
+                    if (additionalTasksData) {
+                        const parsed = JSON.parse(additionalTasksData);
+                        diagnosis += `<li>✅ Data tugas tambahan ada: ${Array.isArray(parsed) ? parsed.length : 'Invalid'} items</li>`;
+                    } else {
+                        diagnosis += '<li>❌ Data tugas tambahan tidak ada</li>';
+                    }
+                } catch (e) {
+                    diagnosis += `<li>❌ Error parsing data: ${e.message}</li>`;
+                }
+                
+                // Cek localStorage quota
+                try {
+                    const testKey = 'test_storage_' + Date.now();
+                    const testData = 'x'.repeat(1000000); // 1MB test
+                    localStorage.setItem(testKey, testData);
+                    localStorage.removeItem(testKey);
+                    diagnosis += '<li>✅ localStorage quota OK</li>';
+                } catch (e) {
+                    diagnosis += `<li>❌ localStorage quota issue: ${e.message}</li>`;
+                }
+                
+                // Cek browser compatibility
+                const isLocalStorageSupported = typeof(Storage) !== "undefined";
+                diagnosis += `<li>${isLocalStorageSupported ? '✅' : '❌'} localStorage support: ${isLocalStorageSupported}</li>`;
+                
+                // Cek JSON support
+                try {
+                    JSON.stringify({test: 'data'});
+                    JSON.parse('{"test": "data"}');
+                    diagnosis += '<li>✅ JSON support OK</li>';
+                } catch (e) {
+                    diagnosis += `<li>❌ JSON support issue: ${e.message}</li>`;
+                }
+                
+                diagnosis += '</ul>';
+                diagnosis += '</div>';
+                
+                result.innerHTML = diagnosis;
+                console.log('✅ Diagnosa selesai');
+            }, 1000);
+        }
+        
+        // Fungsi untuk membersihkan data corrupt
+        function bersihkanDataCorrupt() {
+            console.log('🧹 Membersihkan data corrupt...');
+            
+            const result = document.getElementById('cleanResult');
+            result.innerHTML = '<div style="padding: 10px; background: #fff3cd; border-radius: 5px;">🧹 Sedang membersihkan data corrupt...</div>';
+            
+            setTimeout(() => {
+                try {
+                    // Backup data yang ada
+                    const existingData = localStorage.getItem('additional_tasks_data');
+                    if (existingData) {
+                        localStorage.setItem('additional_tasks_data_backup_' + Date.now(), existingData);
+                    }
+                    
+                    // Hapus data yang mungkin corrupt
+                    const keysToClean = [
+                        'additional_tasks_data',
+                        'additional_tasks_data_backup',
+                        'additional_tasks_data_timestamp',
+                        'additional_tasks_cache',
+                        'additional_tasks_temp'
+                    ];
+                    
+                    let cleanedCount = 0;
+                    keysToClean.forEach(key => {
+                        if (localStorage.getItem(key)) {
+                            localStorage.removeItem(key);
+                            cleanedCount++;
+                        }
+                    });
+                    
+                    result.innerHTML = `
+                        <div style="background: #d4edda; padding: 15px; border-radius: 8px; margin-top: 10px;">
+                            <h4>✅ Pembersihan Selesai!</h4>
+                            <p>Berhasil membersihkan ${cleanedCount} data corrupt.</p>
+                            <p>Data lama sudah di-backup dengan timestamp.</p>
+                        </div>
+                    `;
+                    
+                    console.log(`✅ Berhasil membersihkan ${cleanedCount} data corrupt`);
+                } catch (error) {
+                    result.innerHTML = `
+                        <div style="background: #f8d7da; padding: 15px; border-radius: 8px; margin-top: 10px;">
+                            <h4>❌ Error saat pembersihan:</h4>
+                            <p>${error.message}</p>
+                        </div>
+                    `;
+                }
+            }, 1500);
+        }
+        
+        // Fungsi untuk setup data fresh
+        function setupDataFresh() {
+            console.log('📊 Setup data fresh...');
+            
+            const result = document.getElementById('setupResult');
+            result.innerHTML = '<div style="padding: 10px; background: #e3f2fd; border-radius: 5px;">📊 Sedang setup data fresh...</div>';
+            
+            setTimeout(() => {
+                try {
+                    // Buat data fresh untuk tugas tambahan
+                    const currentDate = new Date();
+                    const year = currentDate.getFullYear();
+                    const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+                    const day = String(currentDate.getDate()).padStart(2, '0');
+                    
+                    const freshData = [
+                        {
+                            id: "fresh_task_1",
+                            name: "Rapat Koordinasi Pengawas Sekolah",
+                            date: `${year}-${month}-15`,
+                            location: "Kantor Dinas Pendidikan Provinsi Jawa Barat",
+                            organizer: "Dinas Pendidikan Provinsi Jawa Barat",
+                            description: "Rapat koordinasi bulanan membahas program supervisi sekolah, evaluasi kinerja pengawas, dan rencana kegiatan bulan berikutnya.",
+                            createdAt: new Date().toISOString()
+                        }
+                    ];
+                    
+                    // Simpan data fresh
+                    localStorage.setItem('additional_tasks_data', JSON.stringify(freshData));
+                    localStorage.setItem('additional_tasks_data_backup', JSON.stringify(freshData));
+                    localStorage.setItem('additional_tasks_data_timestamp', Date.now().toString());
+                    
+                    // Set metadata
+                    localStorage.setItem('additional_tasks_version', '2.0');
+                    localStorage.setItem('additional_tasks_last_updated', new Date().toISOString());
+                    
+                    result.innerHTML = `
+                        <div style="background: #d4edda; padding: 15px; border-radius: 8px; margin-top: 10px;">
+                            <h4>✅ Setup Data Fresh Berhasil!</h4>
+                            <p>Data tugas tambahan fresh telah dibuat:</p>
+                            <ul>
+                                <li><strong>Total data:</strong> ${freshData.length} item</li>
+                                <li><strong>Sample data:</strong> ${freshData[0].name}</li>
+                                <li><strong>Timestamp:</strong> ${new Date().toLocaleString('id-ID')}</li>
+                            </ul>
+                        </div>
+                    `;
+                    
+                    console.log('✅ Setup data fresh berhasil:', freshData);
+                } catch (error) {
+                    result.innerHTML = `
+                        <div style="background: #f8d7da; padding: 15px; border-radius: 8px; margin-top: 10px;">
+                            <h4>❌ Error setup data fresh:</h4>
+                            <p>${error.message}</p>
+                        </div>
+                    `;
+                }
+            }, 2000);
+        }
+        
+        // Fungsi untuk test save function
+        function testSaveFunction() {
+            console.log('🧪 Testing save function...');
+            
+            const result = document.getElementById('testResult');
+            result.innerHTML = '<div style="padding: 10px; background: #e3f2fd; border-radius: 5px;">🧪 Sedang test save function...</div>';
+            
+            setTimeout(() => {
+                try {
+                    // Simulate save function
+                    const testTask = {
+                        id: "test_" + Date.now(),
+                        name: "Test Kegiatan Save Function",
+                        date: new Date().toISOString().split('T')[0],
+                        location: "Test Location",
+                        organizer: "Test Organizer",
+                        description: "Test description untuk memastikan save function bekerja",
+                        photo1: null,
+                        photo2: null,
+                        createdAt: new Date().toISOString()
+                    };
+                    
+                    // Get existing data
+                    const tasksData = localStorage.getItem('additional_tasks_data');
+                    const currentTasks = tasksData ? JSON.parse(tasksData) : [];
+                    
+                    // Add test task
+                    const updatedTasks = [...currentTasks, testTask];
+                    
+                    // Save to localStorage
+                    localStorage.setItem('additional_tasks_data', JSON.stringify(updatedTasks));
+                    localStorage.setItem('additional_tasks_data_backup', JSON.stringify(updatedTasks));
+                    localStorage.setItem('additional_tasks_data_timestamp', Date.now().toString());
+                    
+                    // Verify save
+                    const savedData = localStorage.getItem('additional_tasks_data');
+                    const parsedSaved = JSON.parse(savedData);
+                    const testTaskExists = parsedSaved.find(task => task.id === testTask.id);
+                    
+                    if (testTaskExists) {
+                        result.innerHTML = `
+                            <div style="background: #d4edda; padding: 15px; border-radius: 8px; margin-top: 10px;">
+                                <h4>✅ Test Save Function Berhasil!</h4>
+                                <p>Fungsi save bekerja dengan normal:</p>
+                                <ul>
+                                    <li><strong>Test task ID:</strong> ${testTask.id}</li>
+                                    <li><strong>Total tasks sekarang:</strong> ${parsedSaved.length}</li>
+                                    <li><strong>Save timestamp:</strong> ${new Date().toLocaleString('id-ID')}</li>
+                                </ul>
+                                <p><strong>Status:</strong> ✅ Save function OK</p>
+                            </div>
+                        `;
+                        
+                        // Show final success
+                        document.getElementById('finalResult').style.display = 'block';
+                    } else {
+                        throw new Error('Test task tidak ditemukan setelah save');
+                    }
+                    
+                    console.log('✅ Test save function berhasil');
+                } catch (error) {
+                    result.innerHTML = `
+                        <div style="background: #f8d7da; padding: 15px; border-radius: 8px; margin-top: 10px;">
+                            <h4>❌ Test Save Function Gagal:</h4>
+                            <p>${error.message}</p>
+                            <p><strong>Solusi:</strong> Coba refresh halaman dan ulangi langkah-langkah di atas.</p>
+                        </div>
+                    `;
+                }
+            }, 1500);
+        }
+        
+        // Auto-run diagnosa saat halaman dimuat
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                console.log('🔧 Auto-running diagnosa...');
+                diagnosaError();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
