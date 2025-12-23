@@ -197,12 +197,26 @@ export function UserActivitiesDialog({ userId, userName, open, onOpenChange }: U
         console.log(`🔑 Admin access: ${isAdmin}`);
         
         const filtered = data.filter(item => {
-          // If admin, allow access to any user's data
+          // For Wawan user, be very strict about data ownership
+          if (userName && userName.toLowerCase().includes('wawan')) {
+            console.log('🎯 Wawan user - strict filtering:', item);
+            
+            // Only match by exact user_id or username
+            if (item.user_id === userId || item.username === userName) {
+              console.log(`✅ Wawan exact match:`, item);
+              return true;
+            }
+            
+            // Skip any other matches to avoid showing wrong data
+            return false;
+          }
+          
+          // For other users, use normal filtering
           if (isAdmin) {
             console.log('🔑 Admin access - checking item:', item);
             
             // Match by userId (exact match)
-            if (item[userField] === userId) {
+            if (item[userField] === userId || item.user_id === userId) {
               console.log(`✅ Admin found match by ${userField}:`, item);
               return true;
             }
@@ -216,21 +230,9 @@ export function UserActivitiesDialog({ userId, userName, open, onOpenChange }: U
                 return true;
               }
             }
-            
-            // Special case for Wawan - also check if item contains userName in any text field
-            if (userName && userName.toLowerCase() === 'wawan') {
-              const textFields = ['title', 'name', 'description', 'notes', 'findings', 'schoolName'];
-              for (const field of textFields) {
-                if (item[field] && typeof item[field] === 'string' && 
-                    item[field].toLowerCase().includes('wawan')) {
-                  console.log(`✅ Admin found Wawan match in ${field}:`, item[field]);
-                  return true;
-                }
-              }
-            }
           } else {
             // Non-admin users can only see their own data
-            if (item[userField] === userId) {
+            if (item[userField] === userId || item.user_id === userId) {
               console.log(`✅ Found match by ${userField}:`, item);
               return true;
             }
@@ -242,18 +244,6 @@ export function UserActivitiesDialog({ userId, userName, open, onOpenChange }: U
                   item[field].toLowerCase() === userName.toLowerCase()) {
                 console.log(`✅ Found match by ${field}:`, item);
                 return true;
-              }
-            }
-            
-            // Special case for Wawan - also check if item contains userName in any text field
-            if (userName && userName.toLowerCase() === 'wawan') {
-              const textFields = ['title', 'name', 'description', 'notes', 'findings'];
-              for (const field of textFields) {
-                if (item[field] && typeof item[field] === 'string' && 
-                    item[field].toLowerCase().includes('wawan')) {
-                  console.log(`✅ Found Wawan match in ${field}:`, item[field]);
-                  return true;
-                }
               }
             }
           }
