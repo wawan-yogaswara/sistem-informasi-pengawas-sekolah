@@ -1,11 +1,18 @@
 {
   "version": 2,
+  "name": "school-guard-manager",
   "buildCommand": "npm run build",
-  "outputDirectory": "dist",
+  "outputDirectory": "dist/public",
+  "builds": [
+    {
+      "src": "server/index.ts",
+      "use": "@vercel/node"
+    }
+  ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/api/$1"
+      "dest": "/server/index.ts"
     },
     {
       "handle": "filesystem"
@@ -16,9 +23,12 @@
     }
   ],
   "functions": {
-    "api/**/*.js": {
+    "server/index.ts": {
       "memory": 1024,
-      "maxDuration": 10
+      "maxDuration": 30
     }
+  },
+  "env": {
+    "NODE_ENV": "production"
   }
 }
