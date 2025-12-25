@@ -19,16 +19,42 @@ export default async function handler(req, res) {
 
   try {
     if (req.method === 'GET') {
-      // Get real data from Supabase
-      const { data: tasks, error } = await supabase
+      const { user_id } = req.query;
+      
+      console.log('🔍 API /tasks GET request:', { user_id });
+      
+      // Build query
+      let query = supabase
         .from('additional_tasks')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .select('*');
+      
+      // Filter by user_id if provided
+      if (user_id) {
+        query = query.eq('user_id', user_id);
+        console.log('📋 Filtering by user_id:', user_id);
+      } else {
+        console.log('📋 No user_id filter, getting all data');
+      }
+      
+      // Get real data from Supabase
+      const { data: tasks, error } = await query.order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Supabase GET error:', error);
+        console.error('❌ Supabase GET error:', error);
         return res.status(500).json({ error: 'Failed to fetch tasks' });
       }
+
+      console.log(`✅ Found ${tasks?.length || 0} additional tasks`);
+      
+      // Log apel tasks specifically
+      const apelTasks = (tasks || []).filter(task => 
+        (task.title && task.title.toLowerCase().includes('apel')) ||
+        (task.name && task.name.toLowerCase().includes('apel'))
+      );
+      console.log(`🌅 Apel tasks found: ${apelTasks.length}`);
+      apelTasks.forEach(task => {
+        console.log(`  - ${task.title || task.name} (user: ${task.user_id})`);
+      });
 
       res.json(tasks || []);
 

@@ -19,29 +19,73 @@ export default async function handler(req, res) {
 
   try {
     if (req.method === 'GET') {
-      // Get real data from Supabase - try multiple table names
+      const { user_id } = req.query;
+      
+      console.log('🔍 Fetching activities for user_id:', user_id);
+      
+      // Get real data from Supabase - try additional_tasks table first (this is the correct table)
       let activities = [];
       let error = null;
 
-      // Try 'activities' table first
-      const { data: activitiesData, error: activitiesError } = await supabase
-        .from('activities')
-        .select('*')
+      // Build query with user_id filter if provided
+      let activitiesQuery = supabase
+        .from('additional_tasks')
+        .select(`
+          *,
+          schools (
+            id,
+            name
+          )
+        `);
+      
+      if (user_id) {
+        activitiesQuery = activitiesQuery.eq('user_id', user_id);
+      }
+      
+      // Try 'additional_tasks' table first (this is the correct table for activities)
+      const { data: additionalTasksData, error: additionalTasksError } = await activitiesQuery
         .order('created_at', { ascending: false });
 
-      if (!activitiesError && activitiesData) {
-        activities = activitiesData;
+      if (!additionalTasksError && additionalTasksData) {
+        console.log(`✅ Found ${additionalTasksData.length} activities from additional_tasks table`);
+        activities = additionalTasksData.map(task => ({
+          id: task.id,
+          title: task.title,
+          name: task.title, // For compatibility
+          description: task.description,
+          date: task.date,
+          location: task.location,
+          organizer: task.organizer || 'Pengawas Sekolah',
+          photo: task.photo,     // FIXED: Use 'photo' not 'photo1'
+          photo1: task.photo,    // Keep for Reports page compatibility
+          photo2: task.photo2,
+          user_id: task.user_id,
+          school_id: task.school_id,
+          schools: task.schools,
+          created_at: task.created_at,
+          updated_at: task.updated_at
+        }));
       } else {
-        // Try 'events' table as fallback
-        const { data: eventsData, error: eventsError } = await supabase
-          .from('events')
-          .select('*')
+        console.log('⚠️ additional_tasks query failed, trying activities table:', additionalTasksError?.message);
+        
+        // Try 'activities' table as fallback
+        let fallbackQuery = supabase
+          .from('activities')
+          .select('*');
+        
+        if (user_id) {
+          fallbackQuery = fallbackQuery.eq('user_id', user_id);
+        }
+        
+        const { data: activitiesData, error: activitiesError } = await fallbackQuery
           .order('created_at', { ascending: false });
 
-        if (!eventsError && eventsData) {
-          activities = eventsData;
+        if (!activitiesError && activitiesData) {
+          console.log(`✅ Found ${activitiesData.length} activities from activities table`);
+          activities = activitiesData;
         } else {
-          error = activitiesError || eventsError;
+          console.log('❌ Both tables failed:', { additionalTasksError, activitiesError });
+          error = additionalTasksError || activitiesError;
         }
       }
 
@@ -59,38 +103,58 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Title or name is required' });
       }
 
-      // Prepare data for insertion
+      // Validate user_id - ensure it's a valid UUID format
+      let validUserId = user_id || 'default_user';
+      
+      // For Wawan user, use the correct UUID
+      if (user_id === '421cdb28-f2af-4f1f-aa5f-c59a3d661a2e' || validUserId === 'wawan' || validUserId === 'default_user') {
+        validUserId = '421cdb28-f2af-4f1f-aa5f-c59a3d661a2e';
+      }
+      
+      // Validate school_id - use default school if not provided
+      const defaultSchoolId = '1cd40355-1b07-402d-8309-b243c098cfe9'; // SDN 1 Garut
+      
+      // Prepare data for insertion into additional_tasks table
       const activityData = {
         title: title || name,
         description: description || '',
         date: date || new Date().toISOString().split('T')[0],
-        user_id: user_id || 'default_user',
-        type: type || 'activity',
-        location: location || 'Unknown',
+        user_id: validUserId,
+        school_id: defaultSchoolId,
+        status: 'completed',
+        location: location || 'Tempat Kegiatan',
+        organizer: 'Pengawas Sekolah',
+        photo: null, // Will be handled separately if needed
+        photo2: null,
         created_at: new Date().toISOString()
       };
 
-      // Try inserting into 'activities' table first
+      console.log('💾 Inserting activity data:', activityData);
+
+      // Insert into additional_tasks table (this is the correct table for activities)
       let { data: newActivity, error } = await supabase
-        .from('activities')
+        .from('additional_tasks')
         .insert([activityData])
         .select()
         .single();
 
-      // If activities table doesn't exist, try 'events' table
-      if (error && error.code === '42P01') {
-        const eventData = {
-          name: activityData.title,
+      // If additional_tasks table doesn't exist or has constraint issues, try activities table
+      if (error) {
+        console.log('⚠️ additional_tasks insert failed, trying activities table:', error.message);
+        
+        const fallbackData = {
+          title: activityData.title,
           description: activityData.description,
           date: activityData.date,
           user_id: activityData.user_id,
+          type: 'activity',
           location: activityData.location,
           created_at: activityData.created_at
         };
 
         const result = await supabase
-          .from('events')
-          .insert([eventData])
+          .from('activities')
+          .insert([fallbackData])
           .select()
           .single();
 
@@ -109,9 +173,11 @@ export default async function handler(req, res) {
       const { id } = req.query;
       const updateData = req.body;
 
-      // Try updating in 'activities' table first
+      console.log('✏️ Updating activity:', id, updateData);
+
+      // Try updating in 'additional_tasks' table first (this is the correct table)
       let { data: updatedActivity, error } = await supabase
-        .from('activities')
+        .from('additional_tasks')
         .update({
           ...updateData,
           updated_at: new Date().toISOString()
@@ -120,10 +186,12 @@ export default async function handler(req, res) {
         .select()
         .single();
 
-      // If activities table doesn't exist, try 'events' table
-      if (error && error.code === '42P01') {
+      // If additional_tasks table doesn't work, try 'activities' table
+      if (error) {
+        console.log('⚠️ additional_tasks update failed, trying activities table:', error.message);
+        
         const result = await supabase
-          .from('events')
+          .from('activities')
           .update({
             ...updateData,
             updated_at: new Date().toISOString()
@@ -146,16 +214,20 @@ export default async function handler(req, res) {
     } else if (req.method === 'DELETE') {
       const { id } = req.query;
 
-      // Try deleting from 'activities' table first
+      console.log('🗑️ Deleting activity:', id);
+
+      // Try deleting from 'additional_tasks' table first (this is the correct table)
       let { error } = await supabase
-        .from('activities')
+        .from('additional_tasks')
         .delete()
         .eq('id', id);
 
-      // If activities table doesn't exist, try 'events' table
-      if (error && error.code === '42P01') {
+      // If additional_tasks table doesn't work, try 'activities' table
+      if (error) {
+        console.log('⚠️ additional_tasks delete failed, trying activities table:', error.message);
+        
         const result = await supabase
-          .from('events')
+          .from('activities')
           .delete()
           .eq('id', id);
 

@@ -1,0 +1,123 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Emergency - Test Data Laporan</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .activity { border: 1px solid #ddd; margin: 10px 0; padding: 15px; border-radius: 5px; }
+        .photo { width: 100px; height: 100px; object-fit: cover; margin: 5px; border: 1px solid #ccc; }
+        .error { background-color: #f8d7da; padding: 10px; border-radius: 5px; margin: 10px 0; }
+        .success { background-color: #d4edda; padding: 10px; border-radius: 5px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>🚑 Emergency Test - Data Laporan</h1>
+    
+    <div id="status"></div>
+    <div id="activities"></div>
+    
+    <script>
+        function testDataLaporan() {
+            const statusDiv = document.getElementById('status');
+            const activitiesDiv = document.getElementById('activities');
+            
+            try {
+                // Check localStorage
+                const localData = localStorage.getItem('local-database');
+                if (!localData) {
+                    statusDiv.innerHTML = '<div class="error">❌ No localStorage data found</div>';
+                    return;
+                }
+                
+                const database = JSON.parse(localData);
+                
+                // Check user
+                const userData = localStorage.getItem('auth_user');
+                if (!userData) {
+                    statusDiv.innerHTML = '<div class="error">❌ No user session found</div>';
+                    return;
+                }
+                
+                const currentUser = JSON.parse(userData);
+                const userId = currentUser.username === 'wawan' ? '1762696525337' : currentUser.id;
+                
+                // Get activities
+                const activities = [];
+                
+                // Tasks
+                const tasks = database.tasks?.filter(t => t.userId === userId) || [];
+                tasks.forEach(task => {
+                    activities.push({
+                        id: task.id,
+                        type: 'Tugas Pokok',
+                        title: task.title || 'Tugas Harian',
+                        date: task.date || task.createdAt,
+                        photo1: task.photo1,
+                        photo2: task.photo2
+                    });
+                });
+                
+                // Supervisions
+                const supervisions = database.supervisions?.filter(s => s.userId === userId) || [];
+                supervisions.forEach(supervision => {
+                    const school = database.schools?.find(s => s.id === supervision.schoolId);
+                    activities.push({
+                        id: supervision.id,
+                        type: 'Supervisi',
+                        title: `Supervisi ${school?.name || 'Sekolah'}`,
+                        date: supervision.date || supervision.createdAt,
+                        photo1: supervision.photo1,
+                        photo2: supervision.photo2
+                    });
+                });
+                
+                // Additional Tasks
+                const additionalTasks = database.additionalTasks?.filter(t => t.userId === userId) || [];
+                additionalTasks.forEach(task => {
+                    activities.push({
+                        id: task.id,
+                        type: 'Tugas Tambahan',
+                        title: task.name || task.title || 'Kegiatan Tambahan',
+                        date: task.date || task.createdAt,
+                        photo1: task.photo1,
+                        photo2: task.photo2
+                    });
+                });
+                
+                // Sort by date
+                activities.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+                
+                // Display status
+                statusDiv.innerHTML = `
+                    <div class="success">
+                        ✅ Data found: ${activities.length} activities for user ${currentUser.username} (ID: ${userId})
+                    </div>
+                `;
+                
+                // Display activities
+                if (activities.length === 0) {
+                    activitiesDiv.innerHTML = '<div class="error">❌ No activities found</div>';
+                } else {
+                    activitiesDiv.innerHTML = activities.map(activity => `
+                        <div class="activity">
+                            <h3>${activity.type}: ${activity.title}</h3>
+                            <p>Date: ${activity.date}</p>
+                            <div>
+                                ${activity.photo1 ? `<img class="photo" src="http://localhost:5000/uploads/${activity.photo1}" alt="Photo 1" onerror="this.style.display='none'">` : ''}
+                                ${activity.photo2 ? `<img class="photo" src="http://localhost:5000/uploads/${activity.photo2}" alt="Photo 2" onerror="this.style.display='none'">` : ''}
+                            </div>
+                        </div>
+                    `).join('');
+                }
+                
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+        
+        // Run test on load
+        window.onload = testDataLaporan;
+    </script>
+</body>
+</html>

@@ -6,11 +6,12 @@ import path from "path";
 import fs from "fs";
 import { storage } from "./storage";
 import { localStorage, isLocalStorageEnabled } from "./local-storage";
+import { supabaseStorage } from "./supabase-storage";
 import { authMiddleware, generateToken, hashPassword, verifyPassword, seedAdminUser, type AuthRequest } from "./auth";
 import { insertUserSchema, insertSchoolSchema, insertTaskSchema, insertEventSchema, insertSupervisionSchema, insertAdditionalTaskSchema } from "@shared/schema";
 
-// Use local storage if database is not configured
-const db = isLocalStorageEnabled ? localStorage : storage;
+// Use Supabase storage if configured, otherwise fall back to local storage
+const db = isLocalStorageEnabled ? localStorage : supabaseStorage;
 
 // Seed admin user for local storage
 async function seedLocalAdmin() {
@@ -58,9 +59,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Seed admin user
   if (isLocalStorageEnabled) {
     await seedLocalAdmin();
-    console.log("✓ Using local file-based storage (data persisted in local-database.json)");
+    console.log("✓ Using Supabase database storage");
   } else {
-    await seedAdminUser();
+    console.log("✓ Using Supabase database storage");
   }
 
   // Serve uploaded files
@@ -110,7 +111,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       timestamp: new Date().toISOString(),
       server: "Express",
       port: 5000,
-      storage: isLocalStorageEnabled ? "local-file" : "database"
+      storage: isLocalStorageEnabled ? "local-file" : "supabase-client"
     });
   });
 
@@ -189,6 +190,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Dev user data error:", error);
       res.status(500).json({ error: "Failed to fetch user data" });
+    }
+  });
+
+  // Development endpoints for reports (no auth required)
+  app.get("/api/tasks-daily", async (req, res) => {
+    try {
+      const allUsers = await db.getAllUsers();
+      let allTasks: any[] = [];
+      
+      for (const user of allUsers) {
+        const userTasks = await db.getTasks(user.id);
+        // Add user_id field for consistency
+        const tasksWithUserId = userTasks.map(task => ({
+          ...task,
+          user_id: user.id
+        }));
+        allTasks.push(...tasksWithUserId);
+      }
+      
+      res.json(allTasks);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/supervisions", async (req, res) => {
+    try {
+      const allUsers = await db.getAllUsers();
+      let allSupervisions: any[] = [];
+      
+      for (const user of allUsers) {
+        const userSupervisions = await db.getSupervisions(user.id);
+        // Add user_id field for consistency
+        const supervisionsWithUserId = userSupervisions.map(supervision => ({
+          ...supervision,
+          user_id: user.id
+        }));
+        allSupervisions.push(...supervisionsWithUserId);
+      }
+      
+      res.json(allSupervisions);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/activities", async (req, res) => {
+    try {
+      const allUsers = await db.getAllUsers();
+      let allActivities: any[] = [];
+      
+      for (const user of allUsers) {
+        const userActivities = await db.getAdditionalTasks(user.id);
+        // Add user_id field for consistency
+        const activitiesWithUserId = userActivities.map(activity => ({
+          ...activity,
+          user_id: user.id
+        }));
+        allActivities.push(...activitiesWithUserId);
+      }
+      
+      res.json(allActivities);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/schools", async (req, res) => {
+    try {
+      const allUsers = await db.getAllUsers();
+      let allSchools: any[] = [];
+      
+      for (const user of allUsers) {
+        const userSchools = await db.getSchools(user.id);
+        // Add user_id field for consistency
+        const schoolsWithUserId = userSchools.map(school => ({
+          ...school,
+          user_id: user.id
+        }));
+        allSchools.push(...schoolsWithUserId);
+      }
+      
+      res.json(allSchools);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
     }
   });
 
@@ -523,8 +609,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const task = await db.createTask(data);
       res.json(task);
     } catch (error: any) {
-      console.error('Error creating task:', error);
-      res.status(400).json({ error: error.message });
+      console.error('Error creating task:', error?.message || 'Unknown error');
+      res.status(400).json({ error: error?.message || 'Failed to create task' });
     }
   });
 
@@ -594,8 +680,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const event = await db.createEvent(data);
       res.json(event);
     } catch (error: any) {
-      console.error('Error creating event:', error);
-      res.status(400).json({ error: error.message });
+      console.error('Error creating event:', error?.message || 'Unknown error');
+      res.status(400).json({ error: error?.message || 'Failed to create event' });
     }
   });
 
@@ -649,8 +735,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const supervision = await db.createSupervision(data);
       res.json(supervision);
     } catch (error: any) {
-      console.error('Error creating supervision:', error);
-      res.status(400).json({ error: error.message });
+      console.error('Error creating supervision:', error?.message || 'Unknown error');
+      res.status(400).json({ error: error?.message || 'Failed to create supervision' });
     }
   });
 
@@ -702,30 +788,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/additional-tasks", authMiddleware, upload.fields([{ name: "photo1" }, { name: "photo2" }]), async (req: AuthRequest, res) => {
+  app.post("/api/additional-tasks", authMiddleware, upload.fields([{ name: "photo" }]), async (req: AuthRequest, res) => {
     try {
       const files = req.files as { [fieldname: string]: Express.Multer.File[] };
       
-      // Convert photos to base64
-      const photo1Base64 = files?.photo1?.[0] 
-        ? `data:${files.photo1[0].mimetype};base64,${files.photo1[0].buffer.toString('base64')}`
-        : null;
-      const photo2Base64 = files?.photo2?.[0]
-        ? `data:${files.photo2[0].mimetype};base64,${files.photo2[0].buffer.toString('base64')}`
+      // Convert photo to base64
+      const photoBase64 = files?.photo?.[0] 
+        ? `data:${files.photo[0].mimetype};base64,${files.photo[0].buffer.toString('base64')}`
         : null;
       
-      const data = insertAdditionalTaskSchema.parse({
-        ...req.body,
+      const data = {
         userId: req.user!.userId,
+        title: req.body.title,
+        description: req.body.description,
         date: req.body.date ? new Date(req.body.date) : new Date(),
-        photo1: photo1Base64,
-        photo2: photo2Base64,
-      });
+        status: req.body.status || 'pending',
+        photo: photoBase64,
+      };
+      
       const task = await db.createAdditionalTask(data);
       res.json(task);
     } catch (error: any) {
-      console.error('Error creating additional task:', error);
-      res.status(400).json({ error: error.message });
+      console.error('Error creating additional task:', error?.message || 'Unknown error');
+      res.status(400).json({ error: error?.message || 'Failed to create additional task' });
     }
   });
 
@@ -766,8 +851,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('Update successful:', task);
       res.json(task);
     } catch (error: any) {
-      console.error('Error updating additional task:', error);
-      res.status(400).json({ error: error.message || 'Failed to update task' });
+      console.error('Error updating additional task:', error?.message || 'Unknown error');
+      res.status(400).json({ error: error?.message || 'Failed to update task' });
     }
   });
 
@@ -829,8 +914,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         additionalTasks: monthlyAdditionalTasks,
       });
     } catch (error: any) {
-      console.error('Error in monthly details:', error);
-      res.status(400).json({ error: error.message });
+      console.error('Error in monthly details:', error?.message || 'Unknown error');
+      res.status(400).json({ error: error?.message || 'Failed to get monthly details' });
     }
   });
 
@@ -880,8 +965,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         additionalTasks: yearlyAdditionalTasks,
       });
     } catch (error: any) {
-      console.error('Error in yearly details:', error);
-      res.status(400).json({ error: error.message });
+      console.error('Error in yearly details:', error?.message || 'Unknown error');
+      res.status(400).json({ error: error?.message || 'Failed to get yearly details' });
     }
   });
 

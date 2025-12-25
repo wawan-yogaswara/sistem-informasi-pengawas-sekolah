@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Laporan Foto - Fixed Version</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .debug-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .success { background-color: #d4edda; }
+        .error { background-color: #f8d7da; }
+        .warning { background-color: #fff3cd; }
+        .info { background-color: #d1ecf1; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 3px; overflow-x: auto; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        .photo-test { display: inline-block; margin: 10px; text-align: center; border: 1px solid #ddd; padding: 10px; border-radius: 5px; }
+        .photo-test img { width: 150px; height: 150px; object-fit: cover; border: 1px solid #ccc; }
+        .photo-success { background-color: #d4edda; }
+        .photo-error { background-color: #f8d7da; }
+    </style>
+</head>
+<body>
+    <h1>🔍 DEBUG LAPORAN FOTO - FIXED VERSION</h1>
+    
+    <div class="debug-section info">
+        <h2>📊 Browser & Environment Info</h2>
+        <div id="browserInfo"></div>
+    </div>
+
+    <div class="debug-section">
+        <h2>👤 User Session</h2>
+        <div id="userInfo"></div>
+    </div>
+
+    <div class="debug-section">
+        <h2>💾 localStorage Data Analysis</h2>
+        <button onclick="analyzeLocalStorageData()">Analyze localStorage</button>
+        <div id="localStorageAnalysis"></div>
+    </div>
+
+    <div class="debug-section">
+        <h2>📸 Photo Path Testing</h2>
+        <button onclick="testAllPhotoPaths()">Test All Photo Paths</button>
+        <div id="photoPathTest"></div>
+    </div>
+
+    <div class="debug-section">
+        <h2>🔄 Simulate Reports Page Logic</h2>
+        <button onclick="simulateReportsLogic()">Simulate Reports Page</button>
+        <div id="reportsSimulation"></div>
+    </div>
+
+    <div class="debug-section">
+        <h2>🌐 Cross-Browser Comparison</h2>
+        <button onclick="compareBrowserData()">Compare Browser Data</button>
+        <div id="browserComparison"></div>
+    </div>
+
+    <script>
+        // Browser info
+        function showBrowserInfo() {
+            const info = {
+                userAgent: navigator.userAgent,
+                browser: getBrowserName(),
+                localStorage: typeof(Storage) !== "undefined",
+                currentURL: window.location.href,
+                timestamp: new Date().toISOString(),
+                cookiesEnabled: navigator.cookieEnabled,
+                language: navigator.language,
+                platform: navigator.platform
+            };
+            
+            document.getElementById('browserInfo').innerHTML = `
+                <pre>${JSON.stringify(info, null, 2)}</pre>
+            `;
+        }
+
+        function getBrowserName() {
+            const userAgent = navigator.userAgent;
+            if (userAgent.includes('Chrome') && !userAgent.includes('Edge')) return 'Chrome';
+            if (userAgent.includes('Firefox')) return 'Firefox';
+            if (userAgent.includes('Safari') && !userAgent.includes('Chrome')) return 'Safari';
+            if (userAgent.includes('Edge')) return 'Edge';
+            if (userAgent.includes('Opera') || userAgent.includes('OPR')) return 'Opera';
+            return 'Unknown';
+        }
+
+        // User session info
+        function showUserInfo() {
+            const authUser = localStorage.getItem('auth_user');
+            const profileData = localStorage.getItem('profile_data');
+            
+            let userInfo = '<p><strong>❌ Tidak ada session user</strong></p>';
+            
+            if (authUser) {
+                try {
+                    const user = JSON.parse(authUser);
+                    userInfo = `
+                        <div class="success">
+                            <p><strong>✅ User ditemukan:</strong></p>
+                            <pre>${JSON.stringify(user, null, 2)}</pre>
+                        </div>
+                    `;
+                } catch (e) {
+                    userInfo = '<div class="error"><p><strong>❌ Error parsing auth_user</strong></p></div>';
+                }
+            }
+            
+            if (profileData) {
+                try {
+                    const profile = JSON.parse(profileData);
+                    userInfo += `
+                        <div class="info">
+                            <p><strong>📋 Profile data:</strong></p>
+                            <pre>${JSON.stringify(profile, null, 2)}</pre>
+                        </div>
+                    `;
+                } catch (e) {
+                    userInfo += '<div class="error"><p><strong>❌ Error parsing profile_data</strong></p></div>';
+                }
+            }
+            
+            document.getElementById('userInfo').innerHTML = userInfo;
+        }
+
+        // Analyze localStorage data
+        function analyzeLocalStorageData() {
+            const resultDiv = document.getElementById('localStorageAnalysis');
+            resultDiv.innerHTML = '<p>🔄 Analyzing localStorage data...</p>';
+            
+            try {
+                const localData = localStorage.getItem('local-database');
+                
+                if (!localData) {
+                    resultDiv.innerHTML = '<div class="error"><p>❌ No local-database found in localStorage</p></div>';
+                    return;
+                }
+                
+                const database = JSON.parse(localData);
+                const userData = localStorage.getItem('auth_user');
+                const currentUser = userData ? JSON.parse(userData) : null;
+                const userId = currentUser?.username === 'wawan' ? '1762696525337' : currentUser?.id;
+                
+                const tasks = database.tasks?.filter(task => task.userId === userId) || [];
+                const supervisions = database.supervisions?.filter(supervision => supervision.userId === userId) || [];
+                const additionalTasks = database.additionalTasks?.filter(task => task.userId === userId) || [];
+                
+                // Analyze photos
+                const allActivities = [...tasks, ...supervisions, ...additionalTasks];
+                const photoPaths = [];
+                
+                allActivities.forEach(activity => {
+                    if (activity.photo1) photoPaths.push(activity.photo1);
+                    if (activity.photo2) photoPaths.push(activity.photo2);
+                });
+                
+                const analysis = {
+                    userId: userId,
+                    browser: getBrowserName(),
+                    totalActivities: allActivities.length,
+                    activitiesWithPhotos: allActivities.filter(a => a.photo1 || a.photo2).length,
+                    totalPhotos: photoPaths.length,
+                    photoTypes: {
+                        base64: photoPaths.filter(p => p.startsWith('data:')).length,
+                        filenames: photoPaths.filter(p => !p.startsWith('data:')).length
+                    },
+                    samplePhotoPaths: photoPaths.slice(0, 5),
+                    activities: {
+                        tasks: tasks.length,
+                        supervisions: supervisions.length,
+                        additionalTasks: additionalTasks.length
+                    }
+                };
+                
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        <h3>✅ localStorage Analysis Complete</h3>
+                        <pre>${JSON.stringify(analysis, null, 2)}</pre>
+                    </div>
+                `;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h3>❌ localStorage Analysis Error</h3>
+                        <pre>${error.message}</pre>
+                    </div>
+                `;
+            }
+        }
+
+        // Test all photo paths
+        function testAllPhotoPaths() {
+            const resultDiv = document.getElementById('photoPathTest');
+            resultDiv.innerHTML = '<p>🔄 Testing photo paths...</p>';
+            
+            try {
+                const localData = localStorage.getItem('local-database');
+                if (!localData) {
+                    resultDiv.innerHTML = '<div class="error"><p>❌ No localStorage data</p></div>';
+                    return;
+                }
+                
+                const database = JSON.parse(localData);
+                const userData = localStorage.getItem('auth_user');
+                const currentUser = userData ? JSON.parse(userData) : null;
+                const userId = currentUser?.username === 'wawan' ? '1762696525337' : currentUser?.id;
+                
+                const tasks = database.tasks?.filter(task => task.userId === userId) || [];
+                const supervisions = database.supervisions?.filter(supervision => supervision.userId === userId) || [];
+                const additionalTasks = database.additionalTasks?.filter(task => task.userId === userId) || [];
+                
+                const allActivities = [...tasks, ...supervisions, ...additionalTasks];
+                const photoPaths = [];
+                
+                allActivities.forEach(activity => {
+                    if (activity.photo1) photoPaths.push({ path: activity.photo1, type: 'photo1', activity: activity.title || activity.name });
+                    if (activity.photo2) photoPaths.push({ path: activity.photo2, type: 'photo2', activity: activity.title || activity.name });
+                });
+                
+                if (photoPaths.length === 0) {
+                    resultDiv.innerHTML = '<div class="warning"><p>⚠️ No photos found in activities</p></div>';
+                    return;
+                }
+                
+                let testHTML = '<h4>🧪 Testing Photo Paths:</h4>';
+                testHTML += `<p>Found ${photoPaths.length} photos to test</p>`;
+                
+                const testPaths = [
+                    'http://localhost:5000/uploads/',
+                    'http://localhost:3000/uploads/',
+                    '/uploads/',
+                    './uploads/'
+                ];
+                
+                photoPaths.slice(0, 6).forEach((photoInfo, index) => {
+                    if (photoInfo.path.startsWith('data:')) {
+                        testHTML += `
+                            <div class="photo-test photo-success">
+                                <img src="${photoInfo.path}" alt="${photoInfo.activity} - ${photoInfo.type}" />
+                                <br><small><strong>✅ Base64 Image</strong></small>
+                                <br><small>${photoInfo.activity}</small>
+                            </div>
+                        `;
+                    } else {
+                        testPaths.forEach(basePath => {
+                            const fullPath = basePath + photoInfo.path;
+                            testHTML += `
+                                <div class="photo-test" id="photo-test-${index}-${basePath.replace(/[^a-zA-Z0-9]/g, '')}">
+                                    <img src="${fullPath}" 
+                                         alt="${photoInfo.activity} - ${photoInfo.type}"
+                                         onload="this.parentElement.className='photo-test photo-success'; this.parentElement.querySelector('.status').innerHTML='✅ SUCCESS'"
+                                         onerror="this.parentElement.className='photo-test photo-error'; this.parentElement.querySelector('.status').innerHTML='❌ FAILED'; this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgZmlsbD0iI2NjYyIvPjx0ZXh0IHg9Ijc1IiB5PSI3NSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjEyIiBmaWxsPSIjNjY2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+Tm8gSW1hZ2U8L3RleHQ+PC9zdmc+'" />
+                                    <br><small class="status">🔄 Testing...</small>
+                                    <br><small><strong>${basePath}</strong></small>
+                                    <br><small>${photoInfo.path}</small>
+                                </div>
+                            `;
+                        });
+                    }
+                });
+                
+                resultDiv.innerHTML = testHTML;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h3>❌ Photo Path Test Error</h3>
+                        <pre>${error.message}</pre>
+                    </div>
+                `;
+            }
+        }
+
+        // Simulate reports page logic
+        function simulateReportsLogic() {
+            const resultDiv = document.getElementById('reportsSimulation');
+            resultDiv.innerHTML = '<p>🔄 Simulating reports page logic...</p>';
+            
+            try {
+                // Get user data
+                const userData = localStorage.getItem('auth_user');
+                if (!userData) {
+                    resultDiv.innerHTML = '<div class="error"><p>❌ No user session found</p></div>';
+                    return;
+                }
+                
+                const currentUser = JSON.parse(userData);
+                let userId = currentUser.id;
+                if (currentUser.username === 'wawan') {
+                    userId = '1762696525337';
+                }
+                
+                // Get localStorage data
+                const localData = localStorage.getItem('local-database');
+                if (!localData) {
+                    resultDiv.innerHTML = '<div class="error"><p>❌ No localStorage data</p></div>';
+                    return;
+                }
+                
+                const database = JSON.parse(localData);
+                
+                // Process activities like reports page
+                const activities = [];
+                
+                // Process tasks
+                const tasks = database.tasks?.filter(task => task.userId === userId) || [];
+                tasks.forEach(task => {
+                    activities.push({
+                        id: task.id,
+                        type: 'Tugas Pokok',
+                        title: task.title || 'Tugas Harian',
+                        date: task.date || task.createdAt,
+                        location: 'Sekolah Binaan',
+                        organizer: 'Pengawas Sekolah',
+                        description: task.description || '',
+                        photo1: task.photo1,
+                        photo2: task.photo2,
+                        createdAt: task.createdAt,
+                        source: 'localStorage'
+                    });
+                });
+                
+                // Process supervisions
+                const supervisions = database.supervisions?.filter(supervision => supervision.userId === userId) || [];
+                supervisions.forEach(supervision => {
+                    const school = database.schools?.find(s => s.id === supervision.schoolId);
+                    activities.push({
+                        id: supervision.id,
+                        type: 'Supervisi',
+                        title: `Supervisi ${school?.name || 'Sekolah'}`,
+                        date: supervision.date || supervision.createdAt,
+                        location: school?.name || 'Sekolah Binaan',
+                        organizer: 'Pengawas Sekolah',
+                        description: supervision.findings || supervision.recommendations || '',
+                        photo1: supervision.photo1,
+                        photo2: supervision.photo2,
+                        createdAt: supervision.createdAt,
+                        source: 'localStorage'
+                    });
+                });
+                
+                // Process additional tasks
+                const additionalTasks = database.additionalTasks?.filter(task => task.userId === userId) || [];
+                additionalTasks.forEach(task => {
+                    activities.push({
+                        id: task.id,
+                        type: 'Tugas Tambahan',
+                        title: task.name || task.title || 'Kegiatan Tambahan',
+                        date: task.date || task.createdAt,
+                        location: task.location || 'Tempat Kegiatan',
+                        organizer: task.organizer || 'Pengawas Sekolah',
+                        description: task.description || '',
+                        photo1: task.photo1,
+                        photo2: task.photo2,
+                        createdAt: task.createdAt,
+                        source: 'localStorage'
+                    });
+                });
+                
+                // Sort by date
+                activities.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+                
+                const result = {
+                    browser: getBrowserName(),
+                    userId: userId,
+                    dataSource: 'localStorage',
+                    totalActivities: activities.length,
+                    activitiesWithPhotos: activities.filter(a => a.photo1 || a.photo2).length,
+                    photoStats: {
+                        photo1Count: activities.filter(a => a.photo1).length,
+                        photo2Count: activities.filter(a => a.photo2).length,
+                        base64Photos: activities.filter(a => (a.photo1 && a.photo1.startsWith('data:')) || (a.photo2 && a.photo2.startsWith('data:'))).length,
+                        filePhotos: activities.filter(a => (a.photo1 && !a.photo1.startsWith('data:')) || (a.photo2 && !a.photo2.startsWith('data:'))).length
+                    },
+                    sampleActivities: activities.slice(0, 3).map(a => ({
+                        type: a.type,
+                        title: a.title,
+                        date: a.date,
+                        hasPhoto1: !!a.photo1,
+                        hasPhoto2: !!a.photo2,
+                        photo1Type: a.photo1 ? (a.photo1.startsWith('data:') ? 'base64' : 'file') : null,
+                        photo2Type: a.photo2 ? (a.photo2.startsWith('data:') ? 'base64' : 'file') : null
+                    })),
+                    timestamp: new Date().toISOString()
+                };
+                
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        <h3>📊 Reports Page Simulation Complete</h3>
+                        <pre>${JSON.stringify(result, null, 2)}</pre>
+                    </div>
+                `;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h3>❌ Simulation Error</h3>
+                        <pre>${error.message}</pre>
+                    </div>
+                `;
+            }
+        }
+
+        // Compare browser data
+        function compareBrowserData() {
+            const resultDiv = document.getElementById('browserComparison');
+            
+            const comparison = {
+                browser: getBrowserName(),
+                userAgent: navigator.userAgent,
+                localStorage: {
+                    available: typeof(Storage) !== "undefined",
+                    authUser: !!localStorage.getItem('auth_user'),
+                    localDatabase: !!localStorage.getItem('local-database'),
+                    profileData: !!localStorage.getItem('profile_data')
+                },
+                currentURL: window.location.href,
+                timestamp: new Date().toISOString(),
+                storageSize: {
+                    authUser: localStorage.getItem('auth_user')?.length || 0,
+                    localDatabase: localStorage.getItem('local-database')?.length || 0,
+                    profileData: localStorage.getItem('profile_data')?.length || 0
+                }
+            };
+            
+            resultDiv.innerHTML = `
+                <div class="info">
+                    <h3>🌐 Browser Comparison Data</h3>
+                    <p><strong>Instruksi:</strong> Buka halaman ini di browser lain (Chrome, Edge, Opera) dan bandingkan hasilnya.</p>
+                    <pre>${JSON.stringify(comparison, null, 2)}</pre>
+                </div>
+            `;
+        }
+
+        // Initialize
+        window.onload = function() {
+            showBrowserInfo();
+            showUserInfo();
+        };
+    </script>
+</body>
+</html>

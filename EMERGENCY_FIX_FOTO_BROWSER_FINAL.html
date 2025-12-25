@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🚨 Emergency Fix - Foto & Browser Sync</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .browser-info { 
+            background: #e3f2fd; 
+            padding: 15px; 
+            margin: 10px 0; 
+            border-radius: 5px; 
+            border-left: 4px solid #2196f3;
+        }
+        .activity { 
+            border: 1px solid #ddd; 
+            margin: 15px 0; 
+            padding: 20px; 
+            border-radius: 8px; 
+            background: #fafafa;
+        }
+        .photo { 
+            width: 200px; 
+            height: 200px; 
+            object-fit: cover; 
+            margin: 10px; 
+            border: 2px solid #ccc; 
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        .photo:hover {
+            transform: scale(1.05);
+            border-color: #2196f3;
+        }
+        .error { 
+            background-color: #f8d7da; 
+            padding: 15px; 
+            border-radius: 5px; 
+            margin: 10px 0; 
+            border-left: 4px solid #dc3545;
+        }
+        .success { 
+            background-color: #d4edda; 
+            padding: 15px; 
+            border-radius: 5px; 
+            margin: 10px 0; 
+            border-left: 4px solid #28a745;
+        }
+        .warning { 
+            background-color: #fff3cd; 
+            padding: 15px; 
+            border-radius: 5px; 
+            margin: 10px 0; 
+            border-left: 4px solid #ffc107;
+        }
+        .photo-container { 
+            display: flex; 
+            flex-wrap: wrap; 
+            gap: 15px; 
+            margin-top: 15px;
+        }
+        .photo-item { 
+            text-align: center; 
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .photo-caption { 
+            font-size: 12px; 
+            color: #666; 
+            margin-top: 8px; 
+            font-weight: bold;
+        }
+        .btn {
+            background: #2196f3;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+            transition: background 0.3s ease;
+        }
+        .btn:hover {
+            background: #1976d2;
+        }
+        .btn-danger {
+            background: #dc3545;
+        }
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        .btn-success {
+            background: #28a745;
+        }
+        .btn-success:hover {
+            background: #218838;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+        .debug-info {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚨 Emergency Fix - Foto & Browser Sync</h1>
+        
+        <div class="btn-container">
+            <button class="btn" onclick="testBrowserData()">🔄 Test Data</button>
+            <button class="btn btn-success" onclick="syncFromChrome()">📋 Sync dari Chrome</button>
+            <button class="btn btn-danger" onclick="clearAllData()">🗑️ Clear Data</button>
+            <button class="btn" onclick="testPhotoServer()">📷 Test Server</button>
+        </div>
+        
+        <div id="browser-info" class="browser-info"></div>
+        <div id="status"></div>
+        <div id="stats" class="stats"></div>
+        <div id="debug" class="debug-info" style="display: none;"></div>
+        <div id="activities"></div>
+    </div>
+    
+    <script>
+        let debugLog = [];
+        
+        function log(message) {
+            console.log(message);
+            debugLog.push(new Date().toLocaleTimeString() + ': ' + message);
+            updateDebugDisplay();
+        }
+        
+        function updateDebugDisplay() {
+            const debugDiv = document.getElementById('debug');
+            debugDiv.innerHTML = debugLog.slice(-20).join('<br>');
+            debugDiv.style.display = debugLog.length > 0 ? 'block' : 'none';
+        }
+        
+        function detectBrowser() {
+            const ua = navigator.userAgent;
+            if (ua.includes('Opera') || ua.includes('OPR')) return 'Opera';
+            if (ua.includes('Chrome') && !ua.includes('Edge')) return 'Chrome';
+            if (ua.includes('Edge')) return 'Edge';
+            if (ua.includes('Firefox')) return 'Firefox';
+            if (ua.includes('Safari') && !ua.includes('Chrome')) return 'Safari';
+            return 'Unknown';
+        }
+        
+        function testPhotoServer() {
+            log('🔍 Testing photo server...');
+            
+            // Test server ports
+            const testPorts = [5000, 3000];
+            const testImage = '1762824574393-359380420.jpeg'; // Known image from data
+            
+            testPorts.forEach(port => {
+                const img = new Image();
+                img.onload = () => {
+                    log(`✅ Server port ${port} accessible`);
+                };
+                img.onerror = () => {
+                    log(`❌ Server port ${port} not accessible`);
+                };
+                img.src = `http://localhost:${port}/uploads/${testImage}`;
+            });
+        }
+        
+        function syncFromChrome() {
+            const browser = detectBrowser();
+            if (browser === 'Chrome') {
+                alert('Anda sudah di Chrome! Buka browser lain untuk sync.');
+                return;
+            }
+            
+            const chromeData = prompt(`
+Untuk sync data dari Chrome:
+
+1. Buka Chrome
+2. Buka Developer Tools (F12)
+3. Ke tab Console
+4. Jalankan: JSON.stringify(localStorage.getItem('local-database'))
+5. Copy hasilnya dan paste di sini:
+            `);
+            
+            if (chromeData) {
+                try {
+                    // Validate JSON
+                    const parsed = JSON.parse(chromeData);
+                    localStorage.setItem('local-database', chromeData);
+                    
+                    // Also sync auth_user if needed
+                    const authData = prompt('Jika perlu, paste juga auth_user data:');
+                    if (authData) {
+                        localStorage.setItem('auth_user', authData);
+                    }
+                    
+                    log(`✅ Data berhasil di-sync ke ${browser}`);
+                    testBrowserData();
+                } catch (error) {
+                    alert('Error: Data tidak valid. Pastikan format JSON benar.');
+                    log(`❌ Sync error: ${error.message}`);
+                }
+            }
+        }
+        
+        function clearAllData() {
+            if (confirm('Yakin ingin menghapus semua data localStorage?')) {
+                localStorage.clear();
+                log('🗑️ All localStorage data cleared');
+                testBrowserData();
+            }
+        }
+        
+        function testBrowserData() {
+            const browserInfoDiv = document.getElementById('browser-info');
+            const statusDiv = document.getElementById('status');
+            const statsDiv = document.getElementById('stats');
+            const activitiesDiv = document.getElementById('activities');
+            
+            log('🔍 Starting browser data test...');
+            
+            // Display browser info
+            const browser = detectBrowser();
+            browserInfoDiv.innerHTML = `
+                <h3>🔍 Browser Information</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px;">
+                    <div><strong>Browser:</strong> ${browser}</div>
+                    <div><strong>localStorage:</strong> ${typeof(Storage) !== "undefined" ? '✅ Supported' : '❌ Not Supported'}</div>
+                    <div><strong>URL:</strong> ${window.location.href}</div>
+                    <div><strong>Timestamp:</strong> ${new Date().toLocaleString()}</div>
+                </div>
+            `;
+            
+            try {
+                // Check localStorage
+                const localData = localStorage.getItem('local-database');
+                if (!localData) {
+                    statusDiv.innerHTML = `<div class="error">❌ No localStorage data found in ${browser}</div>`;
+                    log(`❌ No localStorage data in ${browser}`);
+                    return;
+                }
+                
+                const database = JSON.parse(localData);
+                log(`✅ localStorage data found in ${browser}`);
+                
+                // Check user
+                const userData = localStorage.getItem('auth_user');
+                if (!userData) {
+                    statusDiv.innerHTML = `<div class="error">❌ No user session found in ${browser}</div>`;
+                    log(`❌ No auth_user in ${browser}`);
+                    return;
+                }
+                
+                const currentUser = JSON.parse(userData);
+                const userId = currentUser.username === 'wawan' ? '1762696525337' : currentUser.id;
+                log(`👤 User: ${currentUser.username} (ID: ${userId})`);
+                
+                // Get activities
+                const activities = [];
+                
+                // Tasks
+                const tasks = database.tasks?.filter(t => t.userId === userId) || [];
+                tasks.forEach(task => {
+                    activities.push({
+                        id: task.id,
+                        type: 'Tugas Pokok',
+                        title: task.title || 'Tugas Harian',
+                        date: task.date || task.createdAt,
+                        photo1: task.photo1,
+                        photo2: task.photo2
+                    });
+                });
+                
+                // Supervisions
+                const supervisions = database.supervisions?.filter(s => s.userId === userId) || [];
+                supervisions.forEach(supervision => {
+                    const school = database.schools?.find(s => s.id === supervision.schoolId);
+                    activities.push({
+                        id: supervision.id,
+                        type: 'Supervisi',
+                        title: `Supervisi ${school?.name || 'Sekolah'}`,
+                        date: supervision.date || supervision.createdAt,
+                        photo1: supervision.photo1,
+                        photo2: supervision.photo2
+                    });
+                });
+                
+                // Additional Tasks
+                const additionalTasks = database.additionalTasks?.filter(t => t.userId === userId) || [];
+                additionalTasks.forEach(task => {
+                    activities.push({
+                        id: task.id,
+                        type: 'Tugas Tambahan',
+                        title: task.name || task.title || 'Kegiatan Tambahan',
+                        date: task.date || task.createdAt,
+                        photo1: task.photo1,
+                        photo2: task.photo2
+                    });
+                });
+                
+                // Sort by date
+                activities.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+                
+                // Count photos
+                let totalPhotos = 0;
+                let base64Photos = 0;
+                let filePhotos = 0;
+                
+                activities.forEach(activity => {
+                    if (activity.photo1) {
+                        totalPhotos++;
+                        if (activity.photo1.startsWith('data:')) base64Photos++;
+                        else filePhotos++;
+                    }
+                    if (activity.photo2) {
+                        totalPhotos++;
+                        if (activity.photo2.startsWith('data:')) base64Photos++;
+                        else filePhotos++;
+                    }
+                });
+                
+                log(`📊 Found ${activities.length} activities, ${totalPhotos} photos (${base64Photos} base64, ${filePhotos} files)`);
+                
+                // Display stats
+                statsDiv.innerHTML = `
+                    <div class="stat-card">
+                        <div class="stat-number">${activities.length}</div>
+                        <div class="stat-label">Total Activities</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${totalPhotos}</div>
+                        <div class="stat-label">Total Photos</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${base64Photos}</div>
+                        <div class="stat-label">Base64 Photos</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${filePhotos}</div>
+                        <div class="stat-label">File Photos</div>
+                    </div>
+                `;
+                
+                // Display status
+                const statusClass = activities.length === 0 ? 'error' : totalPhotos === 0 ? 'warning' : 'success';
+                statusDiv.innerHTML = `
+                    <div class="${statusClass}">
+                        <h3>📊 Data Status in ${browser}</h3>
+                        <p><strong>User:</strong> ${currentUser.username} (ID: ${userId})</p>
+                        <p><strong>Status:</strong> ${activities.length === 0 ? '❌ No Data' : totalPhotos === 0 ? '⚠️ No Photos' : '✅ Data & Photos Found'}</p>
+                    </div>
+                `;
+                
+                // Display activities
+                if (activities.length === 0) {
+                    activitiesDiv.innerHTML = `<div class="error">❌ No activities found in ${browser}</div>`;
+                } else {
+                    activitiesDiv.innerHTML = `<h3>📋 Activities (${activities.length})</h3>` + 
+                        activities.map(activity => `
+                            <div class="activity">
+                                <h4>${activity.type}: ${activity.title}</h4>
+                                <p><strong>Date:</strong> ${activity.date}</p>
+                                <div class="photo-container">
+                                    ${activity.photo1 ? `
+                                        <div class="photo-item">
+                                            <img class="photo" 
+                                                 src="${activity.photo1.startsWith('data:') ? activity.photo1 : 'http://localhost:5000/uploads/' + activity.photo1}" 
+                                                 alt="Photo 1" 
+                                                 onload="handlePhotoLoad('${activity.photo1}', '${browser}', 1)"
+                                                 onerror="handlePhotoError(this, '${activity.photo1}', '${browser}', 1)">
+                                            <div class="photo-caption">Photo 1</div>
+                                        </div>
+                                    ` : ''}
+                                    ${activity.photo2 ? `
+                                        <div class="photo-item">
+                                            <img class="photo" 
+                                                 src="${activity.photo2.startsWith('data:') ? activity.photo2 : 'http://localhost:5000/uploads/' + activity.photo2}" 
+                                                 alt="Photo 2" 
+                                                 onload="handlePhotoLoad('${activity.photo2}', '${browser}', 2)"
+                                                 onerror="handlePhotoError(this, '${activity.photo2}', '${browser}', 2)">
+                                            <div class="photo-caption">Photo 2</div>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        `).join('');
+                }
+                
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="error">❌ Error in ${browser}: ${error.message}</div>`;
+                log(`❌ Error in ${browser}: ${error.message}`);
+            }
+        }
+        
+        function handlePhotoLoad(photoPath, browser, photoNum) {
+            const shortPath = photoPath.startsWith('data:') ? 'base64' : photoPath.substring(0, 30) + '...';
+            log(`✅ Photo${photoNum} loaded in ${browser}: ${shortPath}`);
+        }
+        
+        function handlePhotoError(img, photoPath, browser, photoNum) {
+            const shortPath = photoPath.substring(0, 30) + '...';
+            log(`❌ Photo${photoNum} error in ${browser}: ${shortPath}`);
+            
+            // Try alternative paths
+            if (img.src.includes('localhost:5000')) {
+                log('🔄 Trying localhost:3000...');
+                img.src = `http://localhost:3000/uploads/${photoPath}`;
+            } else if (img.src.includes('localhost:3000')) {
+                log('🔄 Trying relative path...');
+                img.src = `/uploads/${photoPath}`;
+            } else if (img.src.includes('/uploads/')) {
+                log('🔄 Trying direct file access...');
+                img.src = `./uploads/${photoPath}`;
+            } else {
+                log('❌ All paths failed, showing error placeholder');
+                img.style.display = 'none';
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'photo';
+                errorDiv.style.cssText = 'display: flex; align-items: center; justify-content: center; background: #f8d7da; color: #721c24; border: 2px dashed #f5c6cb; flex-direction: column; font-size: 12px;';
+                errorDiv.innerHTML = `
+                    <div style="font-size: 24px; margin-bottom: 8px;">📷</div>
+                    <div style="font-weight: bold;">Error in ${browser}</div>
+                    <div style="margin-top: 4px; opacity: 0.8;">${shortPath}</div>
+                `;
+                img.parentNode.replaceChild(errorDiv, img);
+            }
+        }
+        
+        // Auto-run test on load
+        window.onload = () => {
+            log('🚀 Page loaded, starting automatic test...');
+            testBrowserData();
+        };
+        
+        // Add keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'r') {
+                e.preventDefault();
+                testBrowserData();
+            }
+        });
+    </script>
+</body>
+</html>

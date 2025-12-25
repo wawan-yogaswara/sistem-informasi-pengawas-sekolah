@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>EMERGENCY DEBUG - Sekolah Tidak Masuk Supabase</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            padding: 20px; 
+            background: #f0f0f0;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .log { 
+            background: #f5f5f5; 
+            padding: 8px; 
+            margin: 5px 0; 
+            border-radius: 3px; 
+            border-left: 4px solid #ccc;
+            font-family: monospace;
+            font-size: 11px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        .success { 
+            color: green; 
+            border-left-color: green;
+            background: #f0fff0;
+        }
+        .error { 
+            color: red; 
+            border-left-color: red;
+            background: #fff0f0;
+        }
+        .info { 
+            color: blue; 
+            border-left-color: blue;
+            background: #f0f0ff;
+        }
+        .warning {
+            color: orange;
+            border-left-color: orange;
+            background: #fff8f0;
+        }
+        button {
+            background: #007cba;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 3px;
+            font-size: 12px;
+        }
+        button:hover {
+            background: #005a87;
+        }
+        .emergency {
+            background: #dc3545;
+        }
+        .emergency:hover {
+            background: #c82333;
+        }
+        .section {
+            border: 1px solid #ddd;
+            margin: 15px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .comparison {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .diff {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚨 EMERGENCY DEBUG - Sekolah Tidak Masuk Supabase</h1>
+        <p><strong>MASALAH:</strong> Data sekolah baru diinput di aplikasi tapi tidak masuk ke Supabase!</p>
+        
+        <div class="section">
+            <h3>🚀 Emergency Actions</h3>
+            <button onclick="debugSekarang()" class="emergency">🚨 DEBUG SEKARANG</button>
+            <button onclick="cekDataSupabase()">📊 Cek Supabase</button>
+            <button onclick="cekDataLocalStorage()">💾 Cek localStorage</button>
+            <button onclick="testAPICall()">🧪 Test API Call</button>
+            <button onclick="forceSync()">🔄 Force Sync</button>
+            <button onclick="clearOutput()">🗑️ Clear</button>
+        </div>
+        
+        <div class="grid">
+            <div class="comparison">
+                <h4>📊 Data di Supabase</h4>
+                <div id="supabaseData">Loading...</div>
+            </div>
+            <div class="comparison">
+                <h4>💾 Data di localStorage</h4>
+                <div id="localStorageData">Loading...</div>
+            </div>
+        </div>
+        
+        <div class="diff">
+            <h4>⚠️ Perbedaan Data</h4>
+            <div id="dataDiff">Analyzing...</div>
+        </div>
+        
+        <div class="section">
+            <h3>📋 Debug Log</h3>
+            <div id="output"></div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const output = document.getElementById('output');
+        const supabaseDataDiv = document.getElementById('supabaseData');
+        const localStorageDataDiv = document.getElementById('localStorageData');
+        const dataDiffDiv = document.getElementById('dataDiff');
+        
+        // Supabase configuration
+        const supabaseUrl = 'https://glhaliktsrcvnznbgxqt.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdsaGFsaWt0c3Jjdm56bmJneHF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYzNjYyMjQsImV4cCI6MjA4MTk0MjIyNH0._kaFo2h7rCdouJp2rpb1lmEvlR6gAc0c3AnRjM_PhP4';
+        
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+        
+        let supabaseSchools = [];
+        let localSchools = [];
+        
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = 'log ' + type;
+            div.innerHTML = `[${new Date().toLocaleTimeString()}] ${message}`;
+            output.appendChild(div);
+            console.log(message);
+            
+            // Auto scroll to bottom
+            div.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function clearOutput() {
+            output.innerHTML = '';
+        }
+        
+        async function cekDataSupabase() {
+            log('📊 Checking Supabase data...', 'info');
+            
+            try {
+                const { data: schools, error } = await supabase
+                    .from('schools')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                if (error) {
+                    log('❌ Supabase error: ' + error.message, 'error');
+                    return [];
+                }
+                
+                supabaseSchools = schools || [];
+                log(`✅ Supabase: ${supabaseSchools.length} schools found`, 'success');
+                
+                // Display in UI
+                supabaseDataDiv.innerHTML = `
+                    <strong>Total: ${supabaseSchools.length} sekolah</strong><br>
+                    ${supabaseSchools.map((school, index) => 
+                        `${index + 1}. ${school.name}<br>`
+                    ).join('')}
+                `;
+                
+                return supabaseSchools;
+                
+            } catch (error) {
+                log('❌ Error: ' + error.message, 'error');
+                return [];
+            }
+        }
+        
+        async function cekDataLocalStorage() {
+            log('💾 Checking localStorage data...', 'info');
+            
+            try {
+                const schoolsData = localStorage.getItem('schools_data');
+                
+                if (!schoolsData) {
+                    log('⚠️ No schools_data in localStorage', 'warning');
+                    localSchools = [];
+                } else {
+                    localSchools = JSON.parse(schoolsData);
+                    log(`✅ localStorage: ${localSchools.length} schools found`, 'success');
+                }
+                
+                // Display in UI
+                localStorageDataDiv.innerHTML = `
+                    <strong>Total: ${localSchools.length} sekolah</strong><br>
+                    ${localSchools.map((school, index) => 
+                        `${index + 1}. ${school.name}<br>`
+                    ).join('')}
+                `;
+                
+                return localSchools;
+                
+            } catch (error) {
+                log('❌ Error reading localStorage: ' + error.message, 'error');
+                return [];
+            }
+        }
+        
+        async function compareDifferences() {
+            log('🔍 Comparing data differences...', 'info');
+            
+            const supabaseNames = supabaseSchools.map(s => s.name);
+            const localNames = localSchools.map(s => s.name);
+            
+            const onlyInLocal = localSchools.filter(school => 
+                !supabaseNames.includes(school.name)
+            );
+            
+            const onlyInSupabase = supabaseSchools.filter(school => 
+                !localNames.includes(school.name)
+            );
+            
+            log(`📊 Analysis:`, 'info');
+            log(`   - Only in localStorage: ${onlyInLocal.length}`, onlyInLocal.length > 0 ? 'warning' : 'info');
+            log(`   - Only in Supabase: ${onlyInSupabase.length}`, onlyInSupabase.length > 0 ? 'warning' : 'info');
+            
+            // Display differences
+            let diffHtml = '';
+            
+            if (onlyInLocal.length > 0) {
+                diffHtml += `<strong>❌ Hanya di localStorage (${onlyInLocal.length}):</strong><br>`;
+                onlyInLocal.forEach((school, index) => {
+                    diffHtml += `${index + 1}. ${school.name}<br>`;
+                });
+                diffHtml += '<br>';
+            }
+            
+            if (onlyInSupabase.length > 0) {
+                diffHtml += `<strong>✅ Hanya di Supabase (${onlyInSupabase.length}):</strong><br>`;
+                onlyInSupabase.forEach((school, index) => {
+                    diffHtml += `${index + 1}. ${school.name}<br>`;
+                });
+            }
+            
+            if (onlyInLocal.length === 0 && onlyInSupabase.length === 0) {
+                diffHtml = '✅ Data sudah sinkron!';
+            }
+            
+            dataDiffDiv.innerHTML = diffHtml;
+            
+            return { onlyInLocal, onlyInSupabase };
+        }
+        
+        async function testAPICall() {
+            log('🧪 Testing API call...', 'info');
+            
+            try {
+                // Test schoolsApi availability
+                if (typeof window.schoolsApi === 'undefined') {
+                    log('❌ schoolsApi not available in window', 'error');
+                    
+                    // Try to access from application context
+                    log('🔍 Checking if running in application context...', 'info');
+                    
+                    if (window.location.hostname === 'localhost' && window.location.port === '5173') {
+                        log('✅ Running in application context', 'success');
+                        log('⚠️ schoolsApi should be available, checking imports...', 'warning');
+                    } else {
+                        log('⚠️ Not running in application context', 'warning');
+                        log('💡 Try running this in the application console', 'info');
+                    }
+                } else {
+                    log('✅ schoolsApi is available', 'success');
+                }
+                
+                // Test direct Supabase call
+                log('🧪 Testing direct Supabase insert...', 'info');
+                
+                const testSchool = {
+                    name: 'TEST DEBUG SCHOOL ' + Date.now(),
+                    address: 'Test Address Debug',
+                    principal: 'Test Principal Debug',
+                    phone: '0262-DEBUG',
+                    email: 'debug@test.com'
+                };
+                
+                const { data, error } = await supabase
+                    .from('schools')
+                    .insert([testSchool])
+                    .select()
+                    .single();
+                
+                if (error) {
+                    log('❌ Direct insert failed: ' + error.message, 'error');
+                    log('   Error details: ' + JSON.stringify(error, null, 2), 'error');
+                } else {
+                    log('✅ Direct insert successful!', 'success');
+                    log('   ID: ' + data.id, 'success');
+                    log('   Name: ' + data.name, 'success');
+                    
+                    // Clean up
+                    await supabase.from('schools').delete().eq('id', data.id);
+                    log('✅ Test data cleaned up', 'success');
+                }
+                
+            } catch (error) {
+                log('❌ API test error: ' + error.message, 'error');
+            }
+        }
+        
+        async function forceSync() {
+            log('🔄 Force syncing localStorage to Supabase...', 'info');
+            
+            try {
+                const { onlyInLocal } = await compareDifferences();
+                
+                if (onlyInLocal.length === 0) {
+                    log('ℹ️ No data to sync', 'info');
+                    return;
+                }
+                
+                log(`📤 Syncing ${onlyInLocal.length} schools to Supabase...`, 'info');
+                
+                for (const school of onlyInLocal) {
+                    try {
+                        const supabaseSchool = {
+                            name: school.name,
+                            address: school.address,
+                            principal: school.principalName || school.principal || '',
+                            phone: school.contact || school.phone || '',
+                            email: school.email || ''
+                        };
+                        
+                        log(`📤 Syncing: ${school.name}`, 'info');
+                        
+                        const { data, error } = await supabase
+                            .from('schools')
+                            .insert([supabaseSchool])
+                            .select()
+                            .single();
+                        
+                        if (error) {
+                            log(`❌ Failed to sync ${school.name}: ${error.message}`, 'error');
+                        } else {
+                            log(`✅ Synced: ${school.name}`, 'success');
+                        }
+                        
+                    } catch (error) {
+                        log(`❌ Error syncing ${school.name}: ${error.message}`, 'error');
+                    }
+                }
+                
+                log('🔄 Refreshing data after sync...', 'info');
+                await cekDataSupabase();
+                await compareDifferences();
+                
+            } catch (error) {
+                log('❌ Force sync error: ' + error.message, 'error');
+            }
+        }
+        
+        async function debugSekarang() {
+            log('🚨 STARTING EMERGENCY DEBUG...', 'warning');
+            
+            // Clear previous results
+            clearOutput();
+            
+            // Run all checks
+            await cekDataSupabase();
+            await cekDataLocalStorage();
+            await compareDifferences();
+            await testAPICall();
+            
+            log('🎯 DEBUG COMPLETED!', 'success');
+            log('💡 Check the comparison above for differences', 'info');
+            log('🔄 Use "Force Sync" if data needs to be synced', 'info');
+        }
+        
+        // Auto-run on page load
+        window.onload = function() {
+            log('🚀 Emergency debug tool loaded!', 'info');
+            debugSekarang();
+        };
+        
+        // Auto-refresh every 10 seconds
+        setInterval(async () => {
+            await cekDataSupabase();
+            await cekDataLocalStorage();
+            await compareDifferences();
+        }, 10000);
+    </script>
+</body>
+</html>

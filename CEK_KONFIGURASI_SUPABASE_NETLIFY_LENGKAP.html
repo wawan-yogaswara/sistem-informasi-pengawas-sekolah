@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cek Konfigurasi Supabase & Netlify - LENGKAP</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            padding: 20px; 
+            background: #f0f0f0;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .log { 
+            background: #f5f5f5; 
+            padding: 8px; 
+            margin: 5px 0; 
+            border-radius: 3px; 
+            border-left: 4px solid #ccc;
+            font-family: monospace;
+            font-size: 11px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .success { 
+            color: green; 
+            border-left-color: green;
+            background: #f0fff0;
+        }
+        .error { 
+            color: red; 
+            border-left-color: red;
+            background: #fff0f0;
+        }
+        .info { 
+            color: blue; 
+            border-left-color: blue;
+            background: #f0f0ff;
+        }
+        .warning {
+            color: orange;
+            border-left-color: orange;
+            background: #fff8f0;
+        }
+        button {
+            background: #007cba;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 3px;
+            font-size: 12px;
+        }
+        button:hover {
+            background: #005a87;
+        }
+        .critical {
+            background: #dc3545;
+        }
+        .critical:hover {
+            background: #c82333;
+        }
+        .section {
+            border: 1px solid #ddd;
+            margin: 15px 0;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+        }
+        .config-box {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .config-item {
+            margin: 8px 0;
+            padding: 8px;
+            background: white;
+            border-radius: 3px;
+            border-left: 3px solid #ddd;
+        }
+        .config-valid {
+            border-left-color: green;
+        }
+        .config-invalid {
+            border-left-color: red;
+        }
+        .config-missing {
+            border-left-color: orange;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Cek Konfigurasi Supabase & Netlify - LENGKAP</h1>
+        <p>Tool ini akan mengecek semua konfigurasi Supabase dan Netlify untuk memastikan semuanya benar.</p>
+        
+        <div class="section">
+            <h3>🚀 Quick Actions</h3>
+            <button onclick="cekSemuaKonfigurasi()" class="critical">🔍 CEK SEMUA KONFIGURASI</button>
+            <button onclick="cekSupabaseConfig()">📊 Cek Supabase</button>
+            <button onclick="cekNetlifyConfig()">🌐 Cek Netlify</button>
+            <button onclick="testKoneksiLangsung()">🧪 Test Koneksi</button>
+            <button onclick="clearOutput()">🗑️ Clear</button>
+        </div>
+        
+        <div class="grid">
+            <div class="config-box">
+                <h4>📊 Supabase Config</h4>
+                <div id="supabaseConfig">Loading...</div>
+            </div>
+            <div class="config-box">
+                <h4>🌐 Netlify Config</h4>
+                <div id="netlifyConfig">Loading...</div>
+            </div>
+            <div class="config-box">
+                <h4>🔗 Connection Status</h4>
+                <div id="connectionStatus">Testing...</div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h3>📋 Detailed Log</h3>
+            <div id="output"></div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const output = document.getElementById('output');
+        const supabaseConfigDiv = document.getElementById('supabaseConfig');
+        const netlifyConfigDiv = document.getElementById('netlifyConfig');
+        const connectionStatusDiv = document.getElementById('connectionStatus');
+        
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = 'log ' + type;
+            div.innerHTML = `[${new Date().toLocaleTimeString()}] ${message}`;
+            output.appendChild(div);
+            console.log(message);
+            
+            // Auto scroll to bottom
+            div.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function clearOutput() {
+            output.innerHTML = '';
+        }
+        
+        function createConfigItem(label, value, isValid) {
+            const className = isValid === true ? 'config-valid' : 
+                             isValid === false ? 'config-invalid' : 'config-missing';
+            return `<div class="config-item ${className}">
+                <strong>${label}:</strong> ${value}
+            </div>`;
+        }
+        
+        async function cekSupabaseConfig() {
+            log('📊 Checking Supabase configuration...', 'info');
+            
+            let configHtml = '';
+            let allValid = true;
+            
+            try {
+                // 1. Check environment variables
+                const supabaseUrl = 'https://glhaliktsrcvnznbgxqt.supabase.co';
+                const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdsaGFsaWt0c3Jjdm56bmJneHF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYzNjYyMjQsImV4cCI6MjA4MTk0MjIyNH0._kaFo2h7rCdouJp2rpb1lmEvlR6gAc0c3AnRjM_PhP4';
+                
+                // Validate URL
+                const urlValid = supabaseUrl && supabaseUrl.includes('supabase.co');
+                configHtml += createConfigItem('Supabase URL', supabaseUrl, urlValid);
+                if (!urlValid) allValid = false;
+                
+                // Validate Key
+                const keyValid = supabaseKey && supabaseKey.length > 100;
+                configHtml += createConfigItem('Supabase Key', supabaseKey ? supabaseKey.substring(0, 50) + '...' : 'Missing', keyValid);
+                if (!keyValid) allValid = false;
+                
+                // 2. Test Supabase client creation
+                if (typeof window.supabase !== 'undefined') {
+                    const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+                    configHtml += createConfigItem('Supabase Client', 'Created successfully', true);
+                    
+                    // 3. Test connection
+                    try {
+                        const { data, error } = await supabaseClient
+                            .from('schools')
+                            .select('count')
+                            .limit(1);
+                        
+                        if (error) {
+                            configHtml += createConfigItem('Connection Test', `Error: ${error.message}`, false);
+                            allValid = false;
+                            log('❌ Supabase connection error: ' + error.message, 'error');
+                        } else {
+                            configHtml += createConfigItem('Connection Test', 'Success', true);
+                            log('✅ Supabase connection successful', 'success');
+                        }
+                    } catch (connError) {
+                        configHtml += createConfigItem('Connection Test', `Exception: ${connError.message}`, false);
+                        allValid = false;
+                        log('❌ Supabase connection exception: ' + connError.message, 'error');
+                    }
+                    
+                    // 4. Test table access
+                    try {
+                        const { data: schools, error: schoolsError } = await supabaseClient
+                            .from('schools')
+                            .select('*')
+                            .limit(1);
+                        
+                        if (schoolsError) {
+                            configHtml += createConfigItem('Table Access', `Error: ${schoolsError.message}`, false);
+                            allValid = false;
+                        } else {
+                            configHtml += createConfigItem('Table Access', `Success (${schools?.length || 0} records)`, true);
+                        }
+                    } catch (tableError) {
+                        configHtml += createConfigItem('Table Access', `Exception: ${tableError.message}`, false);
+                        allValid = false;
+                    }
+                    
+                } else {
+                    configHtml += createConfigItem('Supabase Client', 'Not available', false);
+                    allValid = false;
+                    log('❌ Supabase client not available', 'error');
+                }
+                
+                // 5. Check RLS policies
+                log('🔒 Checking RLS policies...', 'info');
+                configHtml += createConfigItem('RLS Policies', 'Checking...', null);
+                
+                supabaseConfigDiv.innerHTML = configHtml;
+                
+                if (allValid) {
+                    log('✅ Supabase configuration is valid', 'success');
+                } else {
+                    log('❌ Supabase configuration has issues', 'error');
+                }
+                
+            } catch (error) {
+                log('❌ Error checking Supabase config: ' + error.message, 'error');
+                configHtml += createConfigItem('Configuration Check', `Error: ${error.message}`, false);
+                supabaseConfigDiv.innerHTML = configHtml;
+            }
+        }
+        
+        async function cekNetlifyConfig() {
+            log('🌐 Checking Netlify configuration...', 'info');
+            
+            let configHtml = '';
+            let allValid = true;
+            
+            try {
+                // 1. Check if running on Netlify
+                const isNetlify = window.location.hostname.includes('netlify.app') || 
+                                 window.location.hostname.includes('netlify.com');
+                
+                configHtml += createConfigItem('Running on Netlify', isNetlify ? 'Yes' : 'No (localhost)', isNetlify);
+                
+                // 2. Check current hostname
+                configHtml += createConfigItem('Current Hostname', window.location.hostname, true);
+                configHtml += createConfigItem('Current Protocol', window.location.protocol, true);
+                configHtml += createConfigItem('Current Port', window.location.port || 'default', true);
+                
+                // 3. Check environment variables (if available)
+                if (isNetlify) {
+                    // On Netlify, check if env vars are accessible
+                    configHtml += createConfigItem('Environment', 'Production (Netlify)', true);
+                    
+                    // Check if API endpoints work
+                    try {
+                        const response = await fetch('/api/test', { method: 'GET' });
+                        if (response.ok) {
+                            configHtml += createConfigItem('API Endpoints', 'Accessible', true);
+                        } else {
+                            configHtml += createConfigItem('API Endpoints', `Error: ${response.status}`, false);
+                            allValid = false;
+                        }
+                    } catch (apiError) {
+                        configHtml += createConfigItem('API Endpoints', 'Not accessible', false);
+                        allValid = false;
+                    }
+                } else {
+                    configHtml += createConfigItem('Environment', 'Development (localhost)', true);
+                }
+                
+                // 4. Check build configuration
+                configHtml += createConfigItem('Build Status', 'Checking...', null);
+                
+                netlifyConfigDiv.innerHTML = configHtml;
+                
+                if (allValid) {
+                    log('✅ Netlify configuration looks good', 'success');
+                } else {
+                    log('⚠️ Netlify configuration has some issues', 'warning');
+                }
+                
+            } catch (error) {
+                log('❌ Error checking Netlify config: ' + error.message, 'error');
+                configHtml += createConfigItem('Configuration Check', `Error: ${error.message}`, false);
+                netlifyConfigDiv.innerHTML = configHtml;
+            }
+        }
+        
+        async function testKoneksiLangsung() {
+            log('🧪 Testing direct connections...', 'info');
+            
+            let statusHtml = '';
+            
+            try {
+                // 1. Test Supabase direct
+                log('📊 Testing Supabase direct connection...', 'info');
+                
+                const supabaseUrl = 'https://glhaliktsrcvnznbgxqt.supabase.co';
+                const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdsaGFsaWt0c3Jjdm56bmJneHF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYzNjYyMjQsImV4cCI6MjA4MTk0MjIyNH0._kaFo2h7rCdouJp2rpb1lmEvlR6gAc0c3AnRjM_PhP4';
+                
+                if (typeof window.supabase !== 'undefined') {
+                    const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+                    
+                    const startTime = Date.now();
+                    const { data, error } = await supabaseClient
+                        .from('schools')
+                        .select('*')
+                        .limit(5);
+                    const endTime = Date.now();
+                    
+                    if (error) {
+                        statusHtml += createConfigItem('Supabase Query', `Error: ${error.message}`, false);
+                        log('❌ Supabase query failed: ' + error.message, 'error');
+                    } else {
+                        statusHtml += createConfigItem('Supabase Query', `Success (${data?.length || 0} records, ${endTime - startTime}ms)`, true);
+                        log('✅ Supabase query successful: ' + (data?.length || 0) + ' records', 'success');
+                    }
+                } else {
+                    statusHtml += createConfigItem('Supabase Client', 'Not available', false);
+                    log('❌ Supabase client not available', 'error');
+                }
+                
+                // 2. Test API endpoints (if available)
+                log('🔗 Testing API endpoints...', 'info');
+                
+                try {
+                    const apiResponse = await fetch('/api/schools', { 
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    if (apiResponse.ok) {
+                        const apiData = await apiResponse.json();
+                        statusHtml += createConfigItem('API Endpoint', `Success (${apiData?.length || 0} records)`, true);
+                        log('✅ API endpoint accessible', 'success');
+                    } else {
+                        statusHtml += createConfigItem('API Endpoint', `Error: ${apiResponse.status}`, false);
+                        log('❌ API endpoint error: ' + apiResponse.status, 'error');
+                    }
+                } catch (apiError) {
+                    statusHtml += createConfigItem('API Endpoint', 'Not accessible', false);
+                    log('⚠️ API endpoint not accessible (normal for frontend-only)', 'warning');
+                }
+                
+                // 3. Test localStorage
+                log('💾 Testing localStorage...', 'info');
+                
+                try {
+                    const testKey = 'config_test_' + Date.now();
+                    localStorage.setItem(testKey, 'test');
+                    const testValue = localStorage.getItem(testKey);
+                    localStorage.removeItem(testKey);
+                    
+                    if (testValue === 'test') {
+                        statusHtml += createConfigItem('localStorage', 'Working', true);
+                        log('✅ localStorage working', 'success');
+                    } else {
+                        statusHtml += createConfigItem('localStorage', 'Not working', false);
+                        log('❌ localStorage not working', 'error');
+                    }
+                } catch (storageError) {
+                    statusHtml += createConfigItem('localStorage', 'Error', false);
+                    log('❌ localStorage error: ' + storageError.message, 'error');
+                }
+                
+                connectionStatusDiv.innerHTML = statusHtml;
+                
+            } catch (error) {
+                log('❌ Error testing connections: ' + error.message, 'error');
+                statusHtml += createConfigItem('Connection Test', `Error: ${error.message}`, false);
+                connectionStatusDiv.innerHTML = statusHtml;
+            }
+        }
+        
+        async function cekSemuaKonfigurasi() {
+            log('🔍 STARTING COMPREHENSIVE CONFIGURATION CHECK...', 'warning');
+            clearOutput();
+            
+            // Run all checks
+            await cekSupabaseConfig();
+            await cekNetlifyConfig();
+            await testKoneksiLangsung();
+            
+            // Additional checks
+            log('🔧 Running additional checks...', 'info');
+            
+            // Check user authentication
+            const currentUser = localStorage.getItem('auth_user');
+            if (currentUser) {
+                const parsed = JSON.parse(currentUser);
+                log('👤 Current user: ' + parsed.username + ' (ID: ' + parsed.id + ')', 'info');
+                
+                if (parsed.id && parsed.id.includes('-')) {
+                    log('✅ User ID format is valid', 'success');
+                } else {
+                    log('❌ User ID format is invalid: ' + parsed.id, 'error');
+                }
+            } else {
+                log('⚠️ No current user found', 'warning');
+            }
+            
+            // Check data consistency
+            const schoolsData = localStorage.getItem('schools_data');
+            if (schoolsData) {
+                const schools = JSON.parse(schoolsData);
+                log('📋 Schools in localStorage: ' + schools.length, 'info');
+            } else {
+                log('⚠️ No schools data in localStorage', 'warning');
+            }
+            
+            log('🎯 CONFIGURATION CHECK COMPLETED!', 'success');
+            log('💡 Check the boxes above for detailed results', 'info');
+        }
+        
+        // Auto-run on page load
+        window.onload = function() {
+            log('🚀 Configuration checker loaded!', 'info');
+            cekSemuaKonfigurasi();
+        };
+    </script>
+</body>
+</html>

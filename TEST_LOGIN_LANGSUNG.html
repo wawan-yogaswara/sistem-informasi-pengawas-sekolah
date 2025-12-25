@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Login Langsung</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .form-group { margin: 15px 0; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 16px; }
+        button { padding: 12px 24px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        button:hover { background: #0056b3; }
+        button.secondary { background: #6c757d; }
+        button.success { background: #28a745; }
+        .result { margin: 10px 0; padding: 15px; border-radius: 5px; }
+        .success { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .info { background-color: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; font-size: 12px; }
+        .credentials { background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin: 15px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Test Login Langsung</h1>
+        <p>Halaman ini untuk test login jika halaman utama bermasalah.</p>
+        
+        <div class="credentials">
+            <h3>📋 Kredensial Test:</h3>
+            <p><strong>Admin:</strong> admin / admin123</p>
+            <p><strong>Wawan:</strong> wawan / wawan123</p>
+            <p><strong>Test:</strong> test / test123</p>
+        </div>
+        
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="username">Username:</label>
+                <input type="text" id="username" value="test" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" value="test123" required>
+            </div>
+            
+            <div>
+                <button type="submit">🔑 Login</button>
+                <button type="button" onclick="testAPI()" class="secondary">🧪 Test API</button>
+                <button type="button" onclick="forceLogin()" class="success">⚡ Force Login</button>
+                <button type="button" onclick="clearResults()" class="secondary">🗑️ Clear</button>
+            </div>
+        </form>
+        
+        <div id="results"></div>
+    </div>
+
+    <script>
+        const results = document.getElementById('results');
+        const loginForm = document.getElementById('loginForm');
+        
+        function addResult(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong>: ${message}`;
+            results.appendChild(div);
+            results.scrollTop = results.scrollHeight;
+        }
+        
+        function clearResults() {
+            results.innerHTML = '';
+        }
+        
+        // Handle form submit
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            addResult(`🔄 Mencoba login dengan username: ${username}`, 'info');
+            
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                addResult(`📡 Response status: ${response.status}`, 'info');
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult('✅ Login berhasil!', 'success');
+                    addResult(`👤 User data: <pre>${JSON.stringify(data, null, 2)}</pre>`, 'success');
+                    
+                    // Simpan ke localStorage
+                    localStorage.setItem('user', JSON.stringify(data));
+                    addResult('💾 Data user disimpan ke localStorage', 'success');
+                    
+                    // Redirect ke dashboard
+                    setTimeout(() => {
+                        addResult('🔄 Redirect ke dashboard...', 'info');
+                        window.location.href = '/dashboard';
+                    }, 2000);
+                    
+                } else {
+                    const errorText = await response.text();
+                    addResult(`❌ Login gagal: ${errorText}`, 'error');
+                }
+                
+            } catch (error) {
+                addResult(`❌ Error koneksi: ${error.message}`, 'error');
+                addResult('💡 Pastikan server berjalan di port yang benar', 'info');
+            }
+        });
+        
+        // Test API endpoint
+        async function testAPI() {
+            addResult('🧪 Testing API endpoints...', 'info');
+            
+            try {
+                // Test server health
+                const healthResponse = await fetch('/api/health');
+                if (healthResponse.ok) {
+                    addResult('✅ Server berjalan normal', 'success');
+                } else {
+                    addResult('⚠️ Server response tidak normal', 'error');
+                }
+            } catch (error) {
+                addResult('❌ Server tidak dapat diakses', 'error');
+            }
+            
+            try {
+                // Test users endpoint
+                const usersResponse = await fetch('/api/users');
+                addResult(`📊 Users API status: ${usersResponse.status}`, 'info');
+            } catch (error) {
+                addResult('❌ Users API tidak dapat diakses', 'error');
+            }
+        }
+        
+        // Force login (bypass API)
+        function forceLogin() {
+            addResult('⚡ Force login - bypass API...', 'info');
+            
+            const username = document.getElementById('username').value;
+            
+            // Create user object based on username
+            let userData;
+            if (username === 'admin') {
+                userData = {
+                    id: 'admin-uuid-1234-5678-9012-123456789012',
+                    username: 'admin',
+                    name: 'Administrator',
+                    role: 'admin',
+                    nip: '123456789',
+                    position: 'Administrator Sistem'
+                };
+            } else if (username === 'wawan') {
+                userData = {
+                    id: 'user-uuid-1234-5678-9012-123456789012',
+                    username: 'wawan',
+                    name: 'Wawan Setiawan',
+                    role: 'user',
+                    nip: '987654321',
+                    position: 'Pengawas Sekolah'
+                };
+            } else {
+                userData = {
+                    id: 'test-uuid-1234-5678-9012-123456789012',
+                    username: 'test',
+                    name: 'User Test',
+                    role: 'user',
+                    nip: '123456789',
+                    position: 'Pengawas Test'
+                };
+            }
+            
+            // Save to localStorage
+            localStorage.setItem('user', JSON.stringify(userData));
+            addResult('✅ Force login berhasil!', 'success');
+            addResult(`👤 User: ${userData.name} (${userData.role})`, 'success');
+            
+            // Redirect
+            setTimeout(() => {
+                addResult('🔄 Redirect ke dashboard...', 'info');
+                window.location.href = '/dashboard';
+            }, 1500);
+        }
+        
+        // Auto-load info
+        window.onload = function() {
+            addResult('🚀 Halaman test login dimuat', 'info');
+            
+            // Check current user
+            const currentUser = localStorage.getItem('user');
+            if (currentUser) {
+                const user = JSON.parse(currentUser);
+                addResult(`👤 User sudah login: ${user.name} (${user.username})`, 'success');
+            } else {
+                addResult('👤 Belum ada user yang login', 'info');
+            }
+        };
+    </script>
+</body>
+</html>

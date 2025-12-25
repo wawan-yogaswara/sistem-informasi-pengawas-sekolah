@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Sekolah Baru Tidak Masuk Supabase</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            padding: 20px; 
+            background: #f0f0f0;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .log { 
+            background: #f5f5f5; 
+            padding: 10px; 
+            margin: 10px 0; 
+            border-radius: 5px; 
+            border-left: 4px solid #ccc;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .success { 
+            color: green; 
+            border-left-color: green;
+            background: #f0fff0;
+        }
+        .error { 
+            color: red; 
+            border-left-color: red;
+            background: #fff0f0;
+        }
+        .info { 
+            color: blue; 
+            border-left-color: blue;
+            background: #f0f0ff;
+        }
+        .warning {
+            color: orange;
+            border-left-color: orange;
+            background: #fff8f0;
+        }
+        button {
+            background: #007cba;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #005a87;
+        }
+        .section {
+            border: 1px solid #ddd;
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .form-test {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .form-test input, .form-test textarea {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Debug Sekolah Baru Tidak Masuk Supabase</h1>
+        <p>Script ini akan membantu debug mengapa data sekolah baru yang diinput tidak masuk ke Supabase.</p>
+        
+        <div class="section">
+            <h3>🔧 Debug Tools</h3>
+            <button onclick="cekKoneksiSupabase()">🔗 Cek Koneksi Supabase</button>
+            <button onclick="cekDataSekolahSupabase()">📊 Cek Data Sekolah di Supabase</button>
+            <button onclick="cekDataSekolahLocalStorage()">💾 Cek Data Sekolah di localStorage</button>
+            <button onclick="testInputSekolahLangsung()">🧪 Test Input Sekolah Langsung</button>
+            <button onclick="debugAPICall()">🔍 Debug API Call</button>
+            <button onclick="clearOutput()">🗑️ Clear Output</button>
+        </div>
+        
+        <div class="section">
+            <h3>📝 Test Input Sekolah Manual</h3>
+            <div class="form-test">
+                <input type="text" id="schoolName" placeholder="Nama Sekolah" value="Test Sekolah Binaan Baru">
+                <input type="text" id="schoolAddress" placeholder="Alamat" value="Jl. Test Alamat No. 123">
+                <input type="text" id="schoolPrincipal" placeholder="Kepala Sekolah" value="Drs. Test Principal">
+                <input type="text" id="schoolPhone" placeholder="Telepon" value="0262-999999">
+                <input type="text" id="schoolEmail" placeholder="Email" value="test@sekolah.com">
+                <button onclick="testInputManual()">📤 Input Sekolah Manual</button>
+            </div>
+        </div>
+        
+        <div id="output"></div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const output = document.getElementById('output');
+        
+        // Supabase configuration
+        const supabaseUrl = 'https://glhaliktsrcvnznbgxqt.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdsaGFsaWt0c3Jjdm56bmJneHF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYzNjYyMjQsImV4cCI6MjA4MTk0MjIyNH0._kaFo2h7rCdouJp2rpb1lmEvlR6gAc0c3AnRjM_PhP4';
+        
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+        
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = 'log ' + type;
+            div.innerHTML = message;
+            output.appendChild(div);
+            console.log(message);
+            
+            // Auto scroll to bottom
+            div.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function clearOutput() {
+            output.innerHTML = '';
+        }
+        
+        async function cekKoneksiSupabase() {
+            log('🔗 Testing Supabase connection...', 'info');
+            
+            try {
+                const { data, error } = await supabase
+                    .from('schools')
+                    .select('count')
+                    .limit(1);
+                
+                if (error) {
+                    log('❌ Koneksi Supabase gagal: ' + error.message, 'error');
+                } else {
+                    log('✅ Koneksi Supabase berhasil!', 'success');
+                }
+            } catch (error) {
+                log('❌ Error koneksi: ' + error.message, 'error');
+            }
+        }
+        
+        async function cekDataSekolahSupabase() {
+            log('📊 Checking data sekolah di Supabase...', 'info');
+            
+            try {
+                const { data: schools, error } = await supabase
+                    .from('schools')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                if (error) {
+                    log('❌ Error fetching schools: ' + error.message, 'error');
+                    return;
+                }
+                
+                log(`✅ Total sekolah di Supabase: ${schools?.length || 0}`, 'success');
+                
+                if (schools && schools.length > 0) {
+                    log('📋 Daftar sekolah:', 'info');
+                    schools.forEach((school, index) => {
+                        const createdDate = new Date(school.created_at).toLocaleString('id-ID');
+                        log(`   ${index + 1}. ${school.name} (${createdDate})`, 'info');
+                    });
+                }
+                
+                // Cek sekolah yang dibuat hari ini
+                const today = new Date().toISOString().split('T')[0];
+                const todaySchools = schools?.filter(school => 
+                    school.created_at.startsWith(today)
+                ) || [];
+                
+                log(`📅 Sekolah dibuat hari ini: ${todaySchools.length}`, todaySchools.length > 0 ? 'success' : 'warning');
+                
+            } catch (error) {
+                log('❌ Error: ' + error.message, 'error');
+            }
+        }
+        
+        async function cekDataSekolahLocalStorage() {
+            log('💾 Checking data sekolah di localStorage...', 'info');
+            
+            try {
+                const schoolsData = localStorage.getItem('schools_data');
+                
+                if (!schoolsData) {
+                    log('⚠️ Tidak ada data schools_data di localStorage', 'warning');
+                    return;
+                }
+                
+                const schools = JSON.parse(schoolsData);
+                log(`📦 Total sekolah di localStorage: ${schools.length}`, 'info');
+                
+                if (schools.length > 0) {
+                    log('📋 Daftar sekolah di localStorage:', 'info');
+                    schools.forEach((school, index) => {
+                        const createdDate = school.created_at ? 
+                            new Date(school.created_at).toLocaleString('id-ID') : 
+                            'Tidak ada tanggal';
+                        log(`   ${index + 1}. ${school.name} (${createdDate})`, 'info');
+                    });
+                }
+                
+                // Cek apakah ada sekolah yang belum sync ke Supabase
+                const { data: supabaseSchools } = await supabase
+                    .from('schools')
+                    .select('name');
+                
+                const supabaseNames = supabaseSchools?.map(s => s.name) || [];
+                const localOnlySchools = schools.filter(school => 
+                    !supabaseNames.includes(school.name)
+                );
+                
+                if (localOnlySchools.length > 0) {
+                    log(`⚠️ ${localOnlySchools.length} sekolah hanya ada di localStorage:`, 'warning');
+                    localOnlySchools.forEach((school, index) => {
+                        log(`   ${index + 1}. ${school.name}`, 'warning');
+                    });
+                } else {
+                    log('✅ Semua sekolah di localStorage sudah sync ke Supabase', 'success');
+                }
+                
+            } catch (error) {
+                log('❌ Error reading localStorage: ' + error.message, 'error');
+            }
+        }
+        
+        async function testInputSekolahLangsung() {
+            log('🧪 Testing input sekolah langsung ke Supabase...', 'info');
+            
+            try {
+                const testSchool = {
+                    name: 'Test Debug Sekolah ' + new Date().toLocaleTimeString(),
+                    address: 'Jl. Debug Test No. 123',
+                    principal: 'Kepala Sekolah Debug',
+                    phone: '0262-DEBUG',
+                    email: 'debug@test.com'
+                };
+                
+                log('📤 Inserting test school: ' + testSchool.name, 'info');
+                
+                const { data, error } = await supabase
+                    .from('schools')
+                    .insert([testSchool])
+                    .select()
+                    .single();
+                
+                if (error) {
+                    log('❌ Insert failed: ' + error.message, 'error');
+                    log('   Error details: ' + JSON.stringify(error, null, 2), 'error');
+                } else {
+                    log('✅ Insert successful!', 'success');
+                    log('   ID: ' + data.id, 'success');
+                    log('   Name: ' + data.name, 'success');
+                    log('   Created: ' + new Date(data.created_at).toLocaleString('id-ID'), 'success');
+                    
+                    // Clean up
+                    await supabase.from('schools').delete().eq('id', data.id);
+                    log('✅ Test data cleaned up', 'success');
+                }
+                
+            } catch (error) {
+                log('❌ Error: ' + error.message, 'error');
+            }
+        }
+        
+        async function debugAPICall() {
+            log('🔍 Debugging API call process...', 'info');
+            
+            try {
+                // 1. Cek current user
+                const currentUser = localStorage.getItem('auth_user');
+                if (currentUser) {
+                    const parsed = JSON.parse(currentUser);
+                    log('👤 Current user: ' + parsed.username + ' (ID: ' + parsed.id + ')', 'info');
+                    
+                    // Validate user ID format
+                    if (parsed.id && parsed.id.includes('-')) {
+                        log('✅ User ID format valid (UUID)', 'success');
+                    } else {
+                        log('⚠️ User ID format invalid: ' + parsed.id, 'warning');
+                    }
+                } else {
+                    log('❌ No current user found in localStorage', 'error');
+                }
+                
+                // 2. Cek API function
+                if (typeof window.schoolsApi !== 'undefined') {
+                    log('✅ schoolsApi available', 'success');
+                } else {
+                    log('❌ schoolsApi not available', 'error');
+                }
+                
+                // 3. Test manual API call
+                log('🧪 Testing manual API call...', 'info');
+                
+                const testData = {
+                    name: 'API Test School ' + Date.now(),
+                    address: 'API Test Address',
+                    principal: 'API Test Principal',
+                    phone: '0262-API-TEST',
+                    email: 'api@test.com'
+                };
+                
+                // Simulate the API call
+                const { data, error } = await supabase
+                    .from('schools')
+                    .insert([testData])
+                    .select()
+                    .single();
+                
+                if (error) {
+                    log('❌ Manual API call failed: ' + error.message, 'error');
+                } else {
+                    log('✅ Manual API call successful!', 'success');
+                    log('   Created school: ' + data.name, 'success');
+                    
+                    // Clean up
+                    await supabase.from('schools').delete().eq('id', data.id);
+                    log('✅ Cleaned up test data', 'success');
+                }
+                
+            } catch (error) {
+                log('❌ Debug error: ' + error.message, 'error');
+            }
+        }
+        
+        async function testInputManual() {
+            log('📝 Testing manual school input...', 'info');
+            
+            try {
+                const schoolData = {
+                    name: document.getElementById('schoolName').value,
+                    address: document.getElementById('schoolAddress').value,
+                    principal: document.getElementById('schoolPrincipal').value,
+                    phone: document.getElementById('schoolPhone').value,
+                    email: document.getElementById('schoolEmail').value
+                };
+                
+                log('📤 Input data: ' + JSON.stringify(schoolData, null, 2), 'info');
+                
+                const { data, error } = await supabase
+                    .from('schools')
+                    .insert([schoolData])
+                    .select()
+                    .single();
+                
+                if (error) {
+                    log('❌ Manual input failed: ' + error.message, 'error');
+                    log('   Error details: ' + JSON.stringify(error, null, 2), 'error');
+                } else {
+                    log('✅ Manual input successful!', 'success');
+                    log('   ID: ' + data.id, 'success');
+                    log('   Name: ' + data.name, 'success');
+                    log('   Created: ' + new Date(data.created_at).toLocaleString('id-ID'), 'success');
+                    
+                    // Update localStorage
+                    const existingSchools = JSON.parse(localStorage.getItem('schools_data') || '[]');
+                    existingSchools.unshift(data);
+                    localStorage.setItem('schools_data', JSON.stringify(existingSchools));
+                    
+                    log('✅ Data juga disimpan ke localStorage', 'success');
+                    
+                    // Don't clean up - keep the data
+                    log('ℹ️ Data disimpan permanen (tidak dihapus)', 'info');
+                }
+                
+            } catch (error) {
+                log('❌ Error: ' + error.message, 'error');
+            }
+        }
+        
+        // Auto-run initial checks
+        window.onload = function() {
+            log('🚀 Debug tool loaded. Ready to check sekolah data!', 'info');
+            cekKoneksiSupabase();
+        };
+    </script>
+</body>
+</html>

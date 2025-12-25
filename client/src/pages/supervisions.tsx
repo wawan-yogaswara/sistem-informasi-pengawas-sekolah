@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,16 +11,17 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Badge } from "@/components/ui/badge";
 import { Plus, FileText, Printer, Image as ImageIcon, X } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { supervisionsApi } from "@/lib/api";
+import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
+import { supervisionsApi } from "@/lib/api";
 
 type Supervision = {
   id: string;
   school: string;
   type: string;
   date: string;
-  teacherName?: string | null;
-  teacherNip?: string | null;
+  teacher_name?: string | null;
+  teacher_nip?: string | null;
   findings: string;
   recommendations: string;
   photo1?: string | null;
@@ -78,136 +79,120 @@ export default function SupervisionsPage() {
   const photo1InputRef = useRef<HTMLInputElement>(null);
   const photo2InputRef = useRef<HTMLInputElement>(null);
 
-  // Fetch supervisions from API
-  const { data: supervisions = [], isLoading } = useQuery({
+  // SIMPLE: Pure Supabase query untuk supervisions
+  const { data: supervisions = [], isLoading, refetch } = useQuery({
     queryKey: ['supervisions'],
-    queryFn: () => {
-      try {
-        if (typeof window !== 'undefined' && window.localStorage) {
-          const supervisionsData = localStorage.getItem('supervisions_data');
-          if (supervisionsData) {
-            const parsed = JSON.parse(supervisionsData);
-            return Array.isArray(parsed) ? parsed : [];
-          }
-        }
-        return [];
-      } catch (error) {
-        console.warn('Error reading supervisions from localStorage:', error);
-        return [];
+    queryFn: async () => {
+      console.log('🔍 Fetching supervisions from Supabase...');
+      
+      const { data, error } = await supabase
+        .from('supervisions')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('❌ Supabase error:', error);
+        throw error;
       }
+      
+      console.log('✅ Supervisions loaded:', data?.length || 0);
+      return data || [];
     },
+    retry: 1,
+    refetchOnWindowFocus: false,
   });
 
-  // Fetch schools for dropdown - HARDCODED for now to ensure dropdown works
+  // SIMPLE: Fetch schools from Supabase
   const { data: schools = [] } = useQuery({
     queryKey: ['schools'],
-    queryFn: () => {
-      // HARDCODED SCHOOLS - This ensures dropdown always has data
-      const hardcodedSchools = [
-        {
-          id: "school-smkn4-garut",
-          name: "SMKN 4 Garut",
-          address: "Jl. Raya Garut No. 200, Garut",
-          contact: "0262-2345678",
-          principalName: "Drs. Andi Wijaya, M.Pd",
-          principalNip: "196905101995031001",
-          supervisions: 0,
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: "school-sdn1-garut",
-          name: "SDN 1 Garut",
-          address: "Jl. Pendidikan No. 1, Garut",
-          contact: "0262-1111111",
-          principalName: "Dra. Sri Mulyani, M.Pd",
-          principalNip: "196801011990032001",
-          supervisions: 2,
-          createdAt: new Date().toISOString()
-        },
-        {
-          id: "school-smpn1-garut",
-          name: "SMPN 1 Garut",
-          address: "Jl. Ahmad Yani No. 50, Garut",
-          contact: "0262-2222222",
-          principalName: "Drs. Bambang Sutrisno, M.Pd",
-          principalNip: "196702021991031002",
-          supervisions: 3,
-          createdAt: new Date().toISOString()
-        }
-      ];
+    queryFn: async () => {
+      console.log('🔍 Fetching schools from Supabase...');
       
-      // Also try to get from localStorage and merge
-      try {
-        if (typeof window !== 'undefined' && window.localStorage) {
-          let schoolsData = localStorage.getItem('schools_data');
-          
-          if (schoolsData) {
-            const parsed = JSON.parse(schoolsData);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              console.log('🏫 Using localStorage schools:', parsed.length);
-              return parsed;
-            }
+      const { data, error } = await supabase
+        .from('schools')
+        .select('*')
+        .order('name', { ascending: true });
+      
+      if (error) {
+        console.error('❌ Schools error:', error);
+        // Fallback to hardcoded schools if Supabase fails
+        return [
+          {
+            id: "school-smkn4-garut",
+            name: "SMKN 4 Garut",
+            address: "Jl. Raya Garut No. 200, Garut",
+            contact: "0262-2345678",
+            principal_name: "Drs. Andi Wijaya, M.Pd",
+            principal_nip: "196905101995031001"
+          },
+          {
+            id: "school-sdn1-garut", 
+            name: "SDN 1 Garut",
+            address: "Jl. Pendidikan No. 1, Garut",
+            contact: "0262-1111111",
+            principal_name: "Dra. Sri Mulyani, M.Pd",
+            principal_nip: "196801011990032001"
+          },
+          {
+            id: "school-smpn1-garut",
+            name: "SMPN 1 Garut", 
+            address: "Jl. Ahmad Yani No. 50, Garut",
+            contact: "0262-2222222",
+            principal_name: "Drs. Bambang Sutrisno, M.Pd",
+            principal_nip: "196702021991031002"
           }
-        }
-      } catch (error) {
-        console.warn('Error reading schools from localStorage:', error);
+        ];
       }
       
-      // Always return hardcoded schools as fallback
-      console.log('🏫 Using hardcoded schools:', hardcodedSchools.length);
-      return hardcodedSchools;
+      console.log('✅ Schools loaded:', data?.length || 0);
+      return data || [];
     },
-    refetchInterval: 5000, // Auto-refresh every 5 seconds to detect changes
-    refetchIntervalInBackground: true,
+    retry: 1,
+    refetchOnWindowFocus: false,
   });
 
-  // Create supervision mutation
-  const createSupervisionMutation = useMutation({
-    mutationFn: supervisionsApi.create,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['supervisions'] });
-      toast({
-        title: "Berhasil",
-        description: "Supervisi berhasil ditambahkan",
-      });
-      setNewSupervision({ school: "", type: "Akademik", date: "", teacherName: "", teacherNip: "", findings: "", recommendations: "" });
-      setPhoto1(null);
-      setPhoto2(null);
-      setPhoto1Preview(null);
-      setPhoto2Preview(null);
-      setIsAddDialogOpen(false);
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Gagal",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Delete supervision mutation
-  const deleteSupervisionMutation = useMutation({
-    mutationFn: supervisionsApi.delete,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['supervisions'] });
+  // SIMPLE: Delete supervision function - Pure Supabase
+  const handleDeleteSupervision = async (id: string) => {
+    try {
+      console.log('🗑️ Deleting supervision:', id);
+      
+      const { error } = await supabase
+        .from('supervisions')
+        .delete()
+        .eq('id', id);
+      
+      if (error) {
+        console.error('❌ Delete error:', error);
+        throw error;
+      }
+      
+      console.log('✅ Supervision deleted');
+      
+      // Refresh data
+      refetch();
+      
       toast({
         title: "Berhasil",
         description: "Supervisi berhasil dihapus",
       });
-    },
-    onError: (error: Error) => {
+      
+      setDeleteDialogOpen(false);
+      setSupervisionToDelete(null);
+      
+    } catch (error: any) {
+      console.error('❌ Delete supervision error:', error);
       toast({
-        title: "Gagal",
-        description: error.message,
+        title: "Error",
+        description: error.message || "Terjadi kesalahan saat menghapus supervisi",
         variant: "destructive",
       });
-    },
-  });
+    }
+  };
 
+  // SIMPLE: Add supervision function - Pure Supabase
   const handleAddSupervision = async () => {
     try {
-      console.log('🔄 Starting handleAddSupervision...');
+      console.log('📝 Adding supervision...');
       
       // Validate required fields
       if (!newSupervision.school) {
@@ -228,42 +213,87 @@ export default function SupervisionsPage() {
         return;
       }
 
-      // Find school ID from school name
-      const selectedSchool = schools.find((s: any) => s.name === newSupervision.school);
-      if (!selectedSchool) {
+      // Get current user - SIMPLIFIED
+      const userData = localStorage.getItem('auth_user');
+      if (!userData) {
         toast({
           title: "Error",
-          description: "Sekolah tidak ditemukan",
+          description: "Silakan login terlebih dahulu",
           variant: "destructive",
         });
         return;
       }
-
-      console.log('📝 Creating FormData for supervision...');
-      const formData = new FormData();
-      formData.append('schoolId', selectedSchool.id);
-      formData.append('type', newSupervision.type);
-      formData.append('teacherName', newSupervision.teacherName || '');
-      formData.append('teacherNip', newSupervision.teacherNip || '');
-      formData.append('findings', newSupervision.findings);
-      formData.append('recommendations', newSupervision.recommendations || '');
-      formData.append('date', newSupervision.date || new Date().toISOString().split('T')[0]);
+      
+      const currentUser = JSON.parse(userData);
+      
+      // Use simple string user_id (no UUID constraint)
+      const userId = currentUser.username || 'user-' + Date.now();
+      
+      console.log('👤 User ID:', userId);
+      
+      // Convert photos to base64 if exists
+      let photo1Base64 = null;
+      let photo2Base64 = null;
       
       if (photo1) {
-        console.log('📸 Adding photo1 to FormData');
-        formData.append('photo1', photo1);
+        const reader = new FileReader();
+        photo1Base64 = await new Promise<string>((resolve) => {
+          reader.onload = () => resolve(reader.result as string);
+          reader.readAsDataURL(photo1);
+        });
       }
-      if (photo2) {
-        console.log('📸 Adding photo2 to FormData');
-        formData.append('photo2', photo2);
-      }
-
-      console.log('💾 Submitting supervision data...');
-      await createSupervisionMutation.mutateAsync(formData);
       
-      console.log('✅ Supervision created successfully');
+      if (photo2) {
+        const reader = new FileReader();
+        photo2Base64 = await new Promise<string>((resolve) => {
+          reader.onload = () => resolve(reader.result as string);
+          reader.readAsDataURL(photo2);
+        });
+      }
+      
+      const { data, error } = await supabase
+        .from('supervisions')
+        .insert([{
+          user_id: userId,
+          school: newSupervision.school,
+          type: newSupervision.type,
+          date: newSupervision.date || new Date().toISOString().split('T')[0],
+          teacher_name: newSupervision.teacherName || null,
+          teacher_nip: newSupervision.teacherNip || null,
+          findings: newSupervision.findings,
+          recommendations: newSupervision.recommendations || null,
+          photo1: photo1Base64,
+          photo2: photo2Base64
+        }])
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('❌ Insert error:', error);
+        throw error;
+      }
+      
+      console.log('✅ Supervision added:', data);
+      
+      // Refresh data
+      refetch();
+      
+      // Success feedback
+      toast({
+        title: "Berhasil",
+        description: "Supervisi berhasil ditambahkan",
+      });
+      
+      // Reset form
+      setNewSupervision({ school: "", type: "Akademik", date: "", teacherName: "", teacherNip: "", findings: "", recommendations: "" });
+      setPhoto1(null);
+      setPhoto2(null);
+      setPhoto1Preview(null);
+      setPhoto2Preview(null);
+      setIsAddDialogOpen(false);
+      
     } catch (error: any) {
-      console.error('❌ Error in handleAddSupervision:', error);
+      console.error('❌ Add supervision error:', error);
       toast({
         title: "Error",
         description: error.message || "Terjadi kesalahan saat menyimpan supervisi",
@@ -283,70 +313,90 @@ export default function SupervisionsPage() {
     return grouped;
   };
 
-  const handleDeleteSupervision = (id: string) => {
+  const openDeleteDialog = (id: string) => {
     setSupervisionToDelete(id);
     setDeleteDialogOpen(true);
   };
 
   const confirmDelete = () => {
     if (supervisionToDelete) {
-      deleteSupervisionMutation.mutate(supervisionToDelete);
-      setDeleteDialogOpen(false);
-      setSupervisionToDelete(null);
+      handleDeleteSupervision(supervisionToDelete);
     }
   };
 
-  // Update supervision mutation
-  const updateSupervisionMutation = useMutation({
-    mutationFn: async ({ id, formData }: { id: string; formData: FormData }) => {
-      // Direct localStorage update - no API calls
-      const supervisionsData = localStorage.getItem('supervisions_data');
-      const currentSupervisions = supervisionsData ? JSON.parse(supervisionsData) : [];
+  // SIMPLE: Update supervision function - Pure Supabase
+  const handleUpdateSupervision = async () => {
+    if (!editingSupervision) return;
+
+    try {
+      console.log('📝 Updating supervision...');
       
-      // Convert FormData to object with proper async file handling
-      const supervisionData: any = {};
-      const filePromises: Promise<void>[] = [];
+      // Get current user
+      const userData = localStorage.getItem('auth_user');
+      if (!userData) {
+        toast({
+          title: "Error",
+          description: "Silakan login terlebih dahulu",
+          variant: "destructive",
+        });
+        return;
+      }
       
-      formData.forEach((value, key) => {
-        if (key.startsWith('photo') && value instanceof File) {
-          // Convert file to base64 for localStorage
-          const promise = new Promise<void>((resolve) => {
-            const reader = new FileReader();
-            reader.onload = () => {
-              supervisionData[key] = reader.result;
-              resolve();
-            };
-            reader.readAsDataURL(value);
-          });
-          filePromises.push(promise);
-        } else {
-          supervisionData[key] = value;
-        }
-      });
+      // Convert photos to base64 if exists
+      let photo1Base64 = photo1Preview; // Keep existing if no new photo
+      let photo2Base64 = photo2Preview; // Keep existing if no new photo
       
-      // Wait for all file conversions to complete
-      await Promise.all(filePromises);
+      if (photo1) {
+        const reader = new FileReader();
+        photo1Base64 = await new Promise<string>((resolve) => {
+          reader.onload = () => resolve(reader.result as string);
+          reader.readAsDataURL(photo1);
+        });
+      }
       
-      // Update the specific supervision
-      const updatedSupervisions = currentSupervisions.map((supervision: any) => 
-        supervision.id === id ? {
-          ...supervision,
-          ...supervisionData,
-          updatedAt: new Date().toISOString()
-        } : supervision
-      );
+      if (photo2) {
+        const reader = new FileReader();
+        photo2Base64 = await new Promise<string>((resolve) => {
+          reader.onload = () => resolve(reader.result as string);
+          reader.readAsDataURL(photo2);
+        });
+      }
       
-      localStorage.setItem('supervisions_data', JSON.stringify(updatedSupervisions));
-      localStorage.setItem('supervisions_data_backup', JSON.stringify(updatedSupervisions));
+      const { data, error } = await supabase
+        .from('supervisions')
+        .update({
+          school: newSupervision.school,
+          type: newSupervision.type,
+          date: newSupervision.date || editingSupervision.date,
+          teacher_name: newSupervision.teacherName || null,
+          teacher_nip: newSupervision.teacherNip || null,
+          findings: newSupervision.findings,
+          recommendations: newSupervision.recommendations || null,
+          photo1: photo1Base64,
+          photo2: photo2Base64,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', editingSupervision.id)
+        .select()
+        .single();
       
-      return { success: true, id };
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['supervisions'] });
+      if (error) {
+        console.error('❌ Update error:', error);
+        throw error;
+      }
+      
+      console.log('✅ Supervision updated:', data);
+      
+      // Refresh data
+      refetch();
+      
+      // Success feedback
       toast({
         title: "Berhasil",
         description: "Supervisi berhasil diupdate",
       });
+      
+      // Reset form
       setEditingSupervision(null);
       setNewSupervision({ school: "", type: "Akademik", date: "", teacherName: "", teacherNip: "", findings: "", recommendations: "" });
       setPhoto1(null);
@@ -354,15 +404,16 @@ export default function SupervisionsPage() {
       setPhoto1Preview(null);
       setPhoto2Preview(null);
       setIsEditDialogOpen(false);
-    },
-    onError: (error: Error) => {
+      
+    } catch (error: any) {
+      console.error('❌ Update supervision error:', error);
       toast({
-        title: "Gagal",
-        description: error.message,
+        title: "Error",
+        description: error.message || "Terjadi kesalahan saat mengupdate supervisi",
         variant: "destructive",
       });
-    },
-  });
+    }
+  };
 
   const handleEditSupervision = (supervision: Supervision) => {
     setEditingSupervision(supervision);
@@ -370,8 +421,8 @@ export default function SupervisionsPage() {
       school: supervision.school,
       type: supervision.type,
       date: supervision.date,
-      teacherName: supervision.teacherName || "",
-      teacherNip: supervision.teacherNip || "",
+      teacherName: supervision.teacher_name || "",
+      teacherNip: supervision.teacher_nip || "",
       findings: supervision.findings,
       recommendations: supervision.recommendations,
     });
@@ -387,36 +438,7 @@ export default function SupervisionsPage() {
     setIsEditDialogOpen(true);
   };
 
-  const handleUpdateSupervision = async () => {
-    if (!editingSupervision) return;
 
-    const selectedSchool = schools.find((s: any) => s.name === newSupervision.school);
-    if (!selectedSchool) {
-      toast({
-        title: "Error",
-        description: "Sekolah tidak ditemukan",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append('schoolId', selectedSchool.id);
-    formData.append('type', newSupervision.type);
-    formData.append('teacherName', newSupervision.teacherName);
-    formData.append('teacherNip', newSupervision.teacherNip);
-    formData.append('findings', newSupervision.findings);
-    formData.append('recommendations', newSupervision.recommendations);
-    // Format date properly
-    const dateToUse = newSupervision.date || editingSupervision.date;
-    const dateStr = dateToUse ? new Date(dateToUse).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
-    formData.append('date', dateStr);
-    
-    if (photo1) formData.append('photo1', photo1);
-    if (photo2) formData.append('photo2', photo2);
-
-    updateSupervisionMutation.mutate({ id: editingSupervision.id, formData });
-  };
 
   const getTypeColor = (type: string) => {
     return type === "Akademik" 
@@ -610,10 +632,10 @@ export default function SupervisionsPage() {
               <div class="info-label">Tanggal:</div>
               <div class="info-value">${new Date(supervision.date).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
             </div>
-            ${supervision.teacherName ? `
+            ${supervision.teacher_name ? `
             <div class="info-row">
               <div class="info-label">Guru:</div>
-              <div class="info-value">${supervision.teacherName}${supervision.teacherNip ? ` (NIP: ${supervision.teacherNip})` : ''}</div>
+              <div class="info-value">${supervision.teacher_name}${supervision.teacher_nip ? ` (NIP: ${supervision.teacher_nip})` : ''}</div>
             </div>
             ` : ''}
             <div class="info-row">
@@ -638,8 +660,8 @@ export default function SupervisionsPage() {
             <div class="signature-section">
               <div class="signature-box">
                 <div class="signature-label">Guru yang Disupervisi</div>
-                <div class="signature-name">${supervision.teacherName || '(...........................)'}</div>
-                ${supervision.teacherNip ? `<div class="signature-nip">NIP/NUPTK: ${supervision.teacherNip}</div>` : ''}
+                <div class="signature-name">${supervision.teacher_name || '(...........................)'}</div>
+                ${supervision.teacher_nip ? `<div class="signature-nip">NIP/NUPTK: ${supervision.teacher_nip}</div>` : ''}
               </div>
               <div class="signature-box">
                 <div class="signature-label">Pengawas Sekolah</div>
@@ -688,12 +710,7 @@ export default function SupervisionsPage() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '8px',
-                minHeight: '40px',
-                // Edge browser compatibility
-                WebkitAppearance: 'none',
-                MozAppearance: 'none',
-                msFlexAlign: 'center',
-                msFlexPack: 'center'
+                minHeight: '40px'
               }}
             >
               <Plus className="h-4 w-4" style={{ marginRight: '8px' }} />
@@ -895,13 +912,12 @@ export default function SupervisionsPage() {
                   variant="outline" 
                   onClick={() => setIsAddDialogOpen(false)} 
                   data-testid="button-cancel-supervision"
-                  disabled={createSupervisionMutation.isPending}
                 >
                   Batal
                 </Button>
                 <Button 
                   onClick={handleAddSupervision} 
-                  disabled={!newSupervision.school || !newSupervision.findings.trim() || createSupervisionMutation.isPending} 
+                  disabled={!newSupervision.school || !newSupervision.findings.trim()} 
                   data-testid="button-save-supervision"
                   style={{
                     minHeight: '40px',
@@ -910,7 +926,7 @@ export default function SupervisionsPage() {
                     justifyContent: 'center'
                   }}
                 >
-                  {createSupervisionMutation.isPending ? "Menyimpan..." : "Simpan Supervisi"}
+                  Simpan Supervisi
                 </Button>
               </div>
             </div>
@@ -1115,8 +1131,8 @@ export default function SupervisionsPage() {
                 }}>
                   Batal
                 </Button>
-                <Button onClick={handleUpdateSupervision} disabled={!newSupervision.school || !newSupervision.findings || updateSupervisionMutation.isPending}>
-                  {updateSupervisionMutation.isPending ? "Menyimpan..." : "Update Supervisi"}
+                <Button onClick={handleUpdateSupervision} disabled={!newSupervision.school || !newSupervision.findings}>
+                  Update Supervisi
                 </Button>
               </div>
             </div>
@@ -1158,7 +1174,7 @@ export default function SupervisionsPage() {
                     <Button variant="outline" size="sm" onClick={() => handleEditSupervision(supervision)} data-testid={`button-edit-supervision-${supervision.id}`}>
                       <FileText className="h-4 w-4" />
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => handleDeleteSupervision(supervision.id)} data-testid={`button-delete-supervision-${supervision.id}`}>
+                    <Button variant="outline" size="sm" onClick={() => openDeleteDialog(supervision.id)} data-testid={`button-delete-supervision-${supervision.id}`}>
                       <X className="h-4 w-4" />
                     </Button>
                   </div>

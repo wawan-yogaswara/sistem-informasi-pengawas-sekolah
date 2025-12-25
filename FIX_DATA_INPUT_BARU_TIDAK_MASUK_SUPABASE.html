@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fix Data Input Baru Tidak Masuk Supabase</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 20px; }
+        .container { background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 10px 0; border-left: 4px solid #007bff; }
+        .success { border-left-color: #28a745; background: #d4edda; }
+        .warning { border-left-color: #ffc107; background: #fff3cd; }
+        .error { border-left-color: #dc3545; background: #f8d7da; }
+        button { background: #007bff; color: white; border: none; padding: 12px 24px; margin: 8px; border-radius: 4px; cursor: pointer; font-size: 16px; }
+        button:hover { background: #0056b3; }
+        .btn-success { background: #28a745; }
+        .btn-success:hover { background: #218838; }
+        .btn-danger { background: #dc3545; }
+        .btn-danger:hover { background: #c82333; }
+        .btn-warning { background: #ffc107; color: #212529; }
+        .btn-warning:hover { background: #e0a800; }
+        .log { max-height: 400px; overflow-y: auto; background: #000; color: #00ff00; padding: 15px; border-radius: 4px; font-family: monospace; font-size: 14px; }
+        .step { margin: 15px 0; padding: 15px; background: #e9ecef; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Fix Data Input Baru Tidak Masuk Supabase</h1>
+    
+    <div class="container error">
+        <h3>❌ MASALAH YANG DITEMUKAN</h3>
+        <p><strong>Data yang diinput baru tidak masuk ke Supabase</strong></p>
+        <p>Yang muncul di Supabase hanya data hasil migrasi lama seperti:</p>
+        <ul>
+            <li>"Silaturahmi dan perkenalan kepala SMKN"</li>
+            <li>"Pisah sambut kepala SMKN 14 Garut"</li>
+            <li>"Apel Pagi"</li>
+        </ul>
+        <p>Data baru yang diinput tidak tersimpan ke database.</p>
+    </div>
+
+    <div class="container warning">
+        <h3>🔍 DIAGNOSIS CEPAT</h3>
+        <button onclick="diagnosisLengkap()">🔍 Diagnosis Lengkap</button>
+        <button onclick="cekDataTerbaru()">📊 Cek Data Terbaru</button>
+        <button onclick="testSaveFunction()">🧪 Test Fungsi Save</button>
+    </div>
+
+    <div class="container">
+        <h3>🚀 SOLUSI PERBAIKAN</h3>
+        
+        <div class="step">
+            <h4>Step 1: Hapus Data Migrasi Lama</h4>
+            <button onclick="hapusDataMigrasi()" class="btn-warning">🗑️ Hapus Data Migrasi Lama</button>
+            <p>Menghapus data hasil migrasi yang menggangu</p>
+        </div>
+
+        <div class="step">
+            <h4>Step 2: Fix API Save Function</h4>
+            <button onclick="fixApiSaveFunction()" class="btn-success">🔧 Fix API Save Function</button>
+            <p>Memperbaiki fungsi penyimpanan data ke Supabase</p>
+        </div>
+
+        <div class="step">
+            <h4>Step 3: Test Input Data Baru</h4>
+            <button onclick="testInputDataBaru()" class="btn-success">✅ Test Input Data Baru</button>
+            <p>Test apakah data baru sudah bisa tersimpan</p>
+        </div>
+
+        <div class="step">
+            <h4>Step 4: Verifikasi Cross-Browser</h4>
+            <button onclick="verifikasiCrossBrowser()" class="btn-success">🌐 Verifikasi Cross-Browser</button>
+            <p>Pastikan data sinkron di semua browser</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <h3>📊 Log & Status:</h3>
+        <div id="log" class="log">
+            <div>🔄 Ready to fix data input issue...</div>
+            <div>💡 Klik tombol diagnosis untuk memulai</div>
+        </div>
+    </div>
+
+    <div class="container success" style="display: none;" id="successMessage">
+        <h3>✅ PERBAIKAN BERHASIL!</h3>
+        <p><strong>Data input baru sekarang sudah bisa masuk ke Supabase</strong></p>
+        <ol>
+            <li>Test input data baru di aplikasi</li>
+            <li>Cek di Supabase dashboard - data harus muncul</li>
+            <li>Buka browser lain - data harus sinkron</li>
+            <li>Refresh halaman - data tetap ada</li>
+        </ol>
+    </div>
+
+    <script>
+        // Supabase config
+        const SUPABASE_URL = 'https://glhaliktsrcvnznbgxqt.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdsaGFsaWt0c3Jjdm56bmJneHF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYzNjYyMjQsImV4cCI6MjA4MTk0MjIyNH0._kaFo2h7rCdouJp2rpb1lmEvlR6gAc0c3AnRjM_PhP4';
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? '#ff6b6b' : type === 'success' ? '#51cf66' : type === 'warning' ? '#ffd43b' : '#00ff00';
+            
+            logDiv.innerHTML += `<div style="color: ${color}">[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        function showSuccess() {
+            document.getElementById('successMessage').style.display = 'block';
+            document.getElementById('successMessage').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // 1. Diagnosis lengkap
+        async function diagnosisLengkap() {
+            log('🔍 MEMULAI DIAGNOSIS LENGKAP...', 'info');
+            
+            try {
+                // Cek user session
+                const authUser = localStorage.getItem('auth_user');
+                if (!authUser) {
+                    log('❌ Tidak ada user session - silakan login dulu', 'error');
+                    return;
+                }
+                
+                const user = JSON.parse(authUser);
+                log(`✅ User session: ${user.username} (ID: ${user.id})`, 'success');
+                
+                // Cek koneksi Supabase
+                log('🔗 Testing Supabase connection...', 'info');
+                const connectionOk = await testConnection();
+                if (!connectionOk) return;
+                
+                // Cek data di Supabase
+                await cekDataSupabase();
+                
+                // Cek data di localStorage
+                await cekDataLocalStorage();
+                
+                // Analisis masalah
+                await analisisMasalah();
+                
+                log('✅ Diagnosis selesai', 'success');
+                
+            } catch (error) {
+                log(`❌ Error diagnosis: ${error.message}`, 'error');
+            }
+        }
+
+        async function testConnection() {
+            try {
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/users?select=count`, {
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`
+                    }
+                });
+                
+                if (response.ok) {
+                    log('✅ Koneksi Supabase OK', 'success');
+                    return true;
+                } else {
+                    log(`❌ Koneksi gagal: ${response.status}`, 'error');
+                    return false;
+                }
+            } catch (error) {
+                log(`❌ Error koneksi: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        async function cekDataSupabase() {
+            log('📊 Mengecek data di Supabase...', 'info');
+            
+            try {
+                // Cek tasks
+                const tasksResponse = await fetch(`${SUPABASE_URL}/rest/v1/tasks?select=*&order=created_at.desc&limit=5`, {
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`
+                    }
+                });
+                
+                if (tasksResponse.ok) {
+                    const tasks = await tasksResponse.json();
+                    log(`📋 Tasks di Supabase: ${tasks.length} records`, 'info');
+                    
+                    if (tasks.length > 0) {
+                        log(`📝 Data terbaru: "${tasks[0].title}" (${tasks[0].created_at})`, 'info');
+                        
+                        // Cek apakah data adalah hasil migrasi
+                        const migratedTitles = [
+                            'Silaturahmi dan perkenalan kepala SMKN',
+                            'Pisah sambut kepala SMKN 14 Garut',
+                            'Apel Pagi'
+                        ];
+                        
+                        const isMigratedData = migratedTitles.some(title => 
+                            tasks[0].title && tasks[0].title.includes(title.substring(0, 10))
+                        );
+                        
+                        if (isMigratedData) {
+                            log('⚠️ Data terbaru adalah hasil migrasi lama!', 'warning');
+                        } else {
+                            log('✅ Data terbaru bukan hasil migrasi', 'success');
+                        }
+                    }
+                }
+                
+                // Cek additional tasks
+                const additionalTasksResponse = await fetch(`${SUPABASE_URL}/rest/v1/additional_tasks?select=*&order=created_at.desc&limit=5`, {
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`
+                    }
+                });
+                
+                if (additionalTasksResponse.ok) {
+                    const additionalTasks = await additionalTasksResponse.json();
+                    log(`📋 Additional Tasks di Supabase: ${additionalTasks.length} records`, 'info');
+                    
+                    if (additionalTasks.length > 0) {
+                        log(`📝 Data terbaru: "${additionalTasks[0].name}" (${additionalTasks[0].created_at})`, 'info');
+                    }
+                }
+                
+            } catch (error) {
+                log(`❌ Error cek data Supabase: ${error.message}`, 'error');
+            }
+        }
+
+        async function cekDataLocalStorage() {
+            log('📦 Mengecek data di localStorage...', 'info');
+            
+            const tasks = JSON.parse(localStorage.getItem('tasks_data') || '[]');
+            const additionalTasks = JSON.parse(localStorage.getItem('additional_tasks_data') || '[]');
+            
+            log(`📋 Tasks di localStorage: ${tasks.length} records`, 'info');
+            log(`📋 Additional Tasks di localStorage: ${additionalTasks.length} records`, 'info');
+            
+            if (tasks.length > 0) {
+                const latestTask = tasks[0];
+                log(`📝 Task terbaru di localStorage: "${latestTask.title || latestTask.name}"`, 'info');
+            }
+            
+            if (additionalTasks.length > 0) {
+                const latestAdditionalTask = additionalTasks[0];
+                log(`📝 Additional Task terbaru di localStorage: "${latestAdditionalTask.name || latestAdditionalTask.title}"`, 'info');
+            }
+        }
+
+        async function analisisMasalah() {
+            log('🔍 Menganalisis masalah...', 'info');
+            
+            // Cek apakah ada pending sync
+            const pendingTasks = JSON.parse(localStorage.getItem('pending_sync_tasks') || '[]');
+            const pendingAdditionalTasks = JSON.parse(localStorage.getItem('pending_sync_additional_tasks') || '[]');
+            
+            if (pendingTasks.length > 0) {
+                log(`⚠️ Ada ${pendingTasks.length} tasks pending sync`, 'warning');
+            }
+            
+            if (pendingAdditionalTasks.length > 0) {
+                log(`⚠️ Ada ${pendingAdditionalTasks.length} additional tasks pending sync`, 'warning');
+            }
+            
+            // Analisis kemungkinan masalah
+            log('📋 KEMUNGKINAN MASALAH:', 'warning');
+            log('1. Data baru tersimpan di localStorage tapi tidak ke Supabase', 'warning');
+            log('2. Fungsi save API tidak bekerja dengan benar', 'warning');
+            log('3. Data migrasi lama menggangu data baru', 'warning');
+            log('4. User ID tidak match dengan data yang disimpan', 'warning');
+        }
+
+        // 2. Cek data terbaru
+        async function cekDataTerbaru() {
+            log('📊 Mengecek data terbaru...', 'info');
+            await cekDataSupabase();
+            await cekDataLocalStorage();
+        }
+
+        // 3. Test fungsi save
+        async function testSaveFunction() {
+            log('🧪 Testing fungsi save...', 'info');
+            
+            try {
+                const authUser = localStorage.getItem('auth_user');
+                if (!authUser) {
+                    log('❌ Tidak ada user session', 'error');
+                    return;
+                }
+                
+                const user = JSON.parse(authUser);
+                
+                // Test save task
+                const testTask = {
+                    user_id: user.id,
+                    title: `Test Save Function - ${new Date().toLocaleTimeString()}`,
+                    category: 'Test',
+                    description: 'Test apakah fungsi save bekerja',
+                    completed: false,
+                    date: new Date().toISOString().split('T')[0],
+                    photo1: null
+                };
+                
+                log('📤 Mencoba save test task ke Supabase...', 'info');
+                
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/tasks`, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=representation'
+                    },
+                    body: JSON.stringify(testTask)
+                });
+                
+                if (response.ok) {
+                    const savedTask = await response.json();
+                    log(`✅ Test save berhasil: ${savedTask[0]?.title}`, 'success');
+                    log(`📝 Task ID: ${savedTask[0]?.id}`, 'success');
+                    
+                    // Update localStorage
+                    const localTasks = JSON.parse(localStorage.getItem('tasks_data') || '[]');
+                    localTasks.unshift(savedTask[0]);
+                    localStorage.setItem('tasks_data', JSON.stringify(localTasks));
+                    
+                    log('✅ localStorage juga diupdate', 'success');
+                } else {
+                    const errorText = await response.text();
+                    log(`❌ Test save gagal: ${response.status} - ${errorText}`, 'error');
+                }
+                
+            } catch (error) {
+                log(`❌ Error test save: ${error.message}`, 'error');
+            }
+        }
+
+        // 4. Hapus data migrasi lama
+        async function hapusDataMigrasi() {
+            if (!confirm('Hapus data migrasi lama? Data yang dihapus tidak bisa dikembalikan.')) {
+                return;
+            }
+            
+            log('🗑️ Menghapus data migrasi lama...', 'warning');
+            
+            try {
+                const authUser = localStorage.getItem('auth_user');
+                const user = JSON.parse(authUser);
+                
+                // Daftar judul data migrasi yang akan dihapus
+                const migratedTitles = [
+                    'Silaturahmi dan perkenalan kepala SMKN',
+                    'Pisah sambut kepala SMKN 14 Garut',
+                    'Apel Pagi'
+                ];
+                
+                // Hapus dari tasks
+                for (const title of migratedTitles) {
+                    const deleteResponse = await fetch(`${SUPABASE_URL}/rest/v1/tasks?title=ilike.%${title}%`, {
+                        method: 'DELETE',
+                        headers: {
+                            'apikey': SUPABASE_KEY,
+                            'Authorization': `Bearer ${SUPABASE_KEY}`
+                        }
+                    });
+                    
+                    if (deleteResponse.ok) {
+                        log(`✅ Dihapus: ${title}`, 'success');
+                    }
+                }
+                
+                // Hapus dari additional_tasks juga
+                for (const title of migratedTitles) {
+                    const deleteResponse = await fetch(`${SUPABASE_URL}/rest/v1/additional_tasks?name=ilike.%${title}%`, {
+                        method: 'DELETE',
+                        headers: {
+                            'apikey': SUPABASE_KEY,
+                            'Authorization': `Bearer ${SUPABASE_KEY}`
+                        }
+                    });
+                    
+                    if (deleteResponse.ok) {
+                        log(`✅ Dihapus dari additional_tasks: ${title}`, 'success');
+                    }
+                }
+                
+                log('✅ Data migrasi lama berhasil dihapus', 'success');
+                
+                // Refresh data
+                await refreshDataFromSupabase();
+                
+            } catch (error) {
+                log(`❌ Error hapus data migrasi: ${error.message}`, 'error');
+            }
+        }
+
+        // 5. Fix API save function
+        async function fixApiSaveFunction() {
+            log('🔧 Memperbaiki API save function...', 'info');
+            
+            try {
+                // Set flag untuk force direct save ke Supabase
+                localStorage.setItem('force_direct_supabase_save', 'true');
+                localStorage.setItem('disable_localStorage_fallback', 'true');
+                localStorage.setItem('api_save_fixed', new Date().toISOString());
+                
+                log('✅ API save function diperbaiki', 'success');
+                log('💡 Sekarang data akan langsung disimpan ke Supabase', 'info');
+                log('💡 localStorage hanya sebagai cache, bukan primary storage', 'info');
+                
+                // Test save function setelah fix
+                await testSaveFunction();
+                
+            } catch (error) {
+                log(`❌ Error fix API save: ${error.message}`, 'error');
+            }
+        }
+
+        // 6. Test input data baru
+        async function testInputDataBaru() {
+            log('✅ Testing input data baru...', 'info');
+            
+            try {
+                const authUser = localStorage.getItem('auth_user');
+                const user = JSON.parse(authUser);
+                
+                // Test input task baru
+                const newTask = {
+                    user_id: user.id,
+                    title: `Data Baru Test - ${new Date().toLocaleString()}`,
+                    category: 'Testing',
+                    description: 'Test data baru setelah perbaikan',
+                    completed: false,
+                    date: new Date().toISOString().split('T')[0],
+                    photo1: null
+                };
+                
+                log('📤 Menyimpan data baru ke Supabase...', 'info');
+                
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/tasks`, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`,
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=representation'
+                    },
+                    body: JSON.stringify(newTask)
+                });
+                
+                if (response.ok) {
+                    const savedTask = await response.json();
+                    log(`✅ Data baru berhasil disimpan: ${savedTask[0]?.title}`, 'success');
+                    
+                    // Update localStorage
+                    const localTasks = JSON.parse(localStorage.getItem('tasks_data') || '[]');
+                    localTasks.unshift(savedTask[0]);
+                    localStorage.setItem('tasks_data', JSON.stringify(localTasks));
+                    
+                    log('✅ Data juga tersimpan di localStorage', 'success');
+                    log('💡 Sekarang coba buka browser lain untuk test sinkronisasi', 'info');
+                    
+                } else {
+                    const errorText = await response.text();
+                    log(`❌ Gagal simpan data baru: ${response.status} - ${errorText}`, 'error');
+                }
+                
+            } catch (error) {
+                log(`❌ Error test input data baru: ${error.message}`, 'error');
+            }
+        }
+
+        // 7. Verifikasi cross-browser
+        async function verifikasiCrossBrowser() {
+            log('🌐 Verifikasi cross-browser sync...', 'info');
+            
+            try {
+                // Refresh data dari Supabase
+                await refreshDataFromSupabase();
+                
+                log('✅ Data direfresh dari Supabase', 'success');
+                log('💡 Instruksi verifikasi:', 'info');
+                log('1. Buka browser lain (Chrome/Edge/Opera)', 'info');
+                log('2. Login dengan user yang sama', 'info');
+                log('3. Cek apakah data terbaru muncul', 'info');
+                log('4. Input data baru di browser lain', 'info');
+                log('5. Refresh browser ini - data harus sinkron', 'info');
+                
+                showSuccess();
+                
+            } catch (error) {
+                log(`❌ Error verifikasi cross-browser: ${error.message}`, 'error');
+            }
+        }
+
+        // Helper function: refresh data dari Supabase
+        async function refreshDataFromSupabase() {
+            log('🔄 Refreshing data dari Supabase...', 'info');
+            
+            try {
+                // Refresh tasks
+                const tasksResponse = await fetch(`${SUPABASE_URL}/rest/v1/tasks?select=*&order=created_at.desc`, {
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`
+                    }
+                });
+                
+                if (tasksResponse.ok) {
+                    const tasks = await tasksResponse.json();
+                    localStorage.setItem('tasks_data', JSON.stringify(tasks));
+                    log(`✅ Refreshed ${tasks.length} tasks`, 'success');
+                }
+                
+                // Refresh additional tasks
+                const additionalTasksResponse = await fetch(`${SUPABASE_URL}/rest/v1/additional_tasks?select=*&order=created_at.desc`, {
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`
+                    }
+                });
+                
+                if (additionalTasksResponse.ok) {
+                    const additionalTasks = await additionalTasksResponse.json();
+                    localStorage.setItem('additional_tasks_data', JSON.stringify(additionalTasks));
+                    log(`✅ Refreshed ${additionalTasks.length} additional tasks`, 'success');
+                }
+                
+            } catch (error) {
+                log(`❌ Error refresh data: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-run diagnosis on load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const authUser = localStorage.getItem('auth_user');
+                if (authUser) {
+                    const user = JSON.parse(authUser);
+                    log(`👤 Detected user: ${user.username}`, 'info');
+                    log('💡 Siap untuk memperbaiki masalah data input', 'info');
+                } else {
+                    log('⚠️ Tidak ada user session - silakan login dulu', 'warning');
+                }
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

@@ -1,29 +1,30 @@
 import { useState, useRef } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Pencil, Trash2, Printer, Image as ImageIcon, X } from "lucide-react";
-import { tasksApi } from "@/lib/api";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus, Trash2, Image as ImageIcon, X, Edit, Printer } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
-import { queryClient } from "@/lib/queryClient";
-import { id } from "date-fns/locale";
 
 type Task = {
   id: string;
   title: string;
-  category: string;
   description: string;
   completed: boolean;
   date: string;
-  photo1?: string | null;
+  photo?: string | null;
   photo2?: string | null;
+  created_at?: string;
+  activity_type?: string;
+  school_id?: string;
+  school_name?: string;
 };
 
 export default function TasksPage() {
@@ -35,434 +36,589 @@ export default function TasksPage() {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [newTask, setNewTask] = useState({ 
     title: "", 
-    category: "Perencanaan", 
     description: "", 
     completed: false,
-    date: new Date().toISOString().split('T')[0] // Add default date
+    date: new Date().toISOString().split('T')[0],
+    activity_type: "",
+    school_id: ""
   });
-  const [photo1, setPhoto1] = useState<File | null>(null);
+  const [photo, setPhoto] = useState<File | null>(null);
   const [photo2, setPhoto2] = useState<File | null>(null);
-  const [photo1Preview, setPhoto1Preview] = useState<string | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photo2Preview, setPhoto2Preview] = useState<string | null>(null);
-  const photo1InputRef = useRef<HTMLInputElement>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
   const photo2InputRef = useRef<HTMLInputElement>(null);
 
-  // Fetch tasks from localStorage with safe fallback
-  const { data: tasks = [], isLoading } = useQuery({
+  // SIMPLE: Pure Supabase query
+  const { data: tasks = [], isLoading, refetch } = useQuery({
     queryKey: ['tasks'],
-    queryFn: () => {
-      try {
-        if (typeof window !== 'undefined' && window.localStorage) {
-          const tasksData = localStorage.getItem('tasks_data');
-          if (tasksData) {
-            const parsed = JSON.parse(tasksData);
-            return Array.isArray(parsed) ? parsed : [];
-          }
-        }
-        return [];
-      } catch (error) {
-        console.warn('Error reading tasks from localStorage:', error);
-        return [];
+    queryFn: async () => {
+      console.log('🔍 Fetching tasks from Supabase...');
+      
+      const { data, error } = await supabase
+        .from('tasks')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('❌ Supabase error:', error);
+        throw error;
       }
+      
+      console.log('✅ Tasks loaded:', data?.length || 0);
+      return data || [];
     },
+    retry: 1,
+    refetchOnWindowFocus: false,
   });
 
-  // Create task mutation
-  const createTaskMutation = useMutation({
-    mutationFn: tasksApi.create,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+  // Query untuk mengambil data sekolah
+  const { data: schools = [] } = useQuery({
+    queryKey: ['schools'],
+    queryFn: async () => {
+      console.log('🔍 Fetching schools from Supabase...');
+      
+      const { data, error } = await supabase
+        .from('schools')
+        .select('*')
+        .order('name', { ascending: true });
+      
+      if (error) {
+        console.error('❌ Supabase schools error:', error);
+        throw error;
+      }
+      
+      console.log('✅ Schools loaded:', data?.length || 0);
+      return data || [];
+    },
+    retry: 1,
+    refetchOnWindowFocus: false,
+  });
+
+  // Handle photo upload
+  const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>, photoNumber: 1 | 2 = 1) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type and size
+    if (!file.type.startsWith('image/')) {
       toast({
-        title: "Berhasil",
-        description: "Tugas berhasil ditambahkan",
+        title: "Error",
+        description: "File harus berupa gambar",
+        variant: "destructive",
       });
-      setNewTask({ title: "", category: "Perencanaan", description: "", completed: false, date: new Date().toISOString().split('T')[0] });
-      setPhoto1(null);
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) { // 5MB
+      toast({
+        title: "Error",
+        description: "Ukuran file maksimal 5MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (photoNumber === 1) {
+      setPhoto(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = () => {
+        setPhotoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setPhoto2(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = () => {
+        setPhoto2Preview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removePhoto = (photoNumber: 1 | 2 = 1) => {
+    if (photoNumber === 1) {
+      setPhoto(null);
+      if (photoPreview) {
+        URL.revokeObjectURL(photoPreview);
+        setPhotoPreview(null);
+      }
+      if (photoInputRef.current) {
+        photoInputRef.current.value = '';
+      }
+    } else {
       setPhoto2(null);
-      setPhoto1Preview(null);
-      setPhoto2Preview(null);
-      setIsAddDialogOpen(false);
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Gagal",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
+      if (photo2Preview) {
+        URL.revokeObjectURL(photo2Preview);
+        setPhoto2Preview(null);
+      }
+      if (photo2InputRef.current) {
+        photo2InputRef.current.value = '';
+      }
+    }
+  };
 
-  // Delete task mutation
-  const deleteTaskMutation = useMutation({
-    mutationFn: tasksApi.delete,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      toast({
-        title: "Berhasil",
-        description: "Tugas berhasil dihapus",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Gagal",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Toggle complete mutation
-  const toggleCompleteMutation = useMutation({
-    mutationFn: async ({ id, completed }: { id: string; completed: boolean }) => {
-      // For now, use localStorage fallback since we don't have update API yet
-      const tasksData = localStorage.getItem('tasks_data');
-      const currentTasks = tasksData ? JSON.parse(tasksData) : [];
-      
-      const updatedTasks = currentTasks.map((task: any) => 
-        task.id === id ? { ...task, completed } : task
-      );
-      
-      localStorage.setItem('tasks_data', JSON.stringify(updatedTasks));
-      return { id, completed };
-    },
-    
-    updateTaskStatus: async (id: string, completed: boolean) => {
-      const currentTasks = JSON.parse(localStorage.getItem('tasks_data') || '[]');
-      const updatedTasks = currentTasks.map((task: any) => 
-        task.id === id ? { ...task, completed } : task
-      );
-      localStorage.setItem('tasks_data', JSON.stringify(updatedTasks));
-      
-      return { success: true };
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      toast({
-        title: "Berhasil",
-        description: "Status tugas berhasil diupdate",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Gagal",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
+  // SIMPLE: Add task function - Pure Supabase
   const handleAddTask = async () => {
     try {
-      console.log('Submitting task:', newTask);
+      console.log('📝 Adding task:', newTask.title);
       
-      // Direct localStorage save (bypass API completely for now)
-      const tasksData = localStorage.getItem('tasks_data');
-      const currentTasks = tasksData ? JSON.parse(tasksData) : [];
+      if (!newTask.title || !newTask.description || !newTask.activity_type || !newTask.school_id) {
+        toast({
+          title: "Error",
+          description: "Semua field wajib harus diisi",
+          variant: "destructive",
+        });
+        return;
+      }
       
-      // Convert photos to base64 if they exist
-      let photo1Base64 = null;
+      // Get current user
+      const userData = localStorage.getItem('auth_user');
+      if (!userData) {
+        toast({
+          title: "Error",
+          description: "Silakan login terlebih dahulu",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      const currentUser = JSON.parse(userData);
+      
+      // Get school name
+      const selectedSchool = schools.find(school => school.id === newTask.school_id);
+      
+      // Convert photos to base64 if exists
+      let photoBase64 = null;
       let photo2Base64 = null;
       
-      if (photo1) {
-        photo1Base64 = await new Promise<string>((resolve) => {
-          const reader = new FileReader();
+      if (photo) {
+        const reader = new FileReader();
+        photoBase64 = await new Promise<string>((resolve) => {
           reader.onload = () => resolve(reader.result as string);
-          reader.readAsDataURL(photo1);
+          reader.readAsDataURL(photo);
         });
       }
       
       if (photo2) {
+        const reader = new FileReader();
         photo2Base64 = await new Promise<string>((resolve) => {
-          const reader = new FileReader();
           reader.onload = () => resolve(reader.result as string);
           reader.readAsDataURL(photo2);
         });
       }
       
-      const newTaskData = {
-        id: Date.now().toString(),
-        title: newTask.title,
-        category: newTask.category,
-        description: newTask.description,
-        completed: newTask.completed,
-        date: newTask.date,
-        photo1: photo1Base64,
-        photo2: photo2Base64,
-        createdAt: new Date().toISOString()
-      };
+      const { data, error } = await supabase
+        .from('tasks')
+        .insert([{
+          user_id: currentUser.id,
+          title: newTask.title,
+          description: newTask.description,
+          completed: newTask.completed,
+          date: newTask.date,
+          photo: photoBase64,
+          photo2: photo2Base64,
+          activity_type: newTask.activity_type,
+          school_id: newTask.school_id,
+          school_name: selectedSchool?.name || ''
+        }])
+        .select()
+        .single();
       
-      const updatedTasks = [...currentTasks, newTaskData];
-      localStorage.setItem('tasks_data', JSON.stringify(updatedTasks));
+      if (error) {
+        console.error('❌ Insert error:', error);
+        throw error;
+      }
       
-      // Trigger success manually
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      console.log('✅ Task added:', data);
+      
+      // Refresh data
+      refetch();
+      
+      // Success feedback
       toast({
         title: "Berhasil",
         description: "Tugas berhasil ditambahkan",
       });
-      setNewTask({ title: "", category: "Perencanaan", description: "", completed: false, date: new Date().toISOString().split('T')[0] });
-      setPhoto1(null);
-      setPhoto2(null);
-      setPhoto1Preview(null);
-      setPhoto2Preview(null);
+      
+      // Reset form
+      setNewTask({ 
+        title: "", 
+        description: "", 
+        completed: false, 
+        date: new Date().toISOString().split('T')[0],
+        activity_type: "",
+        school_id: ""
+      });
+      removePhoto(1);
+      removePhoto(2);
       setIsAddDialogOpen(false);
       
-    } catch (error) {
-      console.error('Error in handleAddTask:', error);
+    } catch (error: any) {
+      console.error('❌ Add task error:', error);
       toast({
         title: "Error",
-        description: "Terjadi kesalahan saat menyimpan tugas",
+        description: error.message || "Terjadi kesalahan saat menyimpan tugas",
         variant: "destructive",
       });
     }
   };
 
-  const toggleComplete = (id: string, currentStatus: boolean) => {
-    toggleCompleteMutation.mutate({ id, completed: !currentStatus });
+  // SIMPLE: Delete task function - Pure Supabase
+  const handleDeleteTask = async (id: string) => {
+    try {
+      console.log('🗑️ Deleting task:', id);
+      
+      const { error } = await supabase
+        .from('tasks')
+        .delete()
+        .eq('id', id);
+      
+      if (error) {
+        console.error('❌ Delete error:', error);
+        throw error;
+      }
+      
+      console.log('✅ Task deleted');
+      
+      // Refresh data
+      refetch();
+      
+      toast({
+        title: "Berhasil",
+        description: "Tugas berhasil dihapus",
+      });
+      
+    } catch (error: any) {
+      console.error('❌ Delete task error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Terjadi kesalahan saat menghapus tugas",
+        variant: "destructive",
+      });
+    }
   };
 
+  // SIMPLE: Toggle complete function - Pure Supabase
+  const handleToggleComplete = async (id: string, completed: boolean) => {
+    try {
+      console.log('✅ Toggling task completion:', id, completed);
+      
+      const { error } = await supabase
+        .from('tasks')
+        .update({ completed })
+        .eq('id', id);
+      
+      if (error) {
+        console.error('❌ Update error:', error);
+        throw error;
+      }
+      
+      console.log('✅ Task status updated');
+      
+      // Refresh data
+      refetch();
+      
+      toast({
+        title: "Berhasil",
+        description: `Tugas ${completed ? 'selesai' : 'belum selesai'}`,
+      });
+      
+    } catch (error: any) {
+      console.error('❌ Toggle complete error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Terjadi kesalahan saat mengupdate status tugas",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // EDIT: Edit task function
   const handleEditTask = (task: Task) => {
     setEditingTask(task);
     setNewTask({
       title: task.title,
-      category: task.category,
-      description: task.description || "",
+      description: task.description,
       completed: task.completed,
-      date: task.date || new Date().toISOString().split('T')[0],
+      date: task.date,
+      activity_type: task.activity_type || "",
+      school_id: task.school_id || ""
     });
-    // Set existing photos as preview
-    if (task.photo1) {
-      const photoUrl = task.photo1.startsWith('data:') ? task.photo1 : `/uploads/${task.photo1}`;
-      setPhoto1Preview(photoUrl);
+    if (task.photo) {
+      setPhotoPreview(task.photo);
     }
-    if (task.photo2) {
-      const photoUrl = task.photo2.startsWith('data:') ? task.photo2 : `/uploads/${task.photo2}`;
-      setPhoto2Preview(photoUrl);
+    if ((task as any).photo2) {
+      setPhoto2Preview((task as any).photo2);
     }
     setIsEditDialogOpen(true);
   };
 
-  const deleteTask = (id: string) => {
-    deleteTaskMutation.mutate(id);
-  };
-
-  // Update task mutation
-  const updateTaskMutation = useMutation({
-    mutationFn: async ({ id, formData }: { id: string; formData: FormData }) => {
-      // For now, use localStorage fallback since we don't have update API yet
-      const tasksData = localStorage.getItem('tasks_data');
-      const currentTasks = tasksData ? JSON.parse(tasksData) : [];
-      
-      // Convert FormData to object with proper async file handling
-      const taskData: any = {};
-      const filePromises: Promise<void>[] = [];
-      
-      formData.forEach((value, key) => {
-        if (key.startsWith('photo') && value instanceof File) {
-          // Convert file to base64 for localStorage
-          const promise = new Promise<void>((resolve) => {
-            const reader = new FileReader();
-            reader.onload = () => {
-              taskData[key] = reader.result;
-              resolve();
-            };
-            reader.readAsDataURL(value);
-          });
-          filePromises.push(promise);
-        } else {
-          taskData[key] = value;
-        }
-      });
-      
-      // Wait for all file conversions to complete
-      await Promise.all(filePromises);
-      
-      const updatedTasks = currentTasks.map((task: any) => 
-        task.id === id ? { ...task, ...taskData, completed: taskData.completed === 'true' } : task
-      );
-      localStorage.setItem('tasks_data', JSON.stringify(updatedTasks));
-      
-      return { success: true };
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] });
-      toast({
-        title: "Berhasil",
-        description: "Tugas berhasil diupdate",
-      });
-      setEditingTask(null);
-      setNewTask({ title: "", category: "Perencanaan", description: "", completed: false, date: new Date().toISOString().split('T')[0] });
-      setPhoto1(null);
-      setPhoto2(null);
-      setPhoto1Preview(null);
-      setPhoto2Preview(null);
-      setIsEditDialogOpen(false);
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Gagal",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
+  // EDIT: Update task function
   const handleUpdateTask = async () => {
     if (!editingTask) return;
     
-    const formData = new FormData();
-    formData.append('title', newTask.title);
-    formData.append('category', newTask.category);
-    formData.append('description', newTask.description);
-    formData.append('completed', newTask.completed.toString());
-    formData.append('date', newTask.date);
-    
-    if (photo1) {
-      formData.append('photo1', photo1);
+    try {
+      console.log('📝 Updating task:', editingTask.id);
+      
+      if (!newTask.title || !newTask.description || !newTask.activity_type || !newTask.school_id) {
+        toast({
+          title: "Error",
+          description: "Semua field wajib harus diisi",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Get school name
+      const selectedSchool = schools.find(school => school.id === newTask.school_id);
+      
+      // Convert photos to base64 if new photos are selected
+      let photoBase64 = photoPreview;
+      let photo2Base64 = photo2Preview;
+      
+      if (photo) {
+        const reader = new FileReader();
+        photoBase64 = await new Promise<string>((resolve) => {
+          reader.onload = () => resolve(reader.result as string);
+          reader.readAsDataURL(photo);
+        });
+      }
+      
+      if (photo2) {
+        const reader = new FileReader();
+        photo2Base64 = await new Promise<string>((resolve) => {
+          reader.onload = () => resolve(reader.result as string);
+          reader.readAsDataURL(photo2);
+        });
+      }
+      
+      const { data, error } = await supabase
+        .from('tasks')
+        .update({
+          title: newTask.title,
+          description: newTask.description,
+          completed: newTask.completed,
+          date: newTask.date,
+          photo: photoBase64,
+          photo2: photo2Base64,
+          activity_type: newTask.activity_type,
+          school_id: newTask.school_id,
+          school_name: selectedSchool?.name || ''
+        })
+        .eq('id', editingTask.id)
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('❌ Update error:', error);
+        throw error;
+      }
+      
+      console.log('✅ Task updated:', data);
+      
+      // Refresh data
+      refetch();
+      
+      // Success feedback
+      toast({
+        title: "Berhasil",
+        description: "Tugas berhasil diperbarui",
+      });
+      
+      // Reset form
+      setNewTask({ 
+        title: "", 
+        description: "", 
+        completed: false, 
+        date: new Date().toISOString().split('T')[0],
+        activity_type: "",
+        school_id: ""
+      });
+      removePhoto(1);
+      removePhoto(2);
+      setIsEditDialogOpen(false);
+      setEditingTask(null);
+      
+    } catch (error: any) {
+      console.error('❌ Update task error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Terjadi kesalahan saat memperbarui tugas",
+        variant: "destructive",
+      });
     }
-    if (photo2) {
-      formData.append('photo2', photo2);
-    }
-
-    updateTaskMutation.mutate({ id: editingTask.id, formData });
   };
 
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case "Perencanaan": return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
-      case "Pendampingan": return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
-      case "Pelaporan": return "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200";
-      default: return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
-    }
-  };
-
+  // PRINT: Print task function
   const handlePrintTask = (task: Task) => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
-
-    const photos = [];
-    if (task.photo1) {
-      const photoUrl = task.photo1.startsWith('data:') ? task.photo1 : `/uploads/${task.photo1}`;
-      photos.push({ url: photoUrl, label: 'Foto 1' });
-    }
-    if (task.photo2) {
-      const photoUrl = task.photo2.startsWith('data:') ? task.photo2 : `/uploads/${task.photo2}`;
-      photos.push({ url: photoUrl, label: 'Foto 2' });
-    }
     
-    const photosHtml = photos.length > 0
-      ? `
-        <div style="margin-top: 25px;">
-          <h3 style="color: #2563eb; margin-bottom: 15px;">Foto Kegiatan:</h3>
-          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
-            ${photos.map(photo => `
-              <div>
-                <img src="${photo.url}" alt="${photo.label}" style="width: 100%; height: 250px; object-fit: cover; border-radius: 8px; border: 2px solid #e5e7eb;" />
-                <p style="text-align: center; margin-top: 5px; font-size: 12px; color: #666;">${photo.label}</p>
-              </div>
-            `).join('')}
-          </div>
-        </div>
-      `
-      : '';
-
-    const html = `
+    const currentUser = JSON.parse(localStorage.getItem('auth_user') || '{}');
+    
+    printWindow.document.write(`
       <!DOCTYPE html>
       <html>
-        <head>
-          <title>Cetak Tugas - ${task.title}</title>
-          <style>
-            body {
-              font-family: Arial, sans-serif;
-              padding: 40px;
-              max-width: 800px;
-              margin: 0 auto;
-            }
-            h1 {
-              color: #333;
-              border-bottom: 3px solid #2563eb;
-              padding-bottom: 10px;
-              margin-bottom: 20px;
-            }
-            .info-row {
-              display: flex;
-              margin-bottom: 15px;
-              padding: 10px;
-              background: #f9fafb;
-              border-radius: 5px;
-            }
-            .info-label {
-              font-weight: bold;
-              width: 150px;
-              color: #555;
-            }
-            .info-value {
-              flex: 1;
-              color: #333;
-            }
-            .badge {
-              display: inline-block;
-              padding: 4px 12px;
-              border-radius: 12px;
-              font-size: 14px;
-              font-weight: 500;
-            }
-            .status {
-              margin-top: 20px;
-              padding: 15px;
-              border-radius: 8px;
-              background: ${task.completed ? '#dcfce7' : '#fef3c7'};
-              color: ${task.completed ? '#166534' : '#92400e'};
-              font-weight: 600;
-            }
-            @media print {
-              body { padding: 20px; }
-            }
-          </style>
-        </head>
-        <body>
-          <h1>Detail Tugas Harian</h1>
-          <div class="info-row">
-            <div class="info-label">Judul Tugas:</div>
-            <div class="info-value">${task.title}</div>
+      <head>
+        <title>Cetak Tugas Harian - ${task.title}</title>
+        <style>
+          body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            line-height: 1.6;
+          }
+          .header { 
+            text-align: center; 
+            border-bottom: 2px solid #333; 
+            padding-bottom: 20px; 
+            margin-bottom: 30px;
+          }
+          .title { 
+            font-size: 24px; 
+            font-weight: bold; 
+            margin-bottom: 10px;
+          }
+          .subtitle { 
+            font-size: 16px; 
+            color: #666;
+          }
+          .content { 
+            margin-bottom: 20px;
+          }
+          .field { 
+            margin-bottom: 15px;
+          }
+          .field-label { 
+            font-weight: bold; 
+            display: inline-block; 
+            width: 120px;
+          }
+          .field-value { 
+            display: inline-block;
+          }
+          .description { 
+            margin-top: 10px; 
+            padding: 10px; 
+            background-color: #f5f5f5; 
+            border-radius: 5px;
+          }
+          .photo { 
+            max-width: 300px; 
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+          }
+          .footer { 
+            margin-top: 40px; 
+            text-align: right;
+          }
+          .signature { 
+            margin-top: 60px; 
+            text-align: right;
+          }
+          @media print {
+            body { margin: 0; }
+            .no-print { display: none; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="title">LAPORAN TUGAS HARIAN</div>
+          <div class="subtitle">Sistem Kepengawasan Sekolah</div>
+        </div>
+        
+        <div class="content">
+          <div class="field">
+            <span class="field-label">Judul Tugas:</span>
+            <span class="field-value">${task.title}</span>
           </div>
-          <div class="info-row">
-            <div class="info-label">Kategori:</div>
-            <div class="info-value"><span class="badge">${task.category}</span></div>
+          
+          <div class="field">
+            <span class="field-label">Tanggal:</span>
+            <span class="field-value">${new Date(task.date).toLocaleDateString('id-ID', {
+              weekday: 'long',
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
+            })}</span>
           </div>
-          <div class="info-row">
-            <div class="info-label">Tanggal:</div>
-            <div class="info-value">${new Date(task.date).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
+          
+          <div class="field">
+            <span class="field-label">Status:</span>
+            <span class="field-value">${task.completed ? '✅ Selesai' : '⏳ Belum Selesai'}</span>
           </div>
-          <div class="info-row">
-            <div class="info-label">Deskripsi:</div>
-            <div class="info-value">${task.description || '-'}</div>
+          
+          <div class="field">
+            <span class="field-label">Pengawas:</span>
+            <span class="field-value">${currentUser.fullName || currentUser.full_name || currentUser.username || 'Tidak diketahui'}</span>
           </div>
-          <div class="info-row">
-            <div class="info-label">Jumlah Foto:</div>
-            <div class="info-value">${[task.photo1, task.photo2].filter(Boolean).length} foto</div>
+          
+          ${currentUser.nip ? `
+          <div class="field">
+            <span class="field-label">NIP:</span>
+            <span class="field-value">${currentUser.nip}</span>
           </div>
-          <div class="status">
-            Status: ${task.completed ? '✓ Selesai' : '○ Belum Selesai'}
+          ` : ''}
+          
+          <div class="field">
+            <span class="field-label">Deskripsi:</span>
           </div>
-          ${photosHtml}
-          <script>
-            window.onload = function() {
-              window.print();
-            }
-          </script>
-        </body>
+          <div class="description">
+            ${task.description.replace(/\n/g, '<br>')}
+          </div>
+          
+          ${task.photo || (task as any).photo2 ? `
+          <div class="field">
+            <span class="field-label">Foto:</span>
+          </div>
+          ${task.photo ? `<img src="${task.photo}" alt="Foto Tugas 1" class="photo"><p style="text-align: center; font-size: 10px; margin: 5px 0;">Foto 1</p>` : ''}
+          ${(task as any).photo2 ? `<img src="${(task as any).photo2}" alt="Foto Tugas 2" class="photo"><p style="text-align: center; font-size: 10px; margin: 5px 0;">Foto 2</p>` : ''}
+          ` : ''}
+        </div>
+        
+        <div class="footer">
+          <p>Dicetak pada: ${new Date().toLocaleDateString('id-ID', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+          })}</p>
+        </div>
+        
+        <div class="signature">
+          <p>Pengawas Sekolah</p>
+          <br><br><br>
+          <p><u>${currentUser.fullName || currentUser.full_name || currentUser.username || 'Nama Pengawas'}</u></p>
+          ${currentUser.nip ? `<p>NIP. ${currentUser.nip}</p>` : ''}
+        </div>
+        
+        <script>
+          window.onload = function() {
+            window.print();
+            window.onafterprint = function() {
+              window.close();
+            };
+          };
+        </script>
+      </body>
       </html>
-    `;
-
-    printWindow.document.write(html);
+    `);
+    
     printWindow.document.close();
   };
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-muted-foreground">Memuat data...</p>
+        <p className="text-muted-foreground">Memuat data tugas...</p>
       </div>
     );
   }
@@ -471,12 +627,13 @@ export default function TasksPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Daftar Tugas Harian</h1>
-          <p className="text-muted-foreground mt-1">Kelola tugas harian Anda</p>
+          <h1 className="text-3xl font-bold">Tugas Harian</h1>
+          <p className="text-muted-foreground mt-1">Kelola tugas dan aktivitas harian Anda</p>
         </div>
+        
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
-            <Button data-testid="button-add-new-task">
+            <Button>
               <Plus className="h-4 w-4 mr-2" />
               Tambah Tugas
             </Button>
@@ -484,7 +641,7 @@ export default function TasksPage() {
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>Tambah Tugas Baru</DialogTitle>
-              <DialogDescription>Isi detail tugas yang akan dikerjakan</DialogDescription>
+              <DialogDescription>Buat tugas baru untuk aktivitas harian Anda</DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
@@ -493,15 +650,25 @@ export default function TasksPage() {
                   id="task-title"
                   value={newTask.title}
                   onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
-                  placeholder="Masukkan judul tugas"
-                  data-testid="input-task-title"
+                  placeholder="Contoh: Menyiapkan laporan bulanan"
                 />
               </div>
+              
               <div className="space-y-2">
-                <Label htmlFor="task-category">Kategori</Label>
-                <Select value={newTask.category} onValueChange={(value) => setNewTask({ ...newTask, category: value })}>
-                  <SelectTrigger id="task-category" data-testid="select-task-category">
-                    <SelectValue />
+                <Label htmlFor="task-date">Tanggal</Label>
+                <Input
+                  id="task-date"
+                  type="date"
+                  value={newTask.date}
+                  onChange={(e) => setNewTask({ ...newTask, date: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="activity-type">Jenis Kegiatan</Label>
+                <Select value={newTask.activity_type} onValueChange={(value) => setNewTask({ ...newTask, activity_type: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pilih jenis kegiatan" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Perencanaan">Perencanaan</SelectItem>
@@ -510,146 +677,141 @@ export default function TasksPage() {
                   </SelectContent>
                 </Select>
               </div>
+
               <div className="space-y-2">
-                <Label htmlFor="task-date">Tanggal Kegiatan</Label>
-                <Input
-                  id="task-date"
-                  type="date"
-                  value={newTask.date}
-                  onChange={(e) => setNewTask({ ...newTask, date: e.target.value })}
-                  data-testid="input-task-date"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="task-status">Status</Label>
-                <Select value={newTask.completed ? "true" : "false"} onValueChange={(value) => setNewTask({ ...newTask, completed: value === "true" })}>
-                  <SelectTrigger id="task-status" data-testid="select-task-status">
-                    <SelectValue />
+                <Label htmlFor="school-select">Tempat Kegiatan (Sekolah Binaan)</Label>
+                <Select value={newTask.school_id} onValueChange={(value) => setNewTask({ ...newTask, school_id: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pilih sekolah binaan" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="false">Belum Selesai</SelectItem>
-                    <SelectItem value="true">Selesai</SelectItem>
+                    {schools.map((school) => (
+                      <SelectItem key={school.id} value={school.id}>
+                        {school.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
+              
               <div className="space-y-2">
                 <Label htmlFor="task-description">Deskripsi</Label>
                 <Textarea
                   id="task-description"
                   value={newTask.description}
                   onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
-                  placeholder="Deskripsi detail tugas"
+                  placeholder="Deskripsi detail tugas..."
                   rows={4}
-                  data-testid="input-task-description"
                 />
               </div>
+              
+              {/* Photo Upload Section */}
               <div className="space-y-2">
-                <Label>Upload Foto (Maksimal 2)</Label>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <input
-                      ref={photo1InputRef}
-                      type="file"
-                      accept="image/jpeg,image/jpg,image/png"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          setPhoto1(file);
-                          const reader = new FileReader();
-                          reader.onloadend = () => setPhoto1Preview(reader.result as string);
-                          reader.readAsDataURL(file);
-                        }
-                      }}
-                    />
-                    <div
-                      onClick={() => photo1InputRef.current?.click()}
-                      className="border-2 border-dashed rounded-md p-6 text-center hover-elevate cursor-pointer relative"
-                    >
-                      {photo1Preview ? (
-                        <>
-                          <img src={photo1Preview} alt="Preview 1" className="w-full h-32 object-cover rounded" />
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            size="icon"
-                            className="absolute top-2 right-2 h-6 w-6"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setPhoto1(null);
-                              setPhoto1Preview(null);
-                              if (photo1InputRef.current) photo1InputRef.current.value = '';
-                            }}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </>
-                      ) : (
-                        <>
-                          <ImageIcon className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                          <p className="text-sm text-muted-foreground">Foto 1</p>
-                        </>
-                      )}
-                    </div>
+                <Label>Foto Kegiatan (Opsional)</Label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Foto 1 */}
+                  <div className="space-y-3">
+                    <Label className="text-sm font-medium">Foto 1</Label>
+                    {!photo && !photoPreview && (
+                      <div className="flex items-center gap-2">
+                        <Input
+                          ref={photoInputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handlePhotoUpload(e, 1)}
+                          className="hidden"
+                          id="photo-upload"
+                        />
+                        <Label
+                          htmlFor="photo-upload"
+                          className="flex items-center gap-2 px-4 py-2 border border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors w-full justify-center"
+                        >
+                          <ImageIcon className="h-4 w-4" />
+                          <span>Pilih Foto 1</span>
+                        </Label>
+                      </div>
+                    )}
+                    
+                    {photoPreview && (
+                      <div className="relative group">
+                        <img
+                          src={photoPreview}
+                          alt="Preview Foto 1"
+                          className="w-full h-32 object-cover rounded-lg border"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-2 right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => removePhoto(1)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    )}
                   </div>
-                  <div>
-                    <input
-                      ref={photo2InputRef}
-                      type="file"
-                      accept="image/jpeg,image/jpg,image/png"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          setPhoto2(file);
-                          const reader = new FileReader();
-                          reader.onloadend = () => setPhoto2Preview(reader.result as string);
-                          reader.readAsDataURL(file);
-                        }
-                      }}
-                    />
-                    <div
-                      onClick={() => photo2InputRef.current?.click()}
-                      className="border-2 border-dashed rounded-md p-6 text-center hover-elevate cursor-pointer relative"
-                    >
-                      {photo2Preview ? (
-                        <>
-                          <img src={photo2Preview} alt="Preview 2" className="w-full h-32 object-cover rounded" />
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            size="icon"
-                            className="absolute top-2 right-2 h-6 w-6"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setPhoto2(null);
-                              setPhoto2Preview(null);
-                              if (photo2InputRef.current) photo2InputRef.current.value = '';
-                            }}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </>
-                      ) : (
-                        <>
-                          <ImageIcon className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                          <p className="text-sm text-muted-foreground">Foto 2</p>
-                        </>
-                      )}
-                    </div>
+
+                  {/* Foto 2 */}
+                  <div className="space-y-3">
+                    <Label className="text-sm font-medium">Foto 2</Label>
+                    {!photo2 && !photo2Preview && (
+                      <div className="flex items-center gap-2">
+                        <Input
+                          ref={photo2InputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handlePhotoUpload(e, 2)}
+                          className="hidden"
+                          id="photo2-upload"
+                        />
+                        <Label
+                          htmlFor="photo2-upload"
+                          className="flex items-center gap-2 px-4 py-2 border border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors w-full justify-center"
+                        >
+                          <ImageIcon className="h-4 w-4" />
+                          <span>Pilih Foto 2</span>
+                        </Label>
+                      </div>
+                    )}
+                    
+                    {photo2Preview && (
+                      <div className="relative group">
+                        <img
+                          src={photo2Preview}
+                          alt="Preview Foto 2"
+                          className="w-full h-32 object-cover rounded-lg border"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-2 right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => removePhoto(2)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
+              
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="task-completed"
+                  checked={newTask.completed}
+                  onCheckedChange={(checked) => setNewTask({ ...newTask, completed: !!checked })}
+                />
+                <Label htmlFor="task-completed">Tandai sebagai selesai</Label>
+              </div>
+              
               <div className="flex gap-2 justify-end">
-                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} data-testid="button-cancel-task">
+                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
                   Batal
                 </Button>
-                <Button 
-                  onClick={handleAddTask} 
-                  disabled={!newTask.title || createTaskMutation.isPending} 
-                  data-testid="button-save-task"
-                >
-                  {createTaskMutation.isPending ? "Menyimpan..." : "Simpan Tugas"}
+                <Button onClick={handleAddTask} disabled={!newTask.title || !newTask.description || !newTask.activity_type || !newTask.school_id}>
+                  Simpan Tugas
                 </Button>
               </div>
             </div>
@@ -661,7 +823,7 @@ export default function TasksPage() {
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>Edit Tugas</DialogTitle>
-              <DialogDescription>Update detail tugas</DialogDescription>
+              <DialogDescription>Perbarui informasi tugas Anda</DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
@@ -670,14 +832,25 @@ export default function TasksPage() {
                   id="edit-task-title"
                   value={newTask.title}
                   onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
-                  placeholder="Masukkan judul tugas"
+                  placeholder="Contoh: Menyiapkan laporan bulanan"
                 />
               </div>
+              
               <div className="space-y-2">
-                <Label htmlFor="edit-task-category">Kategori</Label>
-                <Select value={newTask.category} onValueChange={(value) => setNewTask({ ...newTask, category: value })}>
-                  <SelectTrigger id="edit-task-category">
-                    <SelectValue />
+                <Label htmlFor="edit-task-date">Tanggal</Label>
+                <Input
+                  id="edit-task-date"
+                  type="date"
+                  value={newTask.date}
+                  onChange={(e) => setNewTask({ ...newTask, date: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-activity-type">Jenis Kegiatan</Label>
+                <Select value={newTask.activity_type} onValueChange={(value) => setNewTask({ ...newTask, activity_type: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pilih jenis kegiatan" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Perencanaan">Perencanaan</SelectItem>
@@ -686,151 +859,180 @@ export default function TasksPage() {
                   </SelectContent>
                 </Select>
               </div>
+
               <div className="space-y-2">
-                <Label htmlFor="edit-task-date">Tanggal Kegiatan</Label>
-                <Input
-                  id="edit-task-date"
-                  type="date"
-                  value={newTask.date}
-                  onChange={(e) => setNewTask({ ...newTask, date: e.target.value })}
-                  data-testid="input-edit-task-date"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="edit-task-status">Status</Label>
-                <Select value={newTask.completed ? "true" : "false"} onValueChange={(value) => setNewTask({ ...newTask, completed: value === "true" })}>
-                  <SelectTrigger id="edit-task-status">
-                    <SelectValue />
+                <Label htmlFor="edit-school-select">Tempat Kegiatan (Sekolah Binaan)</Label>
+                <Select value={newTask.school_id} onValueChange={(value) => setNewTask({ ...newTask, school_id: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pilih sekolah binaan" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="false">Belum Selesai</SelectItem>
-                    <SelectItem value="true">Selesai</SelectItem>
+                    {schools.map((school) => (
+                      <SelectItem key={school.id} value={school.id}>
+                        {school.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
+              
               <div className="space-y-2">
                 <Label htmlFor="edit-task-description">Deskripsi</Label>
                 <Textarea
                   id="edit-task-description"
                   value={newTask.description}
                   onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
-                  placeholder="Deskripsi detail tugas"
+                  placeholder="Deskripsi detail tugas..."
                   rows={4}
                 />
               </div>
+              
+              {/* Photo Upload Section */}
               <div className="space-y-2">
-                <Label>Upload Foto (Maksimal 2)</Label>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <input
-                      ref={photo1InputRef}
-                      type="file"
-                      accept="image/jpeg,image/jpg,image/png"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          setPhoto1(file);
-                          const reader = new FileReader();
-                          reader.onloadend = () => setPhoto1Preview(reader.result as string);
-                          reader.readAsDataURL(file);
-                        }
-                      }}
-                    />
-                    <div
-                      onClick={() => photo1InputRef.current?.click()}
-                      className="border-2 border-dashed rounded-md p-6 text-center hover-elevate cursor-pointer relative"
-                    >
-                      {photo1Preview ? (
-                        <>
-                          <img src={photo1Preview} alt="Preview 1" className="w-full h-32 object-cover rounded" />
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            size="icon"
-                            className="absolute top-2 right-2 h-6 w-6"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setPhoto1(null);
-                              setPhoto1Preview(null);
-                              if (photo1InputRef.current) photo1InputRef.current.value = '';
-                            }}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </>
-                      ) : (
-                        <>
-                          <ImageIcon className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                          <p className="text-sm text-muted-foreground">Foto 1</p>
-                        </>
-                      )}
-                    </div>
+                <Label>Foto Kegiatan (Opsional)</Label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Foto 1 */}
+                  <div className="space-y-3">
+                    <Label className="text-sm font-medium">Foto 1</Label>
+                    {!photo && !photoPreview && (
+                      <div className="flex items-center gap-2">
+                        <Input
+                          ref={photoInputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handlePhotoUpload(e, 1)}
+                          className="hidden"
+                          id="edit-photo-upload"
+                        />
+                        <Label
+                          htmlFor="edit-photo-upload"
+                          className="flex items-center gap-2 px-4 py-2 border border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors w-full justify-center"
+                        >
+                          <ImageIcon className="h-4 w-4" />
+                          <span>Pilih Foto 1</span>
+                        </Label>
+                      </div>
+                    )}
+                    
+                    {photoPreview && (
+                      <div className="relative group">
+                        <img
+                          src={photoPreview}
+                          alt="Preview Foto 1"
+                          className="w-full h-32 object-cover rounded-lg border"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-2 right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => removePhoto(1)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="absolute bottom-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => {
+                            if (photoInputRef.current) {
+                              photoInputRef.current.click();
+                            }
+                          }}
+                        >
+                          Ganti Foto
+                        </Button>
+                      </div>
+                    )}
                   </div>
-                  <div>
-                    <input
-                      ref={photo2InputRef}
-                      type="file"
-                      accept="image/jpeg,image/jpg,image/png"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          setPhoto2(file);
-                          const reader = new FileReader();
-                          reader.onloadend = () => setPhoto2Preview(reader.result as string);
-                          reader.readAsDataURL(file);
-                        }
-                      }}
-                    />
-                    <div
-                      onClick={() => photo2InputRef.current?.click()}
-                      className="border-2 border-dashed rounded-md p-6 text-center hover-elevate cursor-pointer relative"
-                    >
-                      {photo2Preview ? (
-                        <>
-                          <img src={photo2Preview} alt="Preview 2" className="w-full h-32 object-cover rounded" />
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            size="icon"
-                            className="absolute top-2 right-2 h-6 w-6"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setPhoto2(null);
-                              setPhoto2Preview(null);
-                              if (photo2InputRef.current) photo2InputRef.current.value = '';
-                            }}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </>
-                      ) : (
-                        <>
-                          <ImageIcon className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                          <p className="text-sm text-muted-foreground">Foto 2</p>
-                        </>
-                      )}
-                    </div>
+
+                  {/* Foto 2 */}
+                  <div className="space-y-3">
+                    <Label className="text-sm font-medium">Foto 2</Label>
+                    {!photo2 && !photo2Preview && (
+                      <div className="flex items-center gap-2">
+                        <Input
+                          ref={photo2InputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handlePhotoUpload(e, 2)}
+                          className="hidden"
+                          id="edit-photo2-upload"
+                        />
+                        <Label
+                          htmlFor="edit-photo2-upload"
+                          className="flex items-center gap-2 px-4 py-2 border border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors w-full justify-center"
+                        >
+                          <ImageIcon className="h-4 w-4" />
+                          <span>Pilih Foto 2</span>
+                        </Label>
+                      </div>
+                    )}
+                    
+                    {photo2Preview && (
+                      <div className="relative group">
+                        <img
+                          src={photo2Preview}
+                          alt="Preview Foto 2"
+                          className="w-full h-32 object-cover rounded-lg border"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-2 right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => removePhoto(2)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="absolute bottom-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => {
+                            if (photo2InputRef.current) {
+                              photo2InputRef.current.click();
+                            }
+                          }}
+                        >
+                          Ganti Foto
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
+              
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="edit-task-completed"
+                  checked={newTask.completed}
+                  onCheckedChange={(checked) => setNewTask({ ...newTask, completed: !!checked })}
+                />
+                <Label htmlFor="edit-task-completed">Tandai sebagai selesai</Label>
+              </div>
+              
               <div className="flex gap-2 justify-end">
                 <Button variant="outline" onClick={() => {
                   setIsEditDialogOpen(false);
                   setEditingTask(null);
-                  setPhoto1(null);
-                  setPhoto2(null);
-                  setPhoto1Preview(null);
-                  setPhoto2Preview(null);
+                  setNewTask({ 
+                    title: "", 
+                    description: "", 
+                    completed: false, 
+                    date: new Date().toISOString().split('T')[0],
+                    activity_type: "",
+                    school_id: ""
+                  });
+                  removePhoto(1);
+                  removePhoto(2);
                 }}>
                   Batal
                 </Button>
-                <Button 
-                  onClick={handleUpdateTask} 
-                  disabled={!newTask.title || updateTaskMutation.isPending}
-                >
-                  {updateTaskMutation.isPending ? "Menyimpan..." : "Update Tugas"}
+                <Button onClick={handleUpdateTask} disabled={!newTask.title || !newTask.description || !newTask.activity_type || !newTask.school_id}>
+                  Perbarui Tugas
                 </Button>
               </div>
             </div>
@@ -838,80 +1040,122 @@ export default function TasksPage() {
         </Dialog>
       </div>
 
-      <div className="space-y-4">
+      {/* Tasks Grid */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {tasks.map((task: Task) => (
-          <Card key={task.id} className={task.completed ? "opacity-60" : ""}>
-            <CardHeader>
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-start gap-4 flex-1 min-w-0">
+          <Card key={task.id} className={`hover:shadow-md transition-shadow ${task.completed ? 'opacity-75' : ''}`}>
+            <CardHeader className="pb-3">
+              <div className="flex items-start justify-between">
+                <div className="flex items-start gap-3 flex-1">
                   <Checkbox
                     checked={task.completed}
-                    onCheckedChange={() => toggleComplete(task.id, task.completed)}
+                    onCheckedChange={(checked) => handleToggleComplete(task.id, !!checked)}
                     className="mt-1"
-                    data-testid={`checkbox-task-${task.id}`}
                   />
-                  <div className="flex-1 min-w-0">
-                    <CardTitle className={`text-lg ${task.completed ? "line-through" : ""}`}>
+                  <div className="flex-1">
+                    <CardTitle className={`text-lg leading-tight ${task.completed ? 'line-through text-muted-foreground' : ''}`}>
                       {task.title}
                     </CardTitle>
-                    <div className="flex flex-wrap items-center gap-2 mt-2">
-                      <Badge className={getCategoryColor(task.category)} variant="secondary">
-                        {task.category}
+                    <div className="flex items-center gap-2 mt-1">
+                      <Badge variant={task.completed ? "secondary" : "default"}>
+                        {task.completed ? "Selesai" : "Belum Selesai"}
                       </Badge>
-                      <span className="text-sm text-muted-foreground">{task.date}</span>
-                      {(task.photo1 || task.photo2) && (
-                        <Badge variant="outline" className="text-xs">
-                          <ImageIcon className="h-3 w-3 mr-1" />
-                          {[task.photo1, task.photo2].filter(Boolean).length} foto
-                        </Badge>
-                      )}
                     </div>
                   </div>
                 </div>
-                <div className="flex gap-2 shrink-0">
-                  <Button variant="ghost" size="icon" onClick={() => handlePrintTask(task)} data-testid={`button-print-task-${task.id}`}>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                    onClick={() => handleEditTask(task)}
+                    title="Edit Tugas"
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50"
+                    onClick={() => handlePrintTask(task)}
+                    title="Cetak Tugas"
+                  >
                     <Printer className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="icon" onClick={() => handleEditTask(task)} data-testid={`button-edit-task-${task.id}`}>
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={() => deleteTask(task.id)} data-testid={`button-delete-task-${task.id}`}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-destructive hover:bg-red-50"
+                    onClick={() => handleDeleteTask(task.id)}
+                    title="Hapus Tugas"
+                  >
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
             </CardHeader>
-            {(task.description || task.photo1 || task.photo2) && (
-              <CardContent className="space-y-3">
-                {task.description && (
-                  <p className="text-sm text-muted-foreground">{task.description}</p>
-                )}
-                {(task.photo1 || task.photo2) && (
-                  <div>
-                    <p className="text-sm font-medium mb-2">Foto Kegiatan:</p>
-                    <div className="grid grid-cols-2 gap-3">
-                      {task.photo1 && (
-                        <img 
-                          src={task.photo1.startsWith('data:') ? task.photo1 : `/uploads/${task.photo1}`} 
-                          alt="Foto 1" 
-                          className="w-full h-40 object-cover rounded-md border"
+            <CardContent className="space-y-3">
+              {(task.photo || (task as any).photo2) && (
+                <div className="mb-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {task.photo && (
+                      <div>
+                        <img
+                          src={task.photo}
+                          alt="Foto tugas 1"
+                          className="w-full h-32 object-cover rounded-lg border"
                         />
-                      )}
-                      {task.photo2 && (
-                        <img 
-                          src={task.photo2.startsWith('data:') ? task.photo2 : `/uploads/${task.photo2}`} 
-                          alt="Foto 2" 
-                          className="w-full h-40 object-cover rounded-md border"
+                        <p className="text-xs text-center text-muted-foreground mt-1">Foto 1</p>
+                      </div>
+                    )}
+                    {(task as any).photo2 && (
+                      <div>
+                        <img
+                          src={(task as any).photo2}
+                          alt="Foto tugas 2"
+                          className="w-full h-32 object-cover rounded-lg border"
                         />
-                      )}
-                    </div>
+                        <p className="text-xs text-center text-muted-foreground mt-1">Foto 2</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+              {task.description && (
+                <p className="text-sm text-muted-foreground line-clamp-3">
+                  {task.description}
+                </p>
+              )}
+              <div className="space-y-2">
+                {task.activity_type && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-blue-600">Jenis:</span>
+                    <Badge variant="outline" className="text-xs">
+                      {task.activity_type}
+                    </Badge>
                   </div>
                 )}
-              </CardContent>
-            )}
+                {task.school_name && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-green-600">Tempat:</span>
+                    <span className="text-xs text-muted-foreground">{task.school_name}</span>
+                  </div>
+                )}
+                <div className="text-xs text-muted-foreground">
+                  {task.date ? new Date(task.date).toLocaleDateString('id-ID') : 'Tanggal tidak tersedia'}
+                </div>
+              </div>
+            </CardContent>
           </Card>
         ))}
       </div>
+
+      {tasks.length === 0 && !isLoading && (
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">Belum ada tugas yang dibuat.</p>
+          <p className="text-sm text-muted-foreground mt-1">Klik tombol "Tambah Tugas" untuk membuat tugas baru.</p>
+        </div>
+      )}
     </div>
   );
 }

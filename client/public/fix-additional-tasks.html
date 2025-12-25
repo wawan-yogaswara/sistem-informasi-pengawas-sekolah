@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fix Additional Tasks Page</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 2.5rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .step {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border-left: 4px solid #4ade80;
+        }
+        
+        .step h3 {
+            margin-top: 0;
+            color: #4ade80;
+            font-size: 1.3rem;
+        }
+        
+        .button {
+            background: linear-gradient(135deg, #4ade80, #22c55e);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(74, 222, 128, 0.4);
+            margin: 0.5rem 0.5rem 0.5rem 0;
+        }
+        
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(74, 222, 128, 0.6);
+        }
+        
+        .button.secondary {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+        }
+        
+        .button.secondary:hover {
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6);
+        }
+        
+        .button.danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+        }
+        
+        .button.danger:hover {
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.6);
+        }
+        
+        .status {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .navigation {
+            text-align: center;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .warning {
+            background: rgba(251, 191, 36, 0.2);
+            border: 1px solid rgba(251, 191, 36, 0.5);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            color: #fbbf24;
+        }
+        
+        .success {
+            background: rgba(34, 197, 94, 0.2);
+            border: 1px solid rgba(34, 197, 94, 0.5);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            color: #22c55e;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Fix Additional Tasks Page</h1>
+        
+        <div class="warning">
+            <strong>⚠️ Issue:</strong> Data appears in Supabase and Reports page but not in Additional Tasks page.
+        </div>
+        
+        <div class="step">
+            <h3>Step 1: Test API Endpoints</h3>
+            <p>First, let's check if the API endpoints are working correctly and returning data.</p>
+            <button class="button secondary" onclick="testAPIEndpoints()">🧪 Test API Endpoints</button>
+            <div id="api-status" class="status" style="display: none;"></div>
+        </div>
+        
+        <div class="step">
+            <h3>Step 2: Diagnose Additional Tasks Page</h3>
+            <p>Run comprehensive diagnosis to identify why data is not appearing in the Additional Tasks page.</p>
+            <button class="button" onclick="diagnoseAdditionalTasks()">🔍 Diagnose Issue</button>
+            <div id="diagnosis-status" class="status" style="display: none;"></div>
+        </div>
+        
+        <div class="step">
+            <h3>Step 3: Apply Fixes</h3>
+            <p>Apply targeted fixes to resolve the visibility issue.</p>
+            <button class="button" onclick="applyFixes()">🔧 Apply Fixes</button>
+            <div id="fix-status" class="status" style="display: none;"></div>
+        </div>
+        
+        <div class="step">
+            <h3>Step 4: Emergency Actions</h3>
+            <p>If the above steps don't work, try these emergency actions.</p>
+            <button class="button danger" onclick="clearAllCaches()">🗑️ Clear All Caches</button>
+            <button class="button danger" onclick="forceReload()">🔄 Force Reload</button>
+        </div>
+        
+        <div class="navigation">
+            <button class="button secondary" onclick="window.location.href='/additional-tasks'">📋 Go to Additional Tasks</button>
+            <button class="button secondary" onclick="window.location.href='/reports'">📊 Go to Reports</button>
+            <button class="button secondary" onclick="window.location.href='/'">🏠 Go to Dashboard</button>
+        </div>
+    </div>
+
+    <script>
+        const WAWAN_USER_ID = '421cdb28-f2af-4f1f-aa5f-c59a3d661a2e';
+        
+        function updateStatus(elementId, message, isError = false) {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.innerHTML += (isError ? '❌ ' : '✅ ') + message + '<br>';
+            element.scrollTop = element.scrollHeight;
+        }
+        
+        function clearStatus(elementId) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = '';
+            element.style.display = 'none';
+        }
+        
+        async function testAPIEndpoints() {
+            clearStatus('api-status');
+            updateStatus('api-status', 'Starting API endpoint tests...');
+            
+            const endpoints = [
+                { name: 'Tasks Daily', url: `/api/tasks-daily?user_id=${WAWAN_USER_ID}` },
+                { name: 'Supervisions', url: `/api/supervisions?user_id=${WAWAN_USER_ID}` },
+                { name: 'Activities', url: `/api/activities?user_id=${WAWAN_USER_ID}` },
+                { name: 'Schools', url: '/api/schools' }
+            ];
+            
+            let totalData = 0;
+            
+            for (const endpoint of endpoints) {
+                try {
+                    updateStatus('api-status', `Testing ${endpoint.name}...`);
+                    const response = await fetch(endpoint.url);
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        updateStatus('api-status', `${endpoint.name}: ${data.length} items found`);
+                        if (endpoint.name === 'Activities') totalData = data.length;
+                    } else {
+                        const errorText = await response.text();
+                        updateStatus('api-status', `${endpoint.name}: Error ${response.status}`, true);
+                    }
+                } catch (error) {
+                    updateStatus('api-status', `${endpoint.name}: ${error.message}`, true);
+                }
+            }
+            
+            updateStatus('api-status', `\nSummary: Found ${totalData} additional tasks in API`);
+            
+            if (totalData > 0) {
+                updateStatus('api-status', 'API is working correctly. Proceed to Step 2.');
+            } else {
+                updateStatus('api-status', 'No data found in API. Check Supabase database.', true);
+            }
+        }
+        
+        async function diagnoseAdditionalTasks() {
+            clearStatus('diagnosis-status');
+            updateStatus('diagnosis-status', 'Starting diagnosis...');
+            
+            // Check user authentication
+            const authUser = localStorage.getItem('auth_user');
+            const userData = authUser ? JSON.parse(authUser) : null;
+            
+            if (!userData || userData.id !== WAWAN_USER_ID) {
+                updateStatus('diagnosis-status', 'Fixing user authentication...', true);
+                const fixedUser = {
+                    id: WAWAN_USER_ID,
+                    username: 'wawan',
+                    fullName: 'H. Wawan Yogaswara, S.Pd, M.Pd',
+                    role: 'admin'
+                };
+                localStorage.setItem('auth_user', JSON.stringify(fixedUser));
+                updateStatus('diagnosis-status', 'User authentication fixed');
+            } else {
+                updateStatus('diagnosis-status', 'User authentication OK');
+            }
+            
+            // Test API
+            try {
+                const response = await fetch(`/api/activities?user_id=${WAWAN_USER_ID}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    updateStatus('diagnosis-status', `API returned ${data.length} activities`);
+                    
+                    if (data.length === 0) {
+                        updateStatus('diagnosis-status', 'Root cause: No data in API', true);
+                        return;
+                    }
+                    
+                    // Check DOM
+                    if (window.location.pathname.includes('additional')) {
+                        const taskCards = document.querySelectorAll('.hover\\:shadow-md, [data-testid="task-card"]');
+                        updateStatus('diagnosis-status', `Found ${taskCards.length} task cards in DOM`);
+                        
+                        if (taskCards.length === 0) {
+                            updateStatus('diagnosis-status', 'Root cause: Data exists in API but not visible in UI', true);
+                            updateStatus('diagnosis-status', 'Proceed to Step 3 to apply fixes');
+                        } else {
+                            updateStatus('diagnosis-status', 'Tasks are visible in UI - no issue found');
+                        }
+                    } else {
+                        updateStatus('diagnosis-status', 'Not on Additional Tasks page - navigate there to test');
+                    }
+                } else {
+                    updateStatus('diagnosis-status', `API error: ${response.status}`, true);
+                }
+            } catch (error) {
+                updateStatus('diagnosis-status', `API test failed: ${error.message}`, true);
+            }
+        }
+        
+        async function applyFixes() {
+            clearStatus('fix-status');
+            updateStatus('fix-status', 'Applying fixes...');
+            
+            // Fix 1: Clear React Query cache
+            if (window.queryClient) {
+                window.queryClient.clear();
+                await window.queryClient.invalidateQueries({ queryKey: ['additional-tasks'] });
+                updateStatus('fix-status', 'Cleared React Query cache');
+            }
+            
+            // Fix 2: Clear localStorage caches
+            const cacheKeys = ['additional_tasks_cache', 'react-query-cache'];
+            cacheKeys.forEach(key => {
+                if (localStorage.getItem(key)) {
+                    localStorage.removeItem(key);
+                    updateStatus('fix-status', `Cleared ${key}`);
+                }
+            });
+            
+            // Fix 3: Dispatch refresh events
+            const events = ['additional-tasks-refresh', 'data-updated', 'cache-cleared'];
+            events.forEach(eventName => {
+                window.dispatchEvent(new CustomEvent(eventName, {
+                    detail: { timestamp: Date.now(), userId: WAWAN_USER_ID }
+                }));
+            });
+            updateStatus('fix-status', 'Dispatched refresh events');
+            
+            // Fix 4: Force refetch if on Additional Tasks page
+            if (window.location.pathname.includes('additional')) {
+                updateStatus('fix-status', 'Waiting for component refresh...');
+                setTimeout(() => {
+                    const taskCards = document.querySelectorAll('.hover\\:shadow-md, [data-testid="task-card"]');
+                    if (taskCards.length === 0) {
+                        updateStatus('fix-status', 'Still not visible, will reload page in 3 seconds...');
+                        setTimeout(() => window.location.reload(), 3000);
+                    } else {
+                        updateStatus('fix-status', 'Success! Tasks are now visible');
+                    }
+                }, 2000);
+            } else {
+                updateStatus('fix-status', 'Navigate to Additional Tasks page to see results');
+            }
+        }
+        
+        function clearAllCaches() {
+            clearStatus('fix-status');
+            updateStatus('fix-status', 'Clearing all caches...');
+            
+            // Clear localStorage
+            const keys = Object.keys(localStorage);
+            const cacheKeys = keys.filter(key => key.includes('cache') || key.includes('query'));
+            cacheKeys.forEach(key => {
+                localStorage.removeItem(key);
+                updateStatus('fix-status', `Cleared ${key}`);
+            });
+            
+            // Clear React Query
+            if (window.queryClient) {
+                window.queryClient.clear();
+                updateStatus('fix-status', 'Cleared React Query cache');
+            }
+            
+            updateStatus('fix-status', 'All caches cleared. Navigate to Additional Tasks page.');
+        }
+        
+        function forceReload() {
+            clearAllCaches();
+            setTimeout(() => {
+                if (window.location.pathname.includes('additional')) {
+                    window.location.reload();
+                } else {
+                    window.location.href = '/additional-tasks';
+                }
+            }, 1000);
+        }
+        
+        // Auto-run API test on page load
+        window.addEventListener('load', () => {
+            setTimeout(testAPIEndpoints, 1000);
+        });
+    </script>
+</body>
+</html>

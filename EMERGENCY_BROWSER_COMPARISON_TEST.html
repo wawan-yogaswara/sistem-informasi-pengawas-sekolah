@@ -1,0 +1,205 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Emergency - Browser Comparison Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .browser-info { background: #e3f2fd; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .activity { border: 1px solid #ddd; margin: 10px 0; padding: 15px; border-radius: 5px; }
+        .photo { width: 150px; height: 150px; object-fit: cover; margin: 5px; border: 1px solid #ccc; }
+        .error { background-color: #f8d7da; padding: 10px; border-radius: 5px; margin: 10px 0; }
+        .success { background-color: #d4edda; padding: 10px; border-radius: 5px; margin: 10px 0; }
+        .warning { background-color: #fff3cd; padding: 10px; border-radius: 5px; margin: 10px 0; }
+        .photo-container { display: flex; flex-wrap: wrap; gap: 10px; }
+        .photo-item { text-align: center; }
+        .photo-caption { font-size: 12px; color: #666; margin-top: 5px; }
+    </style>
+</head>
+<body>
+    <h1>🌐 Emergency Browser Comparison Test</h1>
+    
+    <div id="browser-info" class="browser-info"></div>
+    <div id="status"></div>
+    <div id="activities"></div>
+    
+    <script>
+        function detectBrowser() {
+            const ua = navigator.userAgent;
+            if (ua.includes('Opera') || ua.includes('OPR')) return 'Opera';
+            if (ua.includes('Chrome')) return 'Chrome';
+            if (ua.includes('Edge')) return 'Edge';
+            if (ua.includes('Firefox')) return 'Firefox';
+            if (ua.includes('Safari')) return 'Safari';
+            return 'Unknown';
+        }
+        
+        function testBrowserData() {
+            const browserInfoDiv = document.getElementById('browser-info');
+            const statusDiv = document.getElementById('status');
+            const activitiesDiv = document.getElementById('activities');
+            
+            // Display browser info
+            const browser = detectBrowser();
+            browserInfoDiv.innerHTML = `
+                <h3>🔍 Browser Information</h3>
+                <p><strong>Browser:</strong> ${browser}</p>
+                <p><strong>User Agent:</strong> ${navigator.userAgent}</p>
+                <p><strong>URL:</strong> ${window.location.href}</p>
+                <p><strong>localStorage Support:</strong> ${typeof(Storage) !== "undefined" ? '✅ Yes' : '❌ No'}</p>
+            `;
+            
+            try {
+                // Check localStorage
+                const localData = localStorage.getItem('local-database');
+                if (!localData) {
+                    statusDiv.innerHTML = '<div class="error">❌ No localStorage data found in ' + browser + '</div>';
+                    return;
+                }
+                
+                const database = JSON.parse(localData);
+                
+                // Check user
+                const userData = localStorage.getItem('auth_user');
+                if (!userData) {
+                    statusDiv.innerHTML = '<div class="error">❌ No user session found in ' + browser + '</div>';
+                    return;
+                }
+                
+                const currentUser = JSON.parse(userData);
+                const userId = currentUser.username === 'wawan' ? '1762696525337' : currentUser.id;
+                
+                // Get activities
+                const activities = [];
+                
+                // Tasks
+                const tasks = database.tasks?.filter(t => t.userId === userId) || [];
+                tasks.forEach(task => {
+                    activities.push({
+                        id: task.id,
+                        type: 'Tugas Pokok',
+                        title: task.title || 'Tugas Harian',
+                        date: task.date || task.createdAt,
+                        photo1: task.photo1,
+                        photo2: task.photo2
+                    });
+                });
+                
+                // Supervisions
+                const supervisions = database.supervisions?.filter(s => s.userId === userId) || [];
+                supervisions.forEach(supervision => {
+                    const school = database.schools?.find(s => s.id === supervision.schoolId);
+                    activities.push({
+                        id: supervision.id,
+                        type: 'Supervisi',
+                        title: `Supervisi ${school?.name || 'Sekolah'}`,
+                        date: supervision.date || supervision.createdAt,
+                        photo1: supervision.photo1,
+                        photo2: supervision.photo2
+                    });
+                });
+                
+                // Additional Tasks
+                const additionalTasks = database.additionalTasks?.filter(t => t.userId === userId) || [];
+                additionalTasks.forEach(task => {
+                    activities.push({
+                        id: task.id,
+                        type: 'Tugas Tambahan',
+                        title: task.name || task.title || 'Kegiatan Tambahan',
+                        date: task.date || task.createdAt,
+                        photo1: task.photo1,
+                        photo2: task.photo2
+                    });
+                });
+                
+                // Sort by date
+                activities.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+                
+                // Count photos
+                let totalPhotos = 0;
+                activities.forEach(activity => {
+                    if (activity.photo1) totalPhotos++;
+                    if (activity.photo2) totalPhotos++;
+                });
+                
+                // Display status
+                const statusClass = activities.length === 0 ? 'error' : totalPhotos === 0 ? 'warning' : 'success';
+                statusDiv.innerHTML = `
+                    <div class="${statusClass}">
+                        <h3>📊 Data Status in ${browser}</h3>
+                        <p><strong>User:</strong> ${currentUser.username} (ID: ${userId})</p>
+                        <p><strong>Total Activities:</strong> ${activities.length}</p>
+                        <p><strong>Total Photos:</strong> ${totalPhotos}</p>
+                        <p><strong>Status:</strong> ${activities.length === 0 ? '❌ No Data' : totalPhotos === 0 ? '⚠️ No Photos' : '✅ Data & Photos Found'}</p>
+                    </div>
+                `;
+                
+                // Display activities
+                if (activities.length === 0) {
+                    activitiesDiv.innerHTML = '<div class="error">❌ No activities found in ' + browser + '</div>';
+                } else {
+                    activitiesDiv.innerHTML = '<h3>📋 Activities (' + activities.length + ')</h3>' + 
+                        activities.map(activity => `
+                            <div class="activity">
+                                <h4>${activity.type}: ${activity.title}</h4>
+                                <p><strong>Date:</strong> ${activity.date}</p>
+                                <div class="photo-container">
+                                    ${activity.photo1 ? `
+                                        <div class="photo-item">
+                                            <img class="photo" 
+                                                 src="${activity.photo1.startsWith('data:') ? activity.photo1 : 'http://localhost:5000/uploads/' + activity.photo1}" 
+                                                 alt="Photo 1" 
+                                                 onload="console.log('✅ Photo1 loaded in ${browser}:', '${activity.photo1.substring(0, 30)}...')"
+                                                 onerror="handlePhotoError(this, '${activity.photo1}', '${browser}', 1)">
+                                            <div class="photo-caption">Photo 1</div>
+                                        </div>
+                                    ` : ''}
+                                    ${activity.photo2 ? `
+                                        <div class="photo-item">
+                                            <img class="photo" 
+                                                 src="${activity.photo2.startsWith('data:') ? activity.photo2 : 'http://localhost:5000/uploads/' + activity.photo2}" 
+                                                 alt="Photo 2" 
+                                                 onload="console.log('✅ Photo2 loaded in ${browser}:', '${activity.photo2.substring(0, 30)}...')"
+                                                 onerror="handlePhotoError(this, '${activity.photo2}', '${browser}', 2)">
+                                            <div class="photo-caption">Photo 2</div>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        `).join('');
+                }
+                
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="error">❌ Error in ${browser}: ${error.message}</div>`;
+                console.error('Browser test error:', error);
+            }
+        }
+        
+        function handlePhotoError(img, photoPath, browser, photoNum) {
+            console.log(`❌ Photo${photoNum} error in ${browser}:`, photoPath);
+            
+            // Try alternative paths
+            if (img.src.includes('localhost:5000')) {
+                console.log('🔄 Trying localhost:3000...');
+                img.src = `http://localhost:3000/uploads/${photoPath}`;
+            } else if (img.src.includes('localhost:3000')) {
+                console.log('🔄 Trying relative path...');
+                img.src = `/uploads/${photoPath}`;
+            } else {
+                console.log('❌ All paths failed, showing error');
+                img.style.display = 'none';
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'photo error';
+                errorDiv.innerHTML = `<div style="display: flex; align-items: center; justify-content: center; height: 100%; flex-direction: column;"><div>📷</div><div>Error in ${browser}</div><div style="font-size: 10px;">${photoPath.substring(0, 20)}...</div></div>`;
+                img.parentNode.replaceChild(errorDiv, img);
+            }
+        }
+        
+        // Run test on load
+        window.onload = testBrowserData;
+        
+        // Add refresh button
+        document.body.insertAdjacentHTML('afterbegin', '<button onclick="location.reload()" style="margin-bottom: 20px; padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">🔄 Refresh Test</button>');
+    </script>
+</body>
+</html>

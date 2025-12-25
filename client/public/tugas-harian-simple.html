@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tugas Harian - Pengawas Sekolah</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8fafc;
+            color: #1e293b;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .actions {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+        
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #475569;
+        }
+        
+        .btn-secondary:hover {
+            background: #cbd5e1;
+        }
+        
+        .tasks-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .task-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s;
+        }
+        
+        .task-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transform: translateY(-2px);
+        }
+        
+        .task-header {
+            display: flex;
+            justify-content: between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+        
+        .task-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+        }
+        
+        .task-status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        
+        .status-completed {
+            background: #dcfce7;
+            color: #166534;
+        }
+        
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .task-description {
+            color: #64748b;
+            margin-bottom: 1rem;
+            line-height: 1.5;
+        }
+        
+        .task-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            font-size: 0.875rem;
+            color: #64748b;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        
+        .task-actions {
+            margin-top: 1rem;
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .btn-small {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        }
+        
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+        
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #64748b;
+        }
+        
+        .empty-state h3 {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: #475569;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background: white;
+            margin: 5% auto;
+            padding: 2rem;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+        
+        .form-textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 1rem;
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        .form-select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📋 Tugas Harian</h1>
+            <p>Kelola tugas dan aktivitas harian pengawas sekolah</p>
+        </div>
+        
+        <div class="actions">
+            <button class="btn btn-primary" onclick="openAddModal()">
+                ➕ Tambah Tugas Baru
+            </button>
+            <button class="btn btn-secondary" onclick="refreshTasks()">
+                🔄 Refresh Data
+            </button>
+            <a href="/" class="btn btn-secondary">
+                🏠 Kembali ke Dashboard
+            </a>
+        </div>
+        
+        <div id="tasksContainer" class="tasks-grid">
+            <!-- Tasks akan dimuat di sini -->
+        </div>
+        
+        <div id="emptyState" class="empty-state" style="display: none;">
+            <h3>Belum ada tugas</h3>
+            <p>Klik "Tambah Tugas Baru" untuk membuat tugas pertama Anda</p>
+        </div>
+    </div>
+    
+    <!-- Modal Tambah Tugas -->
+    <div id="addModal" class="modal">
+        <div class="modal-content">
+            <h2 style="margin-bottom: 1.5rem;">Tambah Tugas Baru</h2>
+            <form id="addTaskForm">
+                <div class="form-group">
+                    <label class="form-label">Judul Tugas</label>
+                    <input type="text" id="taskTitle" class="form-input" placeholder="Contoh: Supervisi Pembelajaran Matematika" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Deskripsi</label>
+                    <textarea id="taskDescription" class="form-textarea" placeholder="Deskripsi detail tugas..." required></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Tanggal</label>
+                    <input type="date" id="taskDate" class="form-input" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Jenis Kegiatan</label>
+                    <select id="taskType" class="form-select">
+                        <option value="Pendampingan">Pendampingan</option>
+                        <option value="Pelaporan">Pelaporan</option>
+                        <option value="Perencanaan">Perencanaan</option>
+                        <option value="Monitoring">Monitoring</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Sekolah</label>
+                    <select id="taskSchool" class="form-select">
+                        <option value="">Pilih sekolah...</option>
+                        <option value="SDN 1 Garut">SDN 1 Garut</option>
+                        <option value="SMPN 2 Garut">SMPN 2 Garut</option>
+                        <option value="SMAN 1 Garut">SMAN 1 Garut</option>
+                    </select>
+                </div>
+                
+                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                    <button type="submit" class="btn btn-primary">Simpan Tugas</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeAddModal()">Batal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        // Data tugas (disimpan di localStorage)
+        let tasks = JSON.parse(localStorage.getItem('tasks_data') || '[]');
+        
+        // Inisialisasi data sample jika kosong
+        if (tasks.length === 0) {
+            tasks = [
+                {
+                    id: 'task-1',
+                    title: 'Supervisi Pembelajaran Matematika',
+                    description: 'Melakukan supervisi pembelajaran mata pelajaran Matematika di kelas 5. Mengamati proses pembelajaran dan memberikan feedback kepada guru.',
+                    date: '2025-01-24',
+                    type: 'Pendampingan',
+                    school: 'SDN 1 Garut',
+                    completed: true,
+                    createdAt: new Date().toISOString()
+                },
+                {
+                    id: 'task-2',
+                    title: 'Penyusunan Laporan Bulanan',
+                    description: 'Menyusun laporan bulanan kegiatan supervisi dan pendampingan sekolah binaan untuk bulan Januari 2025.',
+                    date: '2025-01-24',
+                    type: 'Pelaporan',
+                    school: '',
+                    completed: false,
+                    createdAt: new Date().toISOString()
+                },
+                {
+                    id: 'task-3',
+                    title: 'Rapat Koordinasi Kepala Sekolah',
+                    description: 'Menghadiri rapat koordinasi dengan kepala sekolah binaan untuk membahas program peningkatan mutu pendidikan.',
+                    date: '2025-01-23',
+                    type: 'Perencanaan',
+                    school: 'SMPN 2 Garut',
+                    completed: true,
+                    createdAt: new Date(Date.now() - 86400000).toISOString()
+                }
+            ];
+            saveTasks();
+        }
+        
+        // Fungsi untuk menyimpan tasks ke localStorage
+        function saveTasks() {
+            localStorage.setItem('tasks_data', JSON.stringify(tasks));
+        }
+        
+        // Fungsi untuk render tasks
+        function renderTasks() {
+            const container = document.getElementById('tasksContainer');
+            const emptyState = document.getElementById('emptyState');
+            
+            if (tasks.length === 0) {
+                container.style.display = 'none';
+                emptyState.style.display = 'block';
+                return;
+            }
+            
+            container.style.display = 'grid';
+            emptyState.style.display = 'none';
+            
+            container.innerHTML = tasks.map(task => `
+                <div class="task-card">
+                    <div class="task-header">
+                        <div>
+                            <div class="task-title">${task.title}</div>
+                            <span class="task-status ${task.completed ? 'status-completed' : 'status-pending'}">
+                                ${task.completed ? '✅ Selesai' : '⏳ Belum Selesai'}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="task-description">${task.description}</div>
+                    
+                    <div class="task-meta">
+                        <div class="meta-item">
+                            📅 ${formatDate(task.date)}
+                        </div>
+                        <div class="meta-item">
+                            📚 ${task.type}
+                        </div>
+                        ${task.school ? `<div class="meta-item">🏫 ${task.school}</div>` : ''}
+                    </div>
+                    
+                    <div class="task-actions">
+                        <button class="btn btn-success btn-small" onclick="toggleComplete('${task.id}')">
+                            ${task.completed ? 'Tandai Belum Selesai' : 'Tandai Selesai'}
+                        </button>
+                        <button class="btn btn-danger btn-small" onclick="deleteTask('${task.id}')">
+                            Hapus
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // Fungsi untuk format tanggal
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('id-ID', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+        
+        // Fungsi untuk toggle status selesai
+        function toggleComplete(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (task) {
+                task.completed = !task.completed;
+                saveTasks();
+                renderTasks();
+            }
+        }
+        
+        // Fungsi untuk hapus task
+        function deleteTask(taskId) {
+            if (confirm('Yakin ingin menghapus tugas ini?')) {
+                tasks = tasks.filter(t => t.id !== taskId);
+                saveTasks();
+                renderTasks();
+            }
+        }
+        
+        // Fungsi untuk refresh tasks
+        function refreshTasks() {
+            renderTasks();
+            alert('Data tugas berhasil di-refresh!');
+        }
+        
+        // Modal functions
+        function openAddModal() {
+            document.getElementById('addModal').style.display = 'block';
+            document.getElementById('taskDate').value = new Date().toISOString().split('T')[0];
+        }
+        
+        function closeAddModal() {
+            document.getElementById('addModal').style.display = 'none';
+            document.getElementById('addTaskForm').reset();
+        }
+        
+        // Form submit handler
+        document.getElementById('addTaskForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const newTask = {
+                id: 'task-' + Date.now(),
+                title: document.getElementById('taskTitle').value,
+                description: document.getElementById('taskDescription').value,
+                date: document.getElementById('taskDate').value,
+                type: document.getElementById('taskType').value,
+                school: document.getElementById('taskSchool').value,
+                completed: false,
+                createdAt: new Date().toISOString()
+            };
+            
+            tasks.unshift(newTask);
+            saveTasks();
+            renderTasks();
+            closeAddModal();
+            
+            alert('Tugas baru berhasil ditambahkan!');
+        });
+        
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('addModal');
+            if (event.target === modal) {
+                closeAddModal();
+            }
+        }
+        
+        // Initial render
+        renderTasks();
+        
+        console.log('✅ Halaman Tugas Harian berhasil dimuat!');
+        console.log('📊 Total tugas:', tasks.length);
+    </script>
+</body>
+</html>

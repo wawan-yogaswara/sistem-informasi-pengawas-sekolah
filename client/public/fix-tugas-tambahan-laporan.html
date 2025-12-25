@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perbaikan Tugas Tambahan & Laporan Foto</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 2.5rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .problem {
+            background: rgba(251, 191, 36, 0.2);
+            border: 1px solid rgba(251, 191, 36, 0.5);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            color: #fbbf24;
+        }
+        
+        .problem h3 {
+            margin-top: 0;
+            color: #fbbf24;
+        }
+        
+        .step {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border-left: 4px solid #4ade80;
+        }
+        
+        .step h3 {
+            margin-top: 0;
+            color: #4ade80;
+            font-size: 1.3rem;
+        }
+        
+        .button {
+            background: linear-gradient(135deg, #4ade80, #22c55e);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(74, 222, 128, 0.4);
+            margin: 0.5rem 0.5rem 0.5rem 0;
+        }
+        
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(74, 222, 128, 0.6);
+        }
+        
+        .button.primary {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+        }
+        
+        .button.primary:hover {
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6);
+        }
+        
+        .button.danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+        }
+        
+        .button.danger:hover {
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.6);
+        }
+        
+        .status {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            max-height: 300px;
+            overflow-y: auto;
+            display: none;
+        }
+        
+        .navigation {
+            text-align: center;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .info-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+        }
+        
+        .info-card h4 {
+            margin-top: 0;
+            color: #4ade80;
+        }
+        
+        .progress {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+            margin: 1rem 0;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #4ade80, #22c55e);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Perbaikan Tugas Tambahan & Laporan Foto</h1>
+        
+        <div class="problem">
+            <h3>⚠️ Masalah yang Dilaporkan:</h3>
+            <ul style="margin: 0; padding-left: 20px;">
+                <li><strong>Halaman Tugas Tambahan:</strong> Data yang sudah diinput belum muncul</li>
+                <li><strong>Halaman Laporan:</strong> Data yang diinput dengan foto tidak muncul</li>
+            </ul>
+        </div>
+        
+        <div class="grid">
+            <div class="info-card">
+                <h4>📋 Status Tugas Tambahan</h4>
+                <div id="tugas-status">Belum diperiksa</div>
+            </div>
+            <div class="info-card">
+                <h4>📸 Status Laporan Foto</h4>
+                <div id="foto-status">Belum diperiksa</div>
+            </div>
+        </div>
+        
+        <div class="progress">
+            <div class="progress-bar" id="progress-bar"></div>
+        </div>
+        
+        <div class="step">
+            <h3>Langkah 1: Diagnosa Masalah</h3>
+            <p>Periksa API endpoints dan data yang tersimpan di Supabase untuk kedua masalah.</p>
+            <button class="button primary" onclick="diagnoseProblems()">🔍 Diagnosa Masalah</button>
+            <div id="diagnose-status" class="status"></div>
+        </div>
+        
+        <div class="step">
+            <h3>Langkah 2: Perbaikan Otomatis</h3>
+            <p>Jalankan script perbaikan otomatis untuk mengatasi kedua masalah sekaligus.</p>
+            <button class="button" onclick="runAutoFix()">🔧 Perbaikan Otomatis</button>
+            <div id="fix-status" class="status"></div>
+        </div>
+        
+        <div class="step">
+            <h3>Langkah 3: Verifikasi Hasil</h3>
+            <p>Periksa apakah perbaikan berhasil dengan mengunjungi halaman yang bermasalah.</p>
+            <button class="button primary" onclick="verifyFix()">✅ Verifikasi Hasil</button>
+            <div id="verify-status" class="status"></div>
+        </div>
+        
+        <div class="step">
+            <h3>Langkah 4: Tindakan Darurat (jika diperlukan)</h3>
+            <p>Jika perbaikan otomatis tidak berhasil, gunakan tindakan darurat.</p>
+            <button class="button danger" onclick="emergencyFix()">🚨 Perbaikan Darurat</button>
+            <button class="button danger" onclick="forceReload()">🔄 Force Reload</button>
+        </div>
+        
+        <div class="navigation">
+            <button class="button primary" onclick="window.location.href='/additional-tasks'">📋 Buka Tugas Tambahan</button>
+            <button class="button primary" onclick="window.location.href='/reports'">📊 Buka Laporan</button>
+            <button class="button primary" onclick="window.location.href='/'">🏠 Dashboard</button>
+        </div>
+    </div>
+
+    <script>
+        const WAWAN_USER_ID = '421cdb28-f2af-4f1f-aa5f-c59a3d661a2e';
+        let currentStep = 0;
+        
+        function updateProgress(step) {
+            currentStep = step;
+            const progress = (step / 4) * 100;
+            document.getElementById('progress-bar').style.width = progress + '%';
+        }
+        
+        function updateStatus(elementId, message, isError = false) {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.innerHTML += (isError ? '❌ ' : '✅ ') + message + '<br>';
+            element.scrollTop = element.scrollHeight;
+        }
+        
+        function clearStatus(elementId) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = '';
+            element.style.display = 'none';
+        }
+        
+        async function diagnoseProblems() {
+            clearStatus('diagnose-status');
+            updateProgress(1);
+            updateStatus('diagnose-status', 'Memulai diagnosa masalah...');
+            
+            // Test API endpoints
+            const endpoints = [
+                { name: 'Tugas Tambahan', url: `/api/activities?user_id=${WAWAN_USER_ID}`, statusId: 'tugas-status' },
+                { name: 'Tugas Harian', url: `/api/tasks-daily?user_id=${WAWAN_USER_ID}` },
+                { name: 'Supervisi', url: `/api/supervisions?user_id=${WAWAN_USER_ID}` }
+            ];
+            
+            let tugasTambahanCount = 0;
+            let totalPhotos = 0;
+            
+            for (const endpoint of endpoints) {
+                try {
+                    updateStatus('diagnose-status', `Memeriksa ${endpoint.name}...`);
+                    const response = await fetch(endpoint.url);
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        const withPhotos = data.filter(item => item.photo || item.photo1 || item.photo2).length;
+                        
+                        updateStatus('diagnose-status', `${endpoint.name}: ${data.length} data, ${withPhotos} dengan foto`);
+                        
+                        if (endpoint.name === 'Tugas Tambahan') {
+                            tugasTambahanCount = data.length;
+                            document.getElementById('tugas-status').innerHTML = `${data.length} data ditemukan`;
+                        }
+                        
+                        totalPhotos += withPhotos;
+                    } else {
+                        updateStatus('diagnose-status', `${endpoint.name}: Error ${response.status}`, true);
+                    }
+                } catch (error) {
+                    updateStatus('diagnose-status', `${endpoint.name}: ${error.message}`, true);
+                }
+            }
+            
+            document.getElementById('foto-status').innerHTML = `${totalPhotos} foto ditemukan`;
+            
+            // Check current page issues
+            const currentPath = window.location.pathname;
+            if (currentPath.includes('additional')) {
+                const taskCards = document.querySelectorAll('.hover\\:shadow-md, [data-testid="task-card"]');
+                updateStatus('diagnose-status', `Halaman Tugas Tambahan: ${taskCards.length} cards tampil dari ${tugasTambahanCount} data`);
+                
+                if (tugasTambahanCount > 0 && taskCards.length === 0) {
+                    updateStatus('diagnose-status', 'MASALAH DIKONFIRMASI: Data ada tapi tidak tampil di UI', true);
+                }
+            }
+            
+            if (currentPath.includes('reports')) {
+                const photoElements = document.querySelectorAll('img[src*="data:"], img[src*="base64"]');
+                updateStatus('diagnose-status', `Halaman Laporan: ${photoElements.length} foto tampil dari ${totalPhotos} foto`);
+                
+                if (totalPhotos > 0 && photoElements.length === 0) {
+                    updateStatus('diagnose-status', 'MASALAH DIKONFIRMASI: Foto ada tapi tidak tampil di laporan', true);
+                }
+            }
+            
+            updateStatus('diagnose-status', 'Diagnosa selesai. Lanjut ke perbaikan otomatis.');
+        }
+        
+        async function runAutoFix() {
+            clearStatus('fix-status');
+            updateProgress(2);
+            updateStatus('fix-status', 'Memulai perbaikan otomatis...');
+            
+            try {
+                // Load and execute the fix script
+                const response = await fetch('/FIX_TUGAS_TAMBAHAN_DAN_LAPORAN_FOTO_FINAL.js');
+                const scriptContent = await response.text();
+                
+                updateStatus('fix-status', 'Script perbaikan dimuat, menjalankan...');
+                
+                // Execute the script
+                eval(scriptContent);
+                
+                updateStatus('fix-status', 'Script perbaikan dijalankan. Periksa notifikasi popup untuk hasil.');
+                
+            } catch (error) {
+                updateStatus('fix-status', `Gagal menjalankan perbaikan: ${error.message}`, true);
+            }
+        }
+        
+        async function verifyFix() {
+            clearStatus('verify-status');
+            updateProgress(3);
+            updateStatus('verify-status', 'Memverifikasi hasil perbaikan...');
+            
+            // Re-test the APIs
+            try {
+                const activitiesResponse = await fetch(`/api/activities?user_id=${WAWAN_USER_ID}`);
+                if (activitiesResponse.ok) {
+                    const activitiesData = await activitiesResponse.json();
+                    updateStatus('verify-status', `API Tugas Tambahan: ${activitiesData.length} data tersedia`);
+                    
+                    // Check if on additional tasks page
+                    if (window.location.pathname.includes('additional')) {
+                        const taskCards = document.querySelectorAll('.hover\\:shadow-md, [data-testid="task-card"]');
+                        if (taskCards.length > 0) {
+                            updateStatus('verify-status', '✅ BERHASIL: Tugas tambahan sekarang tampil di UI');
+                            document.getElementById('tugas-status').innerHTML = '✅ Diperbaiki';
+                        } else {
+                            updateStatus('verify-status', '⚠️ Tugas tambahan masih belum tampil, coba reload halaman', true);
+                        }
+                    }
+                }
+                
+                // Check reports page
+                if (window.location.pathname.includes('reports')) {
+                    const photoElements = document.querySelectorAll('img[src*="data:"], img[src*="base64"]');
+                    if (photoElements.length > 0) {
+                        updateStatus('verify-status', '✅ BERHASIL: Foto sekarang tampil di laporan');
+                        document.getElementById('foto-status').innerHTML = '✅ Diperbaiki';
+                    } else {
+                        updateStatus('verify-status', '⚠️ Foto masih belum tampil, coba reload halaman', true);
+                    }
+                }
+                
+                updateStatus('verify-status', 'Verifikasi selesai. Jika masih ada masalah, gunakan tindakan darurat.');
+                
+            } catch (error) {
+                updateStatus('verify-status', `Error verifikasi: ${error.message}`, true);
+            }
+        }
+        
+        function emergencyFix() {
+            updateProgress(4);
+            
+            // Clear all caches
+            const cacheKeys = Object.keys(localStorage).filter(key => 
+                key.includes('cache') || key.includes('query') || key.includes('tasks') || key.includes('reports')
+            );
+            
+            cacheKeys.forEach(key => {
+                localStorage.removeItem(key);
+                console.log(`Cleared ${key}`);
+            });
+            
+            // Clear React Query if available
+            if (window.queryClient) {
+                window.queryClient.clear();
+                console.log('Cleared React Query cache');
+            }
+            
+            // Dispatch all possible refresh events
+            const events = [
+                'additional-tasks-refresh',
+                'reports-refresh', 
+                'data-updated',
+                'cache-cleared',
+                'photos-refresh',
+                'updateReportsData'
+            ];
+            
+            events.forEach(eventName => {
+                window.dispatchEvent(new CustomEvent(eventName, {
+                    detail: { timestamp: Date.now(), userId: WAWAN_USER_ID }
+                }));
+            });
+            
+            alert('🚨 Tindakan darurat dijalankan!\n\n• Semua cache dibersihkan\n• Refresh events dikirim\n• Silakan reload halaman atau navigasi ke halaman yang bermasalah');
+        }
+        
+        function forceReload() {
+            const currentPath = window.location.pathname;
+            
+            if (currentPath.includes('additional') || currentPath.includes('reports')) {
+                window.location.reload();
+            } else {
+                // Ask user which page to go to
+                const choice = confirm('Pilih halaman:\n\nOK = Tugas Tambahan\nCancel = Laporan');
+                if (choice) {
+                    window.location.href = '/additional-tasks';
+                } else {
+                    window.location.href = '/reports';
+                }
+            }
+        }
+        
+        // Auto-run diagnosis on page load
+        window.addEventListener('load', () => {
+            setTimeout(diagnoseProblems, 1000);
+        });
+    </script>
+</body>
+</html>

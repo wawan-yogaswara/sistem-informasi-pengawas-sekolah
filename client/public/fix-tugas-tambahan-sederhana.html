@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fix Tugas Tambahan - Sederhana</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 2rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .problem {
+            background: rgba(251, 191, 36, 0.2);
+            border: 1px solid rgba(251, 191, 36, 0.5);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            color: #fbbf24;
+            text-align: center;
+        }
+        
+        .button {
+            background: linear-gradient(135deg, #4ade80, #22c55e);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(74, 222, 128, 0.4);
+            width: 100%;
+            margin-bottom: 1rem;
+        }
+        
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(74, 222, 128, 0.6);
+        }
+        
+        .button.secondary {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+        }
+        
+        .button.secondary:hover {
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6);
+        }
+        
+        .navigation {
+            text-align: center;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .info {
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid rgba(59, 130, 246, 0.5);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Fix Tugas Tambahan</h1>
+        
+        <div class="problem">
+            <h3>⚠️ Masalah:</h3>
+            <p>Data tugas tambahan yang sudah diinput tidak muncul di halaman</p>
+        </div>
+        
+        <div class="info">
+            <strong>ℹ️ Informasi:</strong><br>
+            Script ini akan mendiagnosa dan memperbaiki masalah secara otomatis. 
+            Koneksi Supabase sudah lancar, jadi kemungkinan masalah ada di frontend/cache.
+        </div>
+        
+        <button class="button" onclick="runDiagnosis()">
+            🔍 1. Diagnosa Masalah
+        </button>
+        
+        <button class="button" onclick="runSimpleFix()">
+            🔧 2. Perbaikan Sederhana
+        </button>
+        
+        <button class="button secondary" onclick="forceReload()">
+            🔄 3. Force Reload (Jika Perlu)
+        </button>
+        
+        <div class="navigation">
+            <button class="button secondary" onclick="window.location.href='/additional-tasks'">
+                📋 Buka Halaman Tugas Tambahan
+            </button>
+        </div>
+    </div>
+
+    <script>
+        async function runDiagnosis() {
+            try {
+                console.log('🔍 Menjalankan diagnosa...');
+                
+                // Load and run diagnosis script
+                const response = await fetch('/DIAGNOSA_LANGSUNG_TUGAS_TAMBAHAN.js');
+                const scriptContent = await response.text();
+                
+                // Execute the script
+                eval(scriptContent);
+                
+            } catch (error) {
+                console.error('❌ Diagnosa gagal:', error);
+                alert('❌ Diagnosa gagal: ' + error.message);
+            }
+        }
+        
+        async function runSimpleFix() {
+            try {
+                console.log('🔧 Menjalankan perbaikan sederhana...');
+                
+                // Load and run fix script
+                const response = await fetch('/FIX_SEDERHANA_TUGAS_TAMBAHAN.js');
+                const scriptContent = await response.text();
+                
+                // Execute the script
+                eval(scriptContent);
+                
+            } catch (error) {
+                console.error('❌ Perbaikan gagal:', error);
+                alert('❌ Perbaikan gagal: ' + error.message);
+            }
+        }
+        
+        function forceReload() {
+            // Clear all possible caches
+            if (window.queryClient) {
+                window.queryClient.clear();
+            }
+            
+            // Clear localStorage
+            Object.keys(localStorage).forEach(key => {
+                if (key.includes('cache') || key.includes('query') || key.includes('tasks')) {
+                    localStorage.removeItem(key);
+                }
+            });
+            
+            // Go to additional tasks page and reload
+            window.location.href = '/additional-tasks?t=' + Date.now();
+        }
+        
+        // Auto-run diagnosis on page load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                console.log('🚀 Auto-running diagnosis...');
+                runDiagnosis();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

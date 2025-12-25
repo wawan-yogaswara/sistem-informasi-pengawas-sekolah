@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Laporan Data Hilang</title>
+</head>
+<body>
+    <h1>Debug: Mengapa Data Laporan Hilang</h1>
+    
+    <div id="debug-info"></div>
+    
+    <script>
+        async function debugLaporanData() {
+            const debugInfo = document.getElementById('debug-info');
+            let html = '<h2>Hasil Debug:</h2>';
+            
+            try {
+                // 1. Cek user yang sedang login
+                const currentUser = localStorage.getItem('currentUser');
+                html += `<h3>1. User Login:</h3>`;
+                if (currentUser) {
+                    const user = JSON.parse(currentUser);
+                    html += `<pre>${JSON.stringify(user, null, 2)}</pre>`;
+                    const userId = user.id || user.username;
+                    html += `<p><strong>User ID yang digunakan:</strong> ${userId}</p>`;
+                    
+                    // 2. Test API calls
+                    const baseUrl = window.location.origin;
+                    
+                    // Test additional tasks
+                    html += `<h3>2. Test API Additional Tasks:</h3>`;
+                    try {
+                        const response = await fetch(`${baseUrl}/api/tasks?user_id=${userId}`);
+                        const data = await response.json();
+                        html += `<p><strong>Status:</strong> ${response.status}</p>`;
+                        html += `<p><strong>Data count:</strong> ${data.length}</p>`;
+                        html += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                    } catch (error) {
+                        html += `<p><strong>Error:</strong> ${error.message}</p>`;
+                    }
+                    
+                    // Test supervisions
+                    html += `<h3>3. Test API Supervisions:</h3>`;
+                    try {
+                        const response = await fetch(`${baseUrl}/api/supervisions?user_id=${userId}`);
+                        const data = await response.json();
+                        html += `<p><strong>Status:</strong> ${response.status}</p>`;
+                        html += `<p><strong>Data count:</strong> ${data.length}</p>`;
+                        html += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                    } catch (error) {
+                        html += `<p><strong>Error:</strong> ${error.message}</p>`;
+                    }
+                    
+                    // Test tasks daily
+                    html += `<h3>4. Test API Tasks Daily:</h3>`;
+                    try {
+                        const response = await fetch(`${baseUrl}/api/tasks-daily?user_id=${userId}`);
+                        const data = await response.json();
+                        html += `<p><strong>Status:</strong> ${response.status}</p>`;
+                        html += `<p><strong>Data count:</strong> ${data.length}</p>`;
+                        html += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                    } catch (error) {
+                        html += `<p><strong>Error:</strong> ${error.message}</p>`;
+                    }
+                    
+                    // Test tanpa filter user_id
+                    html += `<h3>5. Test API Tanpa Filter User ID:</h3>`;
+                    try {
+                        const response = await fetch(`${baseUrl}/api/tasks`);
+                        const data = await response.json();
+                        html += `<p><strong>Additional Tasks (semua):</strong> ${data.length} records</p>`;
+                        
+                        const response2 = await fetch(`${baseUrl}/api/supervisions`);
+                        const data2 = await response2.json();
+                        html += `<p><strong>Supervisions (semua):</strong> ${data2.length} records</p>`;
+                        
+                        const response3 = await fetch(`${baseUrl}/api/tasks-daily`);
+                        const data3 = await response3.json();
+                        html += `<p><strong>Tasks Daily (semua):</strong> ${data3.length} records</p>`;
+                    } catch (error) {
+                        html += `<p><strong>Error:</strong> ${error.message}</p>`;
+                    }
+                    
+                } else {
+                    html += `<p><strong>Error:</strong> Tidak ada user yang login!</p>`;
+                }
+                
+                // 3. Cek localStorage data lama
+                html += `<h3>6. Cek Data localStorage Lama:</h3>`;
+                const additionalTasksData = localStorage.getItem('additional_tasks_data');
+                const supervisionsData = localStorage.getItem('supervisions_data');
+                const tasksData = localStorage.getItem('tasks_data');
+                
+                html += `<p><strong>additional_tasks_data:</strong> ${additionalTasksData ? JSON.parse(additionalTasksData).length + ' records' : 'Tidak ada'}</p>`;
+                html += `<p><strong>supervisions_data:</strong> ${supervisionsData ? JSON.parse(supervisionsData).length + ' records' : 'Tidak ada'}</p>`;
+                html += `<p><strong>tasks_data:</strong> ${tasksData ? JSON.parse(tasksData).length + ' records' : 'Tidak ada'}</p>`;
+                
+            } catch (error) {
+                html += `<p><strong>Error umum:</strong> ${error.message}</p>`;
+            }
+            
+            debugInfo.innerHTML = html;
+        }
+        
+        // Jalankan debug saat halaman dimuat
+        debugLaporanData();
+    </script>
+</body>
+</html>

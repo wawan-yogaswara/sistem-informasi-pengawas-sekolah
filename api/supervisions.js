@@ -19,11 +19,20 @@ export default async function handler(req, res) {
 
   try {
     if (req.method === 'GET') {
-      // Get real data from Supabase
-      const { data: supervisions, error } = await supabase
+      const { user_id } = req.query;
+      
+      // Build query
+      let query = supabase
         .from('supervisions')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .select('*');
+      
+      // Filter by user_id if provided
+      if (user_id) {
+        query = query.eq('user_id', user_id);
+      }
+      
+      // Get real data from Supabase
+      const { data: supervisions, error } = await query.order('created_at', { ascending: false });
 
       if (error) {
         console.error('Supabase GET error:', error);

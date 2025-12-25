@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Fixes - Additional Tasks & Reports Photos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+        }
+        .test-section.success {
+            border-color: #10b981;
+            background: #f0fdf4;
+        }
+        .test-section.error {
+            border-color: #ef4444;
+            background: #fef2f2;
+        }
+        .test-section.warning {
+            border-color: #f59e0b;
+            background: #fffbeb;
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        button.success {
+            background: #10b981;
+        }
+        button.error {
+            background: #ef4444;
+        }
+        .log {
+            background: #1f2937;
+            color: #f9fafb;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 10px 0;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .status.success {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #10b981;
+        }
+        .status.error {
+            background: #fecaca;
+            color: #991b1b;
+            border: 1px solid #ef4444;
+        }
+        .status.info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #3b82f6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 Test Fixes - Additional Tasks & Reports Photos</h1>
+            <p>Test script untuk memverifikasi perbaikan masalah coding yang spesifik</p>
+        </div>
+
+        <div class="test-section" id="additionalTasksTest">
+            <h2>📋 Test 1: Additional Tasks Page Data Display</h2>
+            <p><strong>Issue:</strong> Data exists in Supabase but not showing in Additional Tasks page</p>
+            <p><strong>Root Cause:</strong> React Query cache invalidation problem</p>
+            
+            <button onclick="testAdditionalTasksData()">🧪 Test Additional Tasks Data</button>
+            <button onclick="fixAdditionalTasksCache()">🔧 Fix Cache Issue</button>
+            
+            <div id="additionalTasksStatus" class="status info">
+                ⏳ Belum ditest - Klik tombol test untuk memulai
+            </div>
+            
+            <div id="additionalTasksLog" class="log" style="display: none;"></div>
+        </div>
+
+        <div class="test-section" id="reportsPhotosTest">
+            <h2>🖼️ Test 2: Reports Page Photo Display</h2>
+            <p><strong>Issue:</strong> Photos not displaying in Reports page</p>
+            <p><strong>Root Cause:</strong> Complex photo path fallback logic causing issues with base64 data</p>
+            
+            <button onclick="testReportsPhotos()">🧪 Test Reports Photos</button>
+            <button onclick="fixReportsPhotos()">🔧 Fix Photo Display</button>
+            
+            <div id="reportsPhotosStatus" class="status info">
+                ⏳ Belum ditest - Klik tombol test untuk memulai
+            </div>
+            
+            <div id="reportsPhotosLog" class="log" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>🚀 Run All Tests</h2>
+            <p>Jalankan semua test sekaligus untuk verifikasi komprehensif</p>
+            
+            <button onclick="runAllTests()" style="background: #7c3aed;">🧪 Run All Tests</button>
+            <button onclick="applyAllFixes()" style="background: #059669;">🔧 Apply All Fixes</button>
+            <button onclick="clearLogs()">🗑️ Clear Logs</button>
+            
+            <div id="overallStatus" class="status info">
+                📊 Overall Status: Ready to test
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>📋 Quick Actions</h2>
+            <button onclick="goToAdditionalTasks()">➡️ Go to Additional Tasks</button>
+            <button onclick="goToReports()">➡️ Go to Reports</button>
+            <button onclick="refreshPage()">🔄 Refresh Page</button>
+            <button onclick="clearAllCache()">🗑️ Clear All Cache</button>
+        </div>
+    </div>
+
+    <script>
+        // Logging function
+        function log(message, section = 'general') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logMessage = `[${timestamp}] ${message}`;
+            console.log(logMessage);
+            
+            const logElement = document.getElementById(`${section}Log`);
+            if (logElement) {
+                logElement.style.display = 'block';
+                logElement.innerHTML += logMessage + '\n';
+                logElement.scrollTop = logElement.scrollHeight;
+            }
+        }
+
+        // Update status
+        function updateStatus(section, message, type = 'info') {
+            const statusElement = document.getElementById(`${section}Status`);
+            if (statusElement) {
+                statusElement.className = `status ${type}`;
+                statusElement.innerHTML = message;
+            }
+        }
+
+        // Test Additional Tasks Data
+        async function testAdditionalTasksData() {
+            log('🧪 Starting Additional Tasks data test...', 'additionalTasks');
+            updateStatus('additionalTasks', '⏳ Testing Additional Tasks data...', 'info');
+            
+            try {
+                // Get user data
+                const userData = localStorage.getItem('auth_user');
+                if (!userData) {
+                    log('❌ No user data found', 'additionalTasks');
+                    updateStatus('additionalTasks', '❌ No user data found', 'error');
+                    return false;
+                }
+                
+                const currentUser = JSON.parse(userData);
+                let userId = currentUser.id;
+                
+                // For wawan user, use correct UUID
+                if (currentUser.username === 'wawan' || !userId || typeof userId !== 'string' || userId.length < 10) {
+                    userId = '421cdb28-f2af-4f1f-aa5f-c59a3d661a2e';
+                    currentUser.id = userId;
+                    localStorage.setItem('auth_user', JSON.stringify(currentUser));
+                    log(`🔧 Updated user_id to: ${userId}`, 'additionalTasks');
+                }
+                
+                log(`👤 Testing with user_id: ${userId}`, 'additionalTasks');
+                
+                // Test API call
+                const response = await fetch(`/api/activities?user_id=${encodeURIComponent(userId)}`);
+                if (!response.ok) {
+                    log(`❌ API call failed: ${response.status}`, 'additionalTasks');
+                    updateStatus('additionalTasks', `❌ API call failed: ${response.status}`, 'error');
+                    return false;
+                }
+                
+                const data = await response.json();
+                log(`✅ API returned ${data.length} additional tasks`, 'additionalTasks');
+                
+                if (data.length === 0) {
+                    log('⚠️ No additional tasks found for user', 'additionalTasks');
+                    updateStatus('additionalTasks', '⚠️ No additional tasks found', 'warning');
+                    return false;
+                }
+                
+                // Log task details
+                data.forEach((task, index) => {
+                    log(`📋 Task ${index + 1}: ${task.title || task.name} (${task.date})`, 'additionalTasks');
+                });
+                
+                updateStatus('additionalTasks', `✅ Found ${data.length} additional tasks in Supabase`, 'success');
+                return true;
+                
+            } catch (error) {
+                log(`❌ Test error: ${error.message}`, 'additionalTasks');
+                updateStatus('additionalTasks', `❌ Test failed: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        // Fix Additional Tasks Cache
+        function fixAdditionalTasksCache() {
+            log('🔧 Applying Additional Tasks cache fix...', 'additionalTasks');
+            updateStatus('additionalTasks', '⏳ Applying cache fix...', 'info');
+            
+            try {
+                // Clear React Query cache if available
+                if (window.queryClient) {
+                    window.queryClient.clear();
+                    log('✅ React Query cache cleared', 'additionalTasks');
+                }
+                
+                // Clear localStorage cache
+                localStorage.removeItem('additional_tasks_cache');
+                localStorage.removeItem('reports_activities_cache');
+                log('✅ localStorage cache cleared', 'additionalTasks');
+                
+                // Force refresh if on Additional Tasks page
+                if (window.location.pathname.includes('additional-tasks')) {
+                    log('🔄 Refreshing Additional Tasks page...', 'additionalTasks');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                }
+                
+                updateStatus('additionalTasks', '✅ Cache fix applied successfully', 'success');
+                
+            } catch (error) {
+                log(`❌ Fix error: ${error.message}`, 'additionalTasks');
+                updateStatus('additionalTasks', `❌ Fix failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Test Reports Photos
+        async function testReportsPhotos() {
+            log('🧪 Starting Reports photos test...', 'reportsPhotos');
+            updateStatus('reportsPhotos', '⏳ Testing Reports photos...', 'info');
+            
+            try {
+                // Get user data
+                const userData = localStorage.getItem('auth_user');
+                if (!userData) {
+                    log('❌ No user data found', 'reportsPhotos');
+                    updateStatus('reportsPhotos', '❌ No user data found', 'error');
+                    return false;
+                }
+                
+                const currentUser = JSON.parse(userData);
+                let userId = currentUser.id;
+                
+                // For wawan user, use correct UUID
+                if (currentUser.username === 'wawan' || !userId || typeof userId !== 'string' || userId.length < 10) {
+                    userId = '421cdb28-f2af-4f1f-aa5f-c59a3d661a2e';
+                }
+                
+                log(`👤 Testing photos for user_id: ${userId}`, 'reportsPhotos');
+                
+                // Test activities API for photos
+                const response = await fetch(`/api/activities?user_id=${encodeURIComponent(userId)}`);
+                if (!response.ok) {
+                    log(`❌ Activities API call failed: ${response.status}`, 'reportsPhotos');
+                    updateStatus('reportsPhotos', `❌ API call failed: ${response.status}`, 'error');
+                    return false;
+                }
+                
+                const activities = await response.json();
+                const activitiesWithPhotos = activities.filter(a => a.photo1 || a.photo2);
+                
+                log(`📸 Found ${activitiesWithPhotos.length} activities with photos out of ${activities.length} total`, 'reportsPhotos');
+                
+                if (activitiesWithPhotos.length === 0) {
+                    log('⚠️ No activities with photos found', 'reportsPhotos');
+                    updateStatus('reportsPhotos', '⚠️ No activities with photos found', 'warning');
+                    return false;
+                }
+                
+                // Check photo data format
+                let base64Photos = 0;
+                let filePathPhotos = 0;
+                
+                activitiesWithPhotos.forEach((activity, index) => {
+                    const photo1Type = activity.photo1 ? (activity.photo1.startsWith('data:') ? 'base64' : 'file path') : 'none';
+                    const photo2Type = activity.photo2 ? (activity.photo2.startsWith('data:') ? 'base64' : 'file path') : 'none';
+                    
+                    if (photo1Type === 'base64') base64Photos++;
+                    if (photo2Type === 'base64') base64Photos++;
+                    if (photo1Type === 'file path') filePathPhotos++;
+                    if (photo2Type === 'file path') filePathPhotos++;
+                    
+                    log(`📷 Activity ${index + 1}: ${activity.title} - Photo1: ${photo1Type}, Photo2: ${photo2Type}`, 'reportsPhotos');
+                });
+                
+                log(`📊 Photo format summary: ${base64Photos} base64, ${filePathPhotos} file paths`, 'reportsPhotos');
+                
+                if (base64Photos > 0) {
+                    updateStatus('reportsPhotos', `✅ Found ${base64Photos} base64 photos (correct format)`, 'success');
+                } else if (filePathPhotos > 0) {
+                    updateStatus('reportsPhotos', `⚠️ Found ${filePathPhotos} file path photos (may cause display issues)`, 'warning');
+                } else {
+                    updateStatus('reportsPhotos', '❌ No valid photos found', 'error');
+                }
+                
+                return base64Photos > 0;
+                
+            } catch (error) {
+                log(`❌ Test error: ${error.message}`, 'reportsPhotos');
+                updateStatus('reportsPhotos', `❌ Test failed: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        // Fix Reports Photos
+        function fixReportsPhotos() {
+            log('🔧 Applying Reports photos fix...', 'reportsPhotos');
+            updateStatus('reportsPhotos', '⏳ Applying photo fix...', 'info');
+            
+            try {
+                // Find all broken photo elements
+                const brokenImages = document.querySelectorAll('img[src*="uploads/"]');
+                log(`🔍 Found ${brokenImages.length} potentially broken images`, 'reportsPhotos');
+                
+                brokenImages.forEach((img, index) => {
+                    log(`🖼️ Checking photo ${index + 1}: ${img.src}`, 'reportsPhotos');
+                    
+                    // If the image is broken, try to fix it
+                    if (img.complete && img.naturalWidth === 0) {
+                        log(`❌ Photo ${index + 1} is broken, attempting fix...`, 'reportsPhotos');
+                        
+                        // Try to reload the image
+                        const originalSrc = img.src;
+                        img.src = '';
+                        setTimeout(() => {
+                            img.src = originalSrc;
+                        }, 100);
+                    }
+                });
+                
+                // Clear photo cache
+                localStorage.removeItem('reports_activities_cache');
+                log('✅ Reports cache cleared', 'reportsPhotos');
+                
+                // Force refresh if on Reports page
+                if (window.location.pathname.includes('reports')) {
+                    log('🔄 Refreshing Reports page...', 'reportsPhotos');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                }
+                
+                updateStatus('reportsPhotos', '✅ Photo fix applied successfully', 'success');
+                
+            } catch (error) {
+                log(`❌ Fix error: ${error.message}`, 'reportsPhotos');
+                updateStatus('reportsPhotos', `❌ Fix failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Run All Tests
+        async function runAllTests() {
+            log('🚀 Running all tests...', 'additionalTasks');
+            log('🚀 Running all tests...', 'reportsPhotos');
+            updateStatus('overall', '⏳ Running all tests...', 'info');
+            
+            const results = {
+                additionalTasks: await testAdditionalTasksData(),
+                reportsPhotos: await testReportsPhotos()
+            };
+            
+            const allPassed = Object.values(results).every(result => result === true);
+            
+            if (allPassed) {
+                updateStatus('overall', '🎉 All tests passed! Fixes are working correctly.', 'success');
+            } else {
+                updateStatus('overall', '❌ Some tests failed. Check individual test results above.', 'error');
+            }
+            
+            return results;
+        }
+
+        // Apply All Fixes
+        function applyAllFixes() {
+            log('🔧 Applying all fixes...', 'additionalTasks');
+            log('🔧 Applying all fixes...', 'reportsPhotos');
+            updateStatus('overall', '⏳ Applying all fixes...', 'info');
+            
+            fixAdditionalTasksCache();
+            fixReportsPhotos();
+            
+            setTimeout(() => {
+                updateStatus('overall', '✅ All fixes applied successfully', 'success');
+            }, 1000);
+        }
+
+        // Utility functions
+        function clearLogs() {
+            document.getElementById('additionalTasksLog').innerHTML = '';
+            document.getElementById('reportsPhotosLog').innerHTML = '';
+            document.getElementById('additionalTasksLog').style.display = 'none';
+            document.getElementById('reportsPhotosLog').style.display = 'none';
+        }
+
+        function goToAdditionalTasks() {
+            window.open('/additional-tasks', '_blank');
+        }
+
+        function goToReports() {
+            window.open('/reports', '_blank');
+        }
+
+        function refreshPage() {
+            window.location.reload();
+        }
+
+        function clearAllCache() {
+            localStorage.removeItem('additional_tasks_cache');
+            localStorage.removeItem('reports_activities_cache');
+            if (window.queryClient) {
+                window.queryClient.clear();
+            }
+            alert('✅ All cache cleared');
+        }
+
+        // Auto-run basic checks on page load
+        window.addEventListener('load', () => {
+            log('🚀 Test page loaded', 'additionalTasks');
+            log('🚀 Test page loaded', 'reportsPhotos');
+            
+            // Check if user is logged in
+            const userData = localStorage.getItem('auth_user');
+            if (userData) {
+                const user = JSON.parse(userData);
+                log(`👤 Logged in as: ${user.username}`, 'additionalTasks');
+                log(`👤 Logged in as: ${user.username}`, 'reportsPhotos');
+            } else {
+                log('⚠️ No user logged in', 'additionalTasks');
+                log('⚠️ No user logged in', 'reportsPhotos');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Laporan - Sumber Data</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .debug-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .supabase { background-color: #e8f5e8; }
+        .localStorage { background-color: #fff3cd; }
+        .error { background-color: #f8d7da; }
+        .success { background-color: #d4edda; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 3px; overflow-x: auto; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        .photo-test { display: inline-block; margin: 10px; text-align: center; }
+        .photo-test img { width: 100px; height: 100px; object-fit: cover; border: 1px solid #ccc; }
+    </style>
+</head>
+<body>
+    <h1>🔍 DEBUG LAPORAN - SUMBER DATA & FOTO</h1>
+    
+    <div class="debug-section">
+        <h2>📊 Informasi Browser & Environment</h2>
+        <div id="browserInfo"></div>
+    </div>
+
+    <div class="debug-section">
+        <h2>👤 User Session</h2>
+        <div id="userInfo"></div>
+    </div>
+
+    <div class="debug-section supabase">
+        <h2>🗄️ Data dari Supabase</h2>
+        <button onclick="testSupabase()">Test Koneksi Supabase</button>
+        <div id="supabaseData"></div>
+    </div>
+
+    <div class="debug-section localStorage">
+        <h2>💾 Data dari localStorage</h2>
+        <button onclick="testLocalStorage()">Test localStorage</button>
+        <div id="localStorageData"></div>
+    </div>
+
+    <div class="debug-section">
+        <h2>📸 Test Foto Path</h2>
+        <button onclick="testPhotoPaths()">Test Semua Path Foto</button>
+        <div id="photoTest"></div>
+    </div>
+
+    <div class="debug-section">
+        <h2>🔄 Hasil Akhir</h2>
+        <button onclick="simulateReportsPage()">Simulasi Halaman Laporan</button>
+        <div id="finalResult"></div>
+    </div>
+
+    <script>
+        // Supabase config (copy dari client/src/lib/supabase.ts)
+        const supabaseUrl = 'https://glhaliktsrcvnznbgxqt.supabase.co';
+        const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdsaGFsaWt0c3Jjdm56bmJneHF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYzNjYyMjQsImV4cCI6MjA4MTk0MjIyNH0._kaFo2h7rCdouJp2rpb1lmEvlR6gAc0c3AnRjM_PhP4';
+
+        // Browser info
+        function showBrowserInfo() {
+            const info = {
+                userAgent: navigator.userAgent,
+                browser: getBrowserName(),
+                localStorage: typeof(Storage) !== "undefined",
+                currentURL: window.location.href,
+                timestamp: new Date().toISOString()
+            };
+            
+            document.getElementById('browserInfo').innerHTML = `
+                <pre>${JSON.stringify(info, null, 2)}</pre>
+            `;
+        }
+
+        function getBrowserName() {
+            const userAgent = navigator.userAgent;
+            if (userAgent.includes('Chrome')) return 'Chrome';
+            if (userAgent.includes('Firefox')) return 'Firefox';
+            if (userAgent.includes('Safari')) return 'Safari';
+            if (userAgent.includes('Edge')) return 'Edge';
+            if (userAgent.includes('Opera')) return 'Opera';
+            return 'Unknown';
+        }
+
+        // User session info
+        function showUserInfo() {
+            const authUser = localStorage.getItem('auth_user');
+            const profileData = localStorage.getItem('profile_data');
+            
+            let userInfo = '<p><strong>❌ Tidak ada session user</strong></p>';
+            
+            if (authUser) {
+                try {
+                    const user = JSON.parse(authUser);
+                    userInfo = `
+                        <p><strong>✅ User ditemukan:</strong></p>
+                        <pre>${JSON.stringify(user, null, 2)}</pre>
+                    `;
+                } catch (e) {
+                    userInfo = '<p><strong>❌ Error parsing auth_user</strong></p>';
+                }
+            }
+            
+            if (profileData) {
+                try {
+                    const profile = JSON.parse(profileData);
+                    userInfo += `
+                        <p><strong>📋 Profile data:</strong></p>
+                        <pre>${JSON.stringify(profile, null, 2)}</pre>
+                    `;
+                } catch (e) {
+                    userInfo += '<p><strong>❌ Error parsing profile_data</strong></p>';
+                }
+            }
+            
+            document.getElementById('userInfo').innerHTML = userInfo;
+        }
+
+        // Test Supabase
+        async function testSupabase() {
+            const resultDiv = document.getElementById('supabaseData');
+            resultDiv.innerHTML = '<p>🔄 Testing Supabase connection...</p>';
+            
+            try {
+                // Get user ID
+                const userData = localStorage.getItem('auth_user');
+                if (!userData) {
+                    resultDiv.innerHTML = '<p class="error">❌ No user data found</p>';
+                    return;
+                }
+                
+                const currentUser = JSON.parse(userData);
+                let userId = currentUser.id;
+                
+                if (currentUser.username === 'wawan') {
+                    userId = '1762696525337';
+                }
+                
+                console.log('🔑 Using user_id for Supabase queries:', userId);
+                
+                // Test Supabase connection
+                const response = await fetch(\`\${supabaseUrl}/rest/v1/tasks?user_id=eq.\${userId}&select=*\`, {
+                    headers: {
+                        'apikey': supabaseAnonKey,
+                        'Authorization': \`Bearer \${supabaseAnonKey}\`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const tasks = await response.json();
+                    
+                    // Test other tables
+                    const supervisionsResponse = await fetch(\`\${supabaseUrl}/rest/v1/supervisions?user_id=eq.\${userId}&select=*\`, {
+                        headers: {
+                            'apikey': supabaseAnonKey,
+                            'Authorization': \`Bearer \${supabaseAnonKey}\`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    const additionalTasksResponse = await fetch(\`\${supabaseUrl}/rest/v1/additional_tasks?user_id=eq.\${userId}&select=*\`, {
+                        headers: {
+                            'apikey': supabaseAnonKey,
+                            'Authorization': \`Bearer \${supabaseAnonKey}\`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    const supervisions = supervisionsResponse.ok ? await supervisionsResponse.json() : [];
+                    const additionalTasks = additionalTasksResponse.ok ? await additionalTasksResponse.json() : [];
+                    
+                    const supabaseResult = {
+                        connection: '✅ SUCCESS',
+                        userId: userId,
+                        tasks: tasks.length,
+                        supervisions: supervisions.length,
+                        additionalTasks: additionalTasks.length,
+                        totalActivities: tasks.length + supervisions.length + additionalTasks.length,
+                        sampleData: {
+                            tasks: tasks.slice(0, 2),
+                            supervisions: supervisions.slice(0, 2),
+                            additionalTasks: additionalTasks.slice(0, 2)
+                        }
+                    };
+                    
+                    resultDiv.innerHTML = \`
+                        <div class="success">
+                            <h3>✅ SUPABASE CONNECTION SUCCESS</h3>
+                            <pre>\${JSON.stringify(supabaseResult, null, 2)}</pre>
+                        </div>
+                    \`;
+                } else {
+                    resultDiv.innerHTML = \`
+                        <div class="error">
+                            <h3>❌ SUPABASE CONNECTION FAILED</h3>
+                            <p>Status: \${response.status}</p>
+                            <p>Error: \${await response.text()}</p>
+                        </div>
+                    \`;
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML = \`
+                    <div class="error">
+                        <h3>❌ SUPABASE ERROR</h3>
+                        <pre>\${error.message}</pre>
+                    </div>
+                \`;
+            }
+        }
+
+        // Test localStorage
+        function testLocalStorage() {
+            const resultDiv = document.getElementById('localStorageData');
+            
+            try {
+                const localData = localStorage.getItem('local-database');
+                
+                if (!localData) {
+                    resultDiv.innerHTML = '<p class="error">❌ No local-database found in localStorage</p>';
+                    return;
+                }
+                
+                const database = JSON.parse(localData);
+                const userData = localStorage.getItem('auth_user');
+                const currentUser = userData ? JSON.parse(userData) : null;
+                const userId = currentUser?.username === 'wawan' ? '1762696525337' : currentUser?.id;
+                
+                const tasks = database.tasks?.filter(task => task.userId === userId) || [];
+                const supervisions = database.supervisions?.filter(supervision => supervision.userId === userId) || [];
+                const additionalTasks = database.additionalTasks?.filter(task => task.userId === userId) || [];
+                
+                const localResult = {
+                    connection: '✅ SUCCESS',
+                    userId: userId,
+                    tasks: tasks.length,
+                    supervisions: supervisions.length,
+                    additionalTasks: additionalTasks.length,
+                    totalActivities: tasks.length + supervisions.length + additionalTasks.length,
+                    sampleData: {
+                        tasks: tasks.slice(0, 2),
+                        supervisions: supervisions.slice(0, 2),
+                        additionalTasks: additionalTasks.slice(0, 2)
+                    }
+                };
+                
+                resultDiv.innerHTML = \`
+                    <div class="success">
+                        <h3>✅ LOCALSTORAGE SUCCESS</h3>
+                        <pre>\${JSON.stringify(localResult, null, 2)}</pre>
+                    </div>
+                \`;
+                
+            } catch (error) {
+                resultDiv.innerHTML = \`
+                    <div class="error">
+                        <h3>❌ LOCALSTORAGE ERROR</h3>
+                        <pre>\${error.message}</pre>
+                    </div>
+                \`;
+            }
+        }
+
+        // Test photo paths
+        function testPhotoPaths() {
+            const resultDiv = document.getElementById('photoTest');
+            resultDiv.innerHTML = '<p>🔄 Testing photo paths...</p>';
+            
+            // Sample photo names from localStorage
+            const samplePhotos = [
+                '1762824574393-359380420.jpeg',
+                '1762824574405-77488473.jpeg',
+                '1762860475722-432184955.jpg',
+                '1762737251966-136256749.jpg',
+                '1762943350585-426634766.jpg'
+            ];
+            
+            const testPaths = [
+                'http://localhost:5000/uploads/',
+                'http://localhost:3000/uploads/',
+                '/uploads/',
+                './uploads/',
+                '../uploads/'
+            ];
+            
+            let photoTestHTML = '<h4>🧪 Testing Photo Paths:</h4>';
+            
+            testPaths.forEach(basePath => {
+                photoTestHTML += \`<h5>Path: \${basePath}</h5><div style="margin-bottom: 20px;">\`;
+                
+                samplePhotos.slice(0, 3).forEach(photo => {
+                    const fullPath = basePath + photo;
+                    photoTestHTML += \`
+                        <div class="photo-test">
+                            <img src="\${fullPath}" 
+                                 alt="\${photo}" 
+                                 onload="this.parentElement.style.backgroundColor='#d4edda'"
+                                 onerror="this.parentElement.style.backgroundColor='#f8d7da'; this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2NjYyIvPjx0ZXh0IHg9IjUwIiB5PSI1MCIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjEyIiBmaWxsPSIjNjY2IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+Tm8gSW1hZ2U8L3RleHQ+PC9zdmc+'" />
+                            <br><small>\${photo}</small>
+                        </div>
+                    \`;
+                });
+                
+                photoTestHTML += '</div>';
+            });
+            
+            resultDiv.innerHTML = photoTestHTML;
+        }
+
+        // Simulate reports page
+        async function simulateReportsPage() {
+            const resultDiv = document.getElementById('finalResult');
+            resultDiv.innerHTML = '<p>🔄 Simulating reports page logic...</p>';
+            
+            try {
+                // Get user data
+                const userData = localStorage.getItem('auth_user');
+                if (!userData) {
+                    resultDiv.innerHTML = '<p class="error">❌ No user session found</p>';
+                    return;
+                }
+                
+                const currentUser = JSON.parse(userData);
+                let userId = currentUser.id;
+                if (currentUser.username === 'wawan') {
+                    userId = '1762696525337';
+                }
+                
+                let activities = [];
+                let dataSource = '';
+                
+                // Try Supabase first
+                try {
+                    const response = await fetch(\`\${supabaseUrl}/rest/v1/tasks?user_id=eq.\${userId}&select=*\`, {
+                        headers: {
+                            'apikey': supabaseAnonKey,
+                            'Authorization': \`Bearer \${supabaseAnonKey}\`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const tasks = await response.json();
+                        if (tasks.length > 0) {
+                            dataSource = 'SUPABASE';
+                            activities = tasks.map(task => ({
+                                id: task.id,
+                                type: 'Tugas Pokok',
+                                title: task.title || 'Tugas Harian',
+                                date: task.date || task.created_at,
+                                photo1: task.photo,
+                                photo2: task.photo2,
+                                source: 'supabase'
+                            }));
+                        }
+                    }
+                } catch (error) {
+                    console.log('Supabase failed, trying localStorage');
+                }
+                
+                // Fallback to localStorage
+                if (activities.length === 0) {
+                    const localData = localStorage.getItem('local-database');
+                    if (localData) {
+                        const database = JSON.parse(localData);
+                        dataSource = 'LOCALSTORAGE';
+                        
+                        // Get tasks
+                        const tasks = database.tasks?.filter(task => task.userId === userId) || [];
+                        const supervisions = database.supervisions?.filter(supervision => supervision.userId === userId) || [];
+                        const additionalTasks = database.additionalTasks?.filter(task => task.userId === userId) || [];
+                        
+                        activities = [
+                            ...tasks.map(task => ({
+                                id: task.id,
+                                type: 'Tugas Pokok',
+                                title: task.title,
+                                date: task.date,
+                                photo1: task.photo1,
+                                photo2: task.photo2,
+                                source: 'localStorage'
+                            })),
+                            ...supervisions.map(supervision => ({
+                                id: supervision.id,
+                                type: 'Supervisi',
+                                title: \`Supervisi \${supervision.schoolId}\`,
+                                date: supervision.date,
+                                photo1: supervision.photo1,
+                                photo2: supervision.photo2,
+                                source: 'localStorage'
+                            })),
+                            ...additionalTasks.map(task => ({
+                                id: task.id,
+                                type: 'Tugas Tambahan',
+                                title: task.name,
+                                date: task.date,
+                                photo1: task.photo1,
+                                photo2: task.photo2,
+                                source: 'localStorage'
+                            }))
+                        ];
+                    }
+                }
+                
+                const result = {
+                    dataSource: dataSource,
+                    userId: userId,
+                    browser: getBrowserName(),
+                    totalActivities: activities.length,
+                    activitiesWithPhotos: activities.filter(a => a.photo1 || a.photo2).length,
+                    activities: activities,
+                    photoBasePath: dataSource === 'SUPABASE' ? 'http://localhost:5000/uploads/' : 'http://localhost:5000/uploads/',
+                    timestamp: new Date().toISOString()
+                };
+                
+                resultDiv.innerHTML = \`
+                    <div class="success">
+                        <h3>📊 HASIL SIMULASI HALAMAN LAPORAN</h3>
+                        <h4>🎯 DATA SOURCE: \${dataSource}</h4>
+                        <pre>\${JSON.stringify(result, null, 2)}</pre>
+                    </div>
+                \`;
+                
+            } catch (error) {
+                resultDiv.innerHTML = \`
+                    <div class="error">
+                        <h3>❌ SIMULATION ERROR</h3>
+                        <pre>\${error.message}</pre>
+                    </div>
+                \`;
+            }
+        }
+
+        // Initialize
+        window.onload = function() {
+            showBrowserInfo();
+            showUserInfo();
+            
+            // Auto-run tests
+            setTimeout(() => {
+                testLocalStorage();
+                testSupabase();
+            }, 1000);
+        };
+    </script>
+</body>
+</html>

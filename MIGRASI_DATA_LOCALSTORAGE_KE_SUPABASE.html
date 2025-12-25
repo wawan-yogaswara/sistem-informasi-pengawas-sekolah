@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Migrasi Data localStorage ke Supabase</title>
+</head>
+<body>
+    <h1>Migrasi Data dari localStorage ke Supabase</h1>
+    
+    <button onclick="migrasiData()" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">
+        Mulai Migrasi Data
+    </button>
+    
+    <div id="progress" style="margin-top: 20px;"></div>
+    
+    <script>
+        async function migrasiData() {
+            const progressDiv = document.getElementById('progress');
+            progressDiv.innerHTML = '<h2>Proses Migrasi Dimulai...</h2>';
+            
+            try {
+                // Get current user
+                const currentUser = localStorage.getItem('currentUser');
+                if (!currentUser) {
+                    progressDiv.innerHTML += '<p style="color: red;">Error: Tidak ada user yang login!</p>';
+                    return;
+                }
+                
+                const user = JSON.parse(currentUser);
+                const userId = user.id || user.username || 'default_user';
+                progressDiv.innerHTML += `<p>User ID: ${userId}</p>`;
+                
+                const baseUrl = window.location.origin;
+                let totalMigrated = 0;
+                
+                // 1. Migrasi Additional Tasks
+                progressDiv.innerHTML += '<h3>1. Migrasi Tugas Tambahan...</h3>';
+                const additionalTasksData = localStorage.getItem('additional_tasks_data');
+                if (additionalTasksData) {
+                    const additionalTasks = JSON.parse(additionalTasksData);
+                    progressDiv.innerHTML += `<p>Ditemukan ${additionalTasks.length} tugas tambahan di localStorage</p>`;
+                    
+                    for (const task of additionalTasks) {
+                        try {
+                            const response = await fetch(`${baseUrl}/api/tasks`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    name: task.name || task.title,
+                                    description: task.description || '',
+                                    date: task.date,
+                                    location: task.location || 'Tidak Diketahui',
+                                    organizer: task.organizer || 'Pengawas Sekolah',
+                                    user_id: userId
+                                })
+                            });
+                            
+                            if (response.ok) {
+                                totalMigrated++;
+                                progressDiv.innerHTML += `<p style="color: green;">✓ Berhasil: ${task.name}</p>`;
+                            } else {
+                                progressDiv.innerHTML += `<p style="color: orange;">⚠ Gagal: ${task.name} (mungkin sudah ada)</p>`;
+                            }
+                        } catch (error) {
+                            progressDiv.innerHTML += `<p style="color: red;">✗ Error: ${task.name} - ${error.message}</p>`;
+                        }
+                    }
+                } else {
+                    progressDiv.innerHTML += '<p>Tidak ada tugas tambahan di localStorage</p>';
+                }
+                
+                // 2. Migrasi Supervisions
+                progressDiv.innerHTML += '<h3>2. Migrasi Supervisi...</h3>';
+                const supervisionsData = localStorage.getItem('supervisions_data');
+                if (supervisionsData) {
+                    const supervisions = JSON.parse(supervisionsData);
+                    progressDiv.innerHTML += `<p>Ditemukan ${supervisions.length} supervisi di localStorage</p>`;
+                    
+                    for (const supervision of supervisions) {
+                        try {
+                            const response = await fetch(`${baseUrl}/api/supervisions`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    school_name: supervision.school || 'Unknown School',
+                                    type: supervision.type || 'Akademik',
+                                    date: supervision.date,
+                                    teacher_name: supervision.teacher_name || '',
+                                    teacher_nip: supervision.teacher_nip || '',
+                                    findings: supervision.findings || supervision.notes || '',
+                                    recommendations: supervision.recommendations || supervision.result || '',
+                                    user_id: userId
+                                })
+                            });
+                            
+                            if (response.ok) {
+                                totalMigrated++;
+                                progressDiv.innerHTML += `<p style="color: green;">✓ Berhasil: Supervisi ${supervision.school}</p>`;
+                            } else {
+                                progressDiv.innerHTML += `<p style="color: orange;">⚠ Gagal: Supervisi ${supervision.school} (mungkin sudah ada)</p>`;
+                            }
+                        } catch (error) {
+                            progressDiv.innerHTML += `<p style="color: red;">✗ Error: Supervisi ${supervision.school} - ${error.message}</p>`;
+                        }
+                    }
+                } else {
+                    progressDiv.innerHTML += '<p>Tidak ada supervisi di localStorage</p>';
+                }
+                
+                // 3. Migrasi Tasks
+                progressDiv.innerHTML += '<h3>3. Migrasi Tugas Harian...</h3>';
+                const tasksData = localStorage.getItem('tasks_data');
+                if (tasksData) {
+                    const tasks = JSON.parse(tasksData);
+                    progressDiv.innerHTML += `<p>Ditemukan ${tasks.length} tugas harian di localStorage</p>`;
+                    
+                    for (const task of tasks) {
+                        try {
+                            const response = await fetch(`${baseUrl}/api/tasks-daily`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    title: task.title,
+                                    description: task.description || '',
+                                    date: task.dueDate || task.date,
+                                    location: task.location || 'Sekolah Binaan',
+                                    school: task.school || task.location || 'Sekolah Binaan',
+                                    user_id: userId
+                                })
+                            });
+                            
+                            if (response.ok) {
+                                totalMigrated++;
+                                progressDiv.innerHTML += `<p style="color: green;">✓ Berhasil: ${task.title}</p>`;
+                            } else {
+                                progressDiv.innerHTML += `<p style="color: orange;">⚠ Gagal: ${task.title} (mungkin sudah ada)</p>`;
+                            }
+                        } catch (error) {
+                            progressDiv.innerHTML += `<p style="color: red;">✗ Error: ${task.title} - ${error.message}</p>`;
+                        }
+                    }
+                } else {
+                    progressDiv.innerHTML += '<p>Tidak ada tugas harian di localStorage</p>';
+                }
+                
+                // Summary
+                progressDiv.innerHTML += `<h2 style="color: green;">Migrasi Selesai!</h2>`;
+                progressDiv.innerHTML += `<p><strong>Total data berhasil dimigrasi: ${totalMigrated}</strong></p>`;
+                progressDiv.innerHTML += `<p>Silakan refresh halaman laporan untuk melihat data yang sudah dimigrasi.</p>`;
+                
+            } catch (error) {
+                progressDiv.innerHTML += `<p style="color: red;">Error umum: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

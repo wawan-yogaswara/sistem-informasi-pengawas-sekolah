@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fix User ID untuk Supabase - LANGSUNG</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            padding: 20px; 
+            background: #f0f0f0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .log { 
+            background: #f5f5f5; 
+            padding: 10px; 
+            margin: 10px 0; 
+            border-radius: 5px; 
+            border-left: 4px solid #ccc;
+        }
+        .success { 
+            color: green; 
+            border-left-color: green;
+            background: #f0fff0;
+        }
+        .error { 
+            color: red; 
+            border-left-color: red;
+            background: #fff0f0;
+        }
+        .info { 
+            color: blue; 
+            border-left-color: blue;
+            background: #f0f0ff;
+        }
+        .warning {
+            color: orange;
+            border-left-color: orange;
+            background: #fff8f0;
+        }
+        button {
+            background: #007cba;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #005a87;
+        }
+        .user-info {
+            background: #e8f4f8;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Fix User ID untuk Supabase</h1>
+        <p>Script ini akan memperbaiki masalah user ID yang tidak cocok antara localStorage dan Supabase.</p>
+        
+        <div class="user-info">
+            <h3>User ID yang Benar dari Supabase:</h3>
+            <ul>
+                <li><strong>admin:</strong> a7c7a9de-9ec8-4416-9aa3-59dab24b620b</li>
+                <li><strong>wawan:</strong> 421cdb28-f2af-4f1f-aa5f-c59a3d661a2e</li>
+            </ul>
+        </div>
+        
+        <button onclick="fixUserIds()">🔧 Fix User IDs</button>
+        <button onclick="testDataInput()">🧪 Test Data Input</button>
+        <button onclick="checkCurrentData()">📊 Check Current Data</button>
+        <button onclick="clearAllData()">🗑️ Clear All Data</button>
+        
+        <div id="output"></div>
+    </div>
+    
+    <script>
+        const output = document.getElementById('output');
+        
+        // Correct user IDs from Supabase
+        const correctUserIds = {
+            admin: 'a7c7a9de-9ec8-4416-9aa3-59dab24b620b',
+            wawan: '421cdb28-f2af-4f1f-aa5f-c59a3d661a2e'
+        };
+        
+        // School IDs from Supabase
+        const schoolIds = {
+            'SDN 1 Garut': '1cd40355-1b07-402d-8309-b243c098cfe9',
+            'SMPN 2 Garut': 'c9b2f6b5-ab65-44e2-a7bb-5e75a635241f',
+            'SMAN 1 Garut': 'fd270001-7032-444e-8b1c-a095c9b6cc2c'
+        };
+        
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = 'log ' + type;
+            div.innerHTML = message;
+            output.appendChild(div);
+            console.log(message);
+            
+            // Auto scroll to bottom
+            div.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function clearOutput() {
+            output.innerHTML = '';
+        }
+        
+        async function fixUserIds() {
+            clearOutput();
+            log('🔧 Starting user ID fix...', 'info');
+            
+            try {
+                // 1. Check current user session
+                const currentUser = localStorage.getItem('auth_user');
+                if (currentUser) {
+                    const parsed = JSON.parse(currentUser);
+                    log(`📋 Current user: ${parsed.username} (ID: ${parsed.id})`, 'info');
+                    
+                    // Update with correct ID
+                    if (parsed.username === 'admin') {
+                        parsed.id = correctUserIds.admin;
+                        localStorage.setItem('auth_user', JSON.stringify(parsed));
+                        log('✅ Admin user ID updated: ' + correctUserIds.admin, 'success');
+                    } else if (parsed.username === 'wawan') {
+                        parsed.id = correctUserIds.wawan;
+                        localStorage.setItem('auth_user', JSON.stringify(parsed));
+                        log('✅ Wawan user ID updated: ' + correctUserIds.wawan, 'success');
+                    }
+                } else {
+                    log('⚠️ No current user session found', 'warning');
+                }
+                
+                // 2. Update existing data with correct user IDs
+                const dataKeys = ['tasks_data', 'additional_tasks_data', 'supervisions_data'];
+                
+                dataKeys.forEach(key => {
+                    const data = localStorage.getItem(key);
+                    if (data) {
+                        try {
+                            const parsed = JSON.parse(data);
+                            if (Array.isArray(parsed)) {
+                                let updated = false;
+                                let updatedCount = 0;
+                                
+                                parsed.forEach(item => {
+                                    // Check if user_id needs updating
+                                    if (item.user_id && !item.user_id.includes('-')) {
+                                        // Old format user ID, update it
+                                        item.user_id = correctUserIds.wawan; // Default to wawan
+                                        updated = true;
+                                        updatedCount++;
+                                    } else if (item.user_id && item.user_id.length < 30) {
+                                        // Short ID, probably wrong
+                                        item.user_id = correctUserIds.wawan;
+                                        updated = true;
+                                        updatedCount++;
+                                    }
+                                });
+                                
+                                if (updated) {
+                                    localStorage.setItem(key, JSON.stringify(parsed));
+                                    log(`✅ Updated ${updatedCount} items in ${key}`, 'success');
+                                } else {
+                                    log(`ℹ️ No updates needed for ${key}`, 'info');
+                                }
+                            }
+                        } catch (e) {
+                            log('❌ Error updating ' + key + ': ' + e.message, 'error');
+                        }
+                    } else {
+                        log(`ℹ️ No data found for ${key}`, 'info');
+                    }
+                });
+                
+                log('✅ User ID fix completed!', 'success');
+                
+            } catch (error) {
+                log('❌ Error: ' + error.message, 'error');
+            }
+        }
+        
+        async function testDataInput() {
+            log('🧪 Testing data input with correct user IDs...', 'info');
+            
+            try {
+                // Create test task
+                const testTask = {
+                    id: crypto.randomUUID(),
+                    user_id: correctUserIds.wawan,
+                    title: 'Test Task ' + new Date().toLocaleString(),
+                    description: 'Test task dengan user ID yang benar',
+                    date: new Date().toISOString().split('T')[0],
+                    completed: false,
+                    created_at: new Date().toISOString()
+                };
+                
+                // Save to localStorage
+                const tasks = JSON.parse(localStorage.getItem('tasks_data') || '[]');
+                tasks.unshift(testTask);
+                localStorage.setItem('tasks_data', JSON.stringify(tasks));
+                
+                log('✅ Test task created: ' + testTask.title, 'success');
+                log('   User ID: ' + testTask.user_id, 'info');
+                
+                // Create test additional task
+                const testAdditionalTask = {
+                    id: crypto.randomUUID(),
+                    user_id: correctUserIds.wawan,
+                    school_id: schoolIds['SDN 1 Garut'],
+                    title: 'Test Tugas Tambahan ' + new Date().toLocaleString(),
+                    description: 'Test tugas tambahan dengan user ID yang benar',
+                    date: new Date().toISOString().split('T')[0],
+                    status: 'completed',
+                    created_at: new Date().toISOString()
+                };
+                
+                // Save to localStorage
+                const additionalTasks = JSON.parse(localStorage.getItem('additional_tasks_data') || '[]');
+                additionalTasks.unshift(testAdditionalTask);
+                localStorage.setItem('additional_tasks_data', JSON.stringify(additionalTasks));
+                
+                log('✅ Test additional task created: ' + testAdditionalTask.title, 'success');
+                log('   User ID: ' + testAdditionalTask.user_id, 'info');
+                log('   School ID: ' + testAdditionalTask.school_id, 'info');
+                
+                log('✅ Test data input completed! Data siap untuk sync ke Supabase.', 'success');
+                
+            } catch (error) {
+                log('❌ Error testing data input: ' + error.message, 'error');
+            }
+        }
+        
+        async function checkCurrentData() {
+            log('📊 Checking current data...', 'info');
+            
+            try {
+                const currentUser = localStorage.getItem('auth_user');
+                if (currentUser) {
+                    const parsed = JSON.parse(currentUser);
+                    log(`👤 Current user: ${parsed.username} (${parsed.role})`, 'info');
+                    log(`   ID: ${parsed.id}`, 'info');
+                    log(`   Valid format: ${parsed.id.includes('-') ? '✅' : '❌'}`, parsed.id.includes('-') ? 'success' : 'error');
+                }
+                
+                const dataKeys = ['tasks_data', 'additional_tasks_data', 'supervisions_data'];
+                
+                dataKeys.forEach(key => {
+                    const data = localStorage.getItem(key);
+                    if (data) {
+                        try {
+                            const parsed = JSON.parse(data);
+                            if (Array.isArray(parsed)) {
+                                log(`📋 ${key}: ${parsed.length} items`, 'info');
+                                
+                                // Check user IDs in data
+                                const validIds = parsed.filter(item => item.user_id && item.user_id.includes('-')).length;
+                                const invalidIds = parsed.length - validIds;
+                                
+                                if (invalidIds > 0) {
+                                    log(`   ⚠️ ${invalidIds} items with invalid user IDs`, 'warning');
+                                } else {
+                                    log(`   ✅ All items have valid user IDs`, 'success');
+                                }
+                                
+                                // Show recent items
+                                if (parsed.length > 0) {
+                                    log(`   Recent items:`, 'info');
+                                    parsed.slice(0, 3).forEach((item, index) => {
+                                        log(`   ${index + 1}. ${item.title || item.name} (${item.date || 'No date'})`, 'info');
+                                    });
+                                }
+                            }
+                        } catch (e) {
+                            log(`❌ Error reading ${key}: ${e.message}`, 'error');
+                        }
+                    } else {
+                        log(`📋 ${key}: No data`, 'info');
+                    }
+                });
+                
+            } catch (error) {
+                log('❌ Error checking data: ' + error.message, 'error');
+            }
+        }
+        
+        async function clearAllData() {
+            if (confirm('⚠️ Apakah Anda yakin ingin menghapus semua data? Ini tidak bisa dibatalkan!')) {
+                log('🗑️ Clearing all data...', 'warning');
+                
+                const dataKeys = ['tasks_data', 'additional_tasks_data', 'supervisions_data', 'schools_data', 'users_data'];
+                
+                dataKeys.forEach(key => {
+                    localStorage.removeItem(key);
+                    log(`✅ Cleared ${key}`, 'success');
+                });
+                
+                log('✅ All data cleared!', 'success');
+            }
+        }
+        
+        // Auto-run check on page load
+        window.onload = function() {
+            log('🚀 Page loaded. Ready to fix user IDs!', 'info');
+            checkCurrentData();
+        };
+    </script>
+</body>
+</html>

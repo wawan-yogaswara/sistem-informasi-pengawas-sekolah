@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Sekolah Baru di Edge - LANGSUNG</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            padding: 20px; 
+            background: #f0f0f0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .log { 
+            background: #f5f5f5; 
+            padding: 10px; 
+            margin: 10px 0; 
+            border-radius: 5px; 
+            border-left: 4px solid #ccc;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .success { 
+            color: green; 
+            border-left-color: green;
+            background: #f0fff0;
+        }
+        .error { 
+            color: red; 
+            border-left-color: red;
+            background: #fff0f0;
+        }
+        .info { 
+            color: blue; 
+            border-left-color: blue;
+            background: #f0f0ff;
+        }
+        .warning {
+            color: orange;
+            border-left-color: orange;
+            background: #fff8f0;
+        }
+        button {
+            background: #007cba;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #005a87;
+        }
+        .section {
+            border: 1px solid #ddd;
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .form-test {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .form-test input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+        .form-test button {
+            grid-column: span 2;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .status.online {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.offline {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Sekolah Baru di Edge - LANGSUNG</h1>
+        <p>Script ini akan test input sekolah baru langsung ke Supabase di browser Edge.</p>
+        
+        <div id="connectionStatus" class="status offline">
+            🔴 Checking connection...
+        </div>
+        
+        <div class="section">
+            <h3>🚀 Quick Actions</h3>
+            <button onclick="testKoneksiSupabase()">🔗 Test Koneksi</button>
+            <button onclick="cekDataSekolahSekarang()">📊 Cek Data Sekolah</button>
+            <button onclick="fixUserIdSekarang()">🔧 Fix User ID</button>
+            <button onclick="testInputSekolahCepat()">⚡ Test Input Cepat</button>
+            <button onclick="clearAllOutput()">🗑️ Clear Output</button>
+        </div>
+        
+        <div class="section">
+            <h3>📝 Input Sekolah Baru Manual</h3>
+            <div class="form-test">
+                <input type="text" id="schoolName" placeholder="Nama Sekolah" value="SDN Test Edge">
+                <input type="text" id="schoolAddress" placeholder="Alamat" value="Jl. Edge Test No. 123">
+                <input type="text" id="schoolPrincipal" placeholder="Kepala Sekolah" value="Drs. Edge Principal">
+                <input type="text" id="schoolPhone" placeholder="Telepon" value="0262-EDGE">
+                <input type="text" id="schoolEmail" placeholder="Email" value="edge@test.com">
+                <button onclick="inputSekolahManual()">📤 Input Sekolah Sekarang</button>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h3>📋 Output Log</h3>
+            <div id="output"></div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const output = document.getElementById('output');
+        const connectionStatus = document.getElementById('connectionStatus');
+        
+        // Supabase configuration
+        const supabaseUrl = 'https://glhaliktsrcvnznbgxqt.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdsaGFsaWt0c3Jjdm56bmJneHF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYzNjYyMjQsImV4cCI6MjA4MTk0MjIyNH0._kaFo2h7rCdouJp2rpb1lmEvlR6gAc0c3AnRjM_PhP4';
+        
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+        
+        // Correct user IDs
+        const correctUserIds = {
+            admin: 'a7c7a9de-9ec8-4416-9aa3-59dab24b620b',
+            wawan: '421cdb28-f2af-4f1f-aa5f-c59a3d661a2e'
+        };
+        
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = 'log ' + type;
+            div.innerHTML = `[${new Date().toLocaleTimeString()}] ${message}`;
+            output.appendChild(div);
+            console.log(message);
+            
+            // Auto scroll to bottom
+            div.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function clearAllOutput() {
+            output.innerHTML = '';
+        }
+        
+        function updateConnectionStatus(isOnline, message) {
+            connectionStatus.className = `status ${isOnline ? 'online' : 'offline'}`;
+            connectionStatus.innerHTML = `${isOnline ? '🟢' : '🔴'} ${message}`;
+        }
+        
+        async function testKoneksiSupabase() {
+            log('🔗 Testing Supabase connection...', 'info');
+            updateConnectionStatus(false, 'Testing connection...');
+            
+            try {
+                const { data, error } = await supabase
+                    .from('schools')
+                    .select('count')
+                    .limit(1);
+                
+                if (error) {
+                    log('❌ Koneksi gagal: ' + error.message, 'error');
+                    updateConnectionStatus(false, 'Connection failed');
+                    return false;
+                } else {
+                    log('✅ Koneksi Supabase berhasil!', 'success');
+                    updateConnectionStatus(true, 'Connected to Supabase');
+                    return true;
+                }
+            } catch (error) {
+                log('❌ Error: ' + error.message, 'error');
+                updateConnectionStatus(false, 'Connection error');
+                return false;
+            }
+        }
+        
+        async function cekDataSekolahSekarang() {
+            log('📊 Checking data sekolah di Supabase...', 'info');
+            
+            try {
+                const { data: schools, error } = await supabase
+                    .from('schools')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                if (error) {
+                    log('❌ Error fetching schools: ' + error.message, 'error');
+                    return;
+                }
+                
+                log(`✅ Total sekolah di Supabase: ${schools?.length || 0}`, 'success');
+                
+                if (schools && schools.length > 0) {
+                    log('📋 Daftar sekolah terbaru:', 'info');
+                    schools.slice(0, 5).forEach((school, index) => {
+                        const createdDate = new Date(school.created_at).toLocaleString('id-ID');
+                        log(`   ${index + 1}. ${school.name} (${createdDate})`, 'info');
+                    });
+                }
+                
+                // Cek sekolah hari ini
+                const today = new Date().toISOString().split('T')[0];
+                const todaySchools = schools?.filter(school => 
+                    school.created_at.startsWith(today)
+                ) || [];
+                
+                log(`📅 Sekolah dibuat hari ini: ${todaySchools.length}`, 
+                    todaySchools.length > 0 ? 'success' : 'warning');
+                
+                return schools;
+                
+            } catch (error) {
+                log('❌ Error: ' + error.message, 'error');
+                return null;
+            }
+        }
+        
+        async function fixUserIdSekarang() {
+            log('🔧 Fixing user ID di localStorage...', 'info');
+            
+            try {
+                // Check current user
+                const currentUser = localStorage.getItem('auth_user');
+                if (currentUser) {
+                    const parsed = JSON.parse(currentUser);
+                    log(`👤 Current user: ${parsed.username} (ID: ${parsed.id})`, 'info');
+                    
+                    // Fix user ID if needed
+                    if (parsed.username === 'admin' && parsed.id !== correctUserIds.admin) {
+                        parsed.id = correctUserIds.admin;
+                        localStorage.setItem('auth_user', JSON.stringify(parsed));
+                        log('✅ Admin user ID fixed: ' + correctUserIds.admin, 'success');
+                    } else if (parsed.username === 'wawan' && parsed.id !== correctUserIds.wawan) {
+                        parsed.id = correctUserIds.wawan;
+                        localStorage.setItem('auth_user', JSON.stringify(parsed));
+                        log('✅ Wawan user ID fixed: ' + correctUserIds.wawan, 'success');
+                    } else {
+                        log('✅ User ID sudah benar', 'success');
+                    }
+                } else {
+                    log('⚠️ No current user found', 'warning');
+                }
+                
+                return true;
+            } catch (error) {
+                log('❌ Error fixing user ID: ' + error.message, 'error');
+                return false;
+            }
+        }
+        
+        async function testInputSekolahCepat() {
+            log('⚡ Testing input sekolah cepat...', 'info');
+            
+            try {
+                // Fix user ID first
+                await fixUserIdSekarang();
+                
+                const testSchool = {
+                    name: 'Test Sekolah Edge ' + new Date().toLocaleTimeString(),
+                    address: 'Jl. Test Edge No. 999',
+                    principal: 'Kepala Sekolah Test Edge',
+                    phone: '0262-TEST-EDGE',
+                    email: 'test-edge@sekolah.com'
+                };
+                
+                log('📤 Inserting test school: ' + testSchool.name, 'info');
+                
+                const { data, error } = await supabase
+                    .from('schools')
+                    .insert([testSchool])
+                    .select()
+                    .single();
+                
+                if (error) {
+                    log('❌ Insert failed: ' + error.message, 'error');
+                    log('   Error details: ' + JSON.stringify(error, null, 2), 'error');
+                } else {
+                    log('✅ Insert successful!', 'success');
+                    log('   ID: ' + data.id, 'success');
+                    log('   Name: ' + data.name, 'success');
+                    log('   Created: ' + new Date(data.created_at).toLocaleString('id-ID'), 'success');
+                    
+                    // Update localStorage
+                    const existingSchools = JSON.parse(localStorage.getItem('schools_data') || '[]');
+                    const newSchoolData = {
+                        id: data.id,
+                        name: data.name,
+                        address: data.address,
+                        contact: data.phone,
+                        principalName: data.principal,
+                        principalNip: '',
+                        supervisions: 0,
+                        createdAt: data.created_at
+                    };
+                    existingSchools.unshift(newSchoolData);
+                    localStorage.setItem('schools_data', JSON.stringify(existingSchools));
+                    
+                    log('✅ Data juga disimpan ke localStorage', 'success');
+                    
+                    // Don't clean up - keep the data
+                    log('ℹ️ Data disimpan permanen untuk testing', 'info');
+                }
+                
+            } catch (error) {
+                log('❌ Error: ' + error.message, 'error');
+            }
+        }
+        
+        async function inputSekolahManual() {
+            log('📝 Input sekolah manual...', 'info');
+            
+            try {
+                // Fix user ID first
+                await fixUserIdSekarang();
+                
+                const schoolData = {
+                    name: document.getElementById('schoolName').value,
+                    address: document.getElementById('schoolAddress').value,
+                    principal: document.getElementById('schoolPrincipal').value,
+                    phone: document.getElementById('schoolPhone').value,
+                    email: document.getElementById('schoolEmail').value
+                };
+                
+                // Validate input
+                if (!schoolData.name || !schoolData.address) {
+                    log('❌ Nama sekolah dan alamat harus diisi', 'error');
+                    return;
+                }
+                
+                log('📤 Input data: ' + JSON.stringify(schoolData, null, 2), 'info');
+                
+                const { data, error } = await supabase
+                    .from('schools')
+                    .insert([schoolData])
+                    .select()
+                    .single();
+                
+                if (error) {
+                    log('❌ Manual input failed: ' + error.message, 'error');
+                    log('   Error details: ' + JSON.stringify(error, null, 2), 'error');
+                } else {
+                    log('✅ Manual input successful!', 'success');
+                    log('   ID: ' + data.id, 'success');
+                    log('   Name: ' + data.name, 'success');
+                    log('   Created: ' + new Date(data.created_at).toLocaleString('id-ID'), 'success');
+                    
+                    // Update localStorage
+                    const existingSchools = JSON.parse(localStorage.getItem('schools_data') || '[]');
+                    const newSchoolData = {
+                        id: data.id,
+                        name: data.name,
+                        address: data.address,
+                        contact: data.phone,
+                        principalName: data.principal,
+                        principalNip: '',
+                        supervisions: 0,
+                        createdAt: data.created_at
+                    };
+                    existingSchools.unshift(newSchoolData);
+                    localStorage.setItem('schools_data', JSON.stringify(existingSchools));
+                    localStorage.setItem('schools_data_backup', JSON.stringify(existingSchools));
+                    
+                    log('✅ Data juga disimpan ke localStorage dan backup', 'success');
+                    
+                    // Clear form
+                    document.getElementById('schoolName').value = 'SDN Test Edge ' + Math.floor(Math.random() * 1000);
+                    document.getElementById('schoolAddress').value = 'Jl. Edge Test No. ' + Math.floor(Math.random() * 1000);
+                    
+                    log('ℹ️ Form cleared, siap untuk input berikutnya', 'info');
+                }
+                
+            } catch (error) {
+                log('❌ Error: ' + error.message, 'error');
+            }
+        }
+        
+        // Auto-run initial checks
+        window.onload = async function() {
+            log('🚀 Test tool loaded for Edge browser!', 'info');
+            log('🌐 User Agent: ' + navigator.userAgent, 'info');
+            
+            // Auto test connection
+            const connected = await testKoneksiSupabase();
+            if (connected) {
+                await cekDataSekolahSekarang();
+                await fixUserIdSekarang();
+            }
+            
+            log('✅ Ready for testing!', 'success');
+        };
+        
+        // Auto-refresh data every 30 seconds
+        setInterval(async () => {
+            if (connectionStatus.className.includes('online')) {
+                await cekDataSekolahSekarang();
+            }
+        }, 30000);
+    </script>
+</body>
+</html>

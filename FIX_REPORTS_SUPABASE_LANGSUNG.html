@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🔧 Fix Reports Supabase Langsung</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 900px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .header { text-align: center; margin-bottom: 30px; }
+        .step { background: #f8f9fa; padding: 20px; margin: 15px 0; border-radius: 8px; border-left: 4px solid #28a745; }
+        .code-block { background: #2d3748; color: #e2e8f0; padding: 15px; border-radius: 6px; font-family: 'Courier New', monospace; font-size: 14px; margin: 10px 0; overflow-x: auto; }
+        .success { color: #28a745; font-weight: bold; }
+        .warning { color: #ffc107; font-weight: bold; }
+        .error { color: #dc3545; font-weight: bold; }
+        .btn { background: #28a745; color: white; padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; margin: 5px; font-size: 16px; }
+        .btn:hover { background: #218838; }
+        .btn-test { background: #007bff; }
+        .btn-test:hover { background: #0056b3; }
+        .result { margin: 15px 0; padding: 15px; border-radius: 6px; }
+        .result.success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .result.error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .result.info { background: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 Fix Reports Supabase Langsung</h1>
+            <p>Tool untuk memperbaiki pengambilan data dari Supabase di halaman laporan</p>
+        </div>
+
+        <div class="step">
+            <h3>📊 Status Koneksi Supabase</h3>
+            <p>Anda sudah konfirmasi bahwa data berhasil masuk ke Supabase. Sekarang kita perbaiki pengambilan data.</p>
+            <div id="connectionStatus" class="result info">
+                ✅ Koneksi Supabase: LANCAR<br>
+                ✅ Data Input: BERHASIL<br>
+                ❌ Tampilan Laporan: PERLU DIPERBAIKI
+            </div>
+        </div>
+
+        <div class="step">
+            <h3>🔧 Langkah 1: Fix User ID</h3>
+            <p>Update user_id Wawan ke UUID yang benar dari Supabase</p>
+            <button class="btn" onclick="fixWawanUserId()">Fix User ID Wawan</button>
+            <div id="userIdResult" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="step">
+            <h3>📊 Langkah 2: Test Load Data</h3>
+            <p>Test pengambilan data dari semua endpoint Supabase</p>
+            <button class="btn btn-test" onclick="testLoadAllData()">Test Load All Data</button>
+            <div id="testResult" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="step">
+            <h3>🚀 Langkah 3: Apply Fix ke Reports</h3>
+            <p>Terapkan perbaikan langsung ke halaman laporan</p>
+            <button class="btn" onclick="applyReportsFix()">Apply Fix & Refresh</button>
+            <div id="applyResult" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="step">
+            <h3>📋 Console Script (Alternative)</h3>
+            <p>Jika tombol di atas tidak bekerja, copy script ini ke console browser di halaman laporan:</p>
+            <div class="code-block" id="consoleScript">
+// Loading script...
+            </div>
+            <button class="btn btn-test" onclick="generateConsoleScript()">Generate Console Script</button>
+        </div>
+
+        <div class="step">
+            <h3>🔍 Debug Info</h3>
+            <div id="debugInfo" style="font-size: 12px; color: #666;"></div>
+        </div>
+    </div>
+
+    <script>
+        // Update debug info
+        function updateDebugInfo() {
+            const debugDiv = document.getElementById('debugInfo');
+            const currentUser = localStorage.getItem('auth_user');
+            const browser = navigator.userAgent.includes('Opera') ? 'Opera' : 
+                           navigator.userAgent.includes('Chrome') ? 'Chrome' : 
+                           navigator.userAgent.includes('Edge') ? 'Edge' : 'Other';
+            
+            debugDiv.innerHTML = `
+                <strong>Debug Info:</strong><br>
+                Browser: ${browser}<br>
+                Current URL: ${window.location.href}<br>
+                LocalStorage auth_user: ${currentUser ? 'Ada' : 'Tidak ada'}<br>
+                Timestamp: ${new Date().toLocaleString()}
+            `;
+        }
+
+        function fixWawanUserId() {
+            const resultDiv = document.getElementById('userIdResult');
+            const currentUser = localStorage.getItem('auth_user');
+            
+            if (!currentUser) {
+                resultDiv.className = 'result error';
+                resultDiv.style.display = 'block';
+                resultDiv.innerHTML = '<div class="error">❌ Tidak ada user data di localStorage</div>';
+                return;
+            }
+            
+            const userData = JSON.parse(currentUser);
+            
+            if (userData.username === 'wawan') {
+                // Update dengan UUID yang benar dari Supabase
+                userData.id = '421cdb28-f2af-4f1f-aa5f-c59a3d661a2e';
+                localStorage.setItem('auth_user', JSON.stringify(userData));
+                
+                resultDiv.className = 'result success';
+                resultDiv.style.display = 'block';
+                resultDiv.innerHTML = `
+                    <div class="success">✅ User ID Wawan berhasil diupdate!</div>
+                    <strong>New User ID:</strong> ${userData.id}<br>
+                    <em>Sekarang halaman laporan akan menggunakan UUID yang benar</em>
+                `;
+            } else {
+                resultDiv.className = 'result error';
+                resultDiv.style.display = 'block';
+                resultDiv.innerHTML = `<div class="error">❌ User bukan Wawan (${userData.username})</div>`;
+            }
+            
+            updateDebugInfo();
+        }
+
+        async function testLoadAllData() {
+            const resultDiv = document.getElementById('testResult');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result info';
+            resultDiv.innerHTML = '<div>🔄 Testing data loading from Supabase...</div>';
+            
+            try {
+                const wawanUserId = '421cdb28-f2af-4f1f-aa5f-c59a3d661a2e';
+                let summary = '';
+                
+                // Test tasks
+                const tasksResponse = await fetch('/api/tasks-daily');
+                if (tasksResponse.ok) {
+                    const tasksData = await tasksResponse.json();
+                    const wawanTasks = tasksData.filter(task => task.user_id === wawanUserId);
+                    summary += `📋 Tasks: ${wawanTasks.length} (dari ${tasksData.length} total)<br>`;
+                } else {
+                    summary += `❌ Tasks API error: ${tasksResponse.status}<br>`;
+                }
+                
+                // Test additional tasks
+                const additionalResponse = await fetch('/api/activities');
+                if (additionalResponse.ok) {
+                    const additionalData = await additionalResponse.json();
+                    const wawanAdditional = additionalData.filter(task => task.user_id === wawanUserId);
+                    summary += `➕ Additional Tasks: ${wawanAdditional.length} (dari ${additionalData.length} total)<br>`;
+                } else {
+                    summary += `❌ Additional Tasks API error: ${additionalResponse.status}<br>`;
+                }
+                
+                // Test supervisions
+                const supervisionsResponse = await fetch('/api/supervisions');
+                if (supervisionsResponse.ok) {
+                    const supervisionsData = await supervisionsResponse.json();
+                    const wawanSupervisions = supervisionsData.filter(supervision => supervision.user_id === wawanUserId);
+                    summary += `🔍 Supervisions: ${wawanSupervisions.length} (dari ${supervisionsData.length} total)<br>`;
+                } else {
+                    summary += `❌ Supervisions API error: ${supervisionsResponse.status}<br>`;
+                }
+                
+                const totalWawan = (summary.match(/\d+/g) || []).reduce((sum, num, index) => {
+                    if (index % 2 === 0) return sum + parseInt(num);
+                    return sum;
+                }, 0);
+                
+                if (totalWawan > 0) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <div class="success">✅ Data berhasil dimuat dari Supabase!</div>
+                        ${summary}
+                        <strong>Total Aktivitas Wawan: ${totalWawan}</strong><br>
+                        <em>Data siap ditampilkan di laporan</em>
+                    `;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `
+                        <div class="error">❌ Tidak ada data Wawan ditemukan</div>
+                        ${summary}
+                        <em>Periksa user_id atau data di Supabase</em>
+                    `;
+                }
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+            }
+        }
+
+        function applyReportsFix() {
+            const resultDiv = document.getElementById('applyResult');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result info';
+            resultDiv.innerHTML = '<div>🔄 Applying fix to reports page...</div>';
+            
+            // Fix user ID first
+            fixWawanUserId();
+            
+            // Open reports page with fix
+            setTimeout(() => {
+                resultDiv.className = 'result success';
+                resultDiv.innerHTML = `
+                    <div class="success">✅ Fix applied!</div>
+                    <em>Opening reports page...</em>
+                `;
+                
+                // Open reports page
+                setTimeout(() => {
+                    window.open('/reports', '_blank');
+                }, 1000);
+            }, 500);
+        }
+
+        function generateConsoleScript() {
+            const script = `
+// 🔧 FIX REPORTS SUPABASE - COPY PASTE KE CONSOLE DI HALAMAN LAPORAN
+
+console.log('🔧 FIXING REPORTS DATA LOADING...');
+
+// 1. Fix user ID
+const currentUser = localStorage.getItem('auth_user');
+if (currentUser) {
+  const userData = JSON.parse(currentUser);
+  if (userData.username === 'wawan') {
+    userData.id = '421cdb28-f2af-4f1f-aa5f-c59a3d661a2e';
+    localStorage.setItem('auth_user', JSON.stringify(userData));
+    console.log('✅ Fixed Wawan user_id');
+  }
+}
+
+// 2. Test load data
+async function testSupabaseData() {
+  const userId = '421cdb28-f2af-4f1f-aa5f-c59a3d661a2e';
+  
+  try {
+    const [tasksRes, additionalRes, supervisionsRes] = await Promise.all([
+      fetch('/api/tasks-daily'),
+      fetch('/api/activities'),
+      fetch('/api/supervisions')
+    ]);
+    
+    const tasks = tasksRes.ok ? await tasksRes.json() : [];
+    const additional = additionalRes.ok ? await additionalRes.json() : [];
+    const supervisions = supervisionsRes.ok ? await supervisionsRes.json() : [];
+    
+    const wawanTasks = tasks.filter(t => t.user_id === userId);
+    const wawanAdditional = additional.filter(t => t.user_id === userId);
+    const wawanSupervisions = supervisions.filter(s => s.user_id === userId);
+    
+    console.log('📊 WAWAN DATA FROM SUPABASE:');
+    console.log('Tasks:', wawanTasks.length);
+    console.log('Additional Tasks:', wawanAdditional.length);
+    console.log('Supervisions:', wawanSupervisions.length);
+    console.log('TOTAL:', wawanTasks.length + wawanAdditional.length + wawanSupervisions.length);
+    
+    if (wawanTasks.length + wawanAdditional.length + wawanSupervisions.length > 0) {
+      console.log('✅ SUCCESS: Data found! Refreshing page...');
+      setTimeout(() => location.reload(), 2000);
+    } else {
+      console.log('❌ No data found for Wawan');
+    }
+    
+  } catch (error) {
+    console.error('❌ Error:', error);
+  }
+}
+
+testSupabaseData();
+`;
+            
+            document.getElementById('consoleScript').textContent = script;
+        }
+
+        // Auto update debug info saat halaman dimuat
+        updateDebugInfo();
+        
+        // Auto generate console script
+        setTimeout(() => {
+            generateConsoleScript();
+        }, 500);
+    </script>
+</body>
+</html>

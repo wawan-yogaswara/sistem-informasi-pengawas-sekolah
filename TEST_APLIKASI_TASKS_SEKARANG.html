@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Aplikasi Tasks - Langsung</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .info { background-color: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Aplikasi Tasks - Langsung</h1>
+    <p>Test ini akan mengecek apakah aplikasi bisa mengakses data tasks dari Supabase.</p>
+    
+    <div>
+        <button onclick="testTasksAPI()">🔍 Test API Tasks</button>
+        <button onclick="testSupabaseConnection()">🌐 Test Koneksi Supabase</button>
+        <button onclick="testInputTask()">➕ Test Input Task Baru</button>
+        <button onclick="clearResults()">🗑️ Bersihkan Hasil</button>
+    </div>
+    
+    <div id="results"></div>
+
+    <script>
+        const results = document.getElementById('results');
+        
+        function addResult(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong>: ${message}`;
+            results.appendChild(div);
+            results.scrollTop = results.scrollHeight;
+        }
+        
+        function clearResults() {
+            results.innerHTML = '';
+        }
+        
+        // Test API Tasks
+        async function testTasksAPI() {
+            addResult('🔍 Memulai test API tasks...', 'info');
+            
+            try {
+                const response = await fetch('/api/tasks', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                addResult(`📡 Response status: ${response.status}`, 'info');
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult(`✅ API Tasks berhasil! Jumlah data: ${data.length}`, 'success');
+                    
+                    if (data.length > 0) {
+                        addResult(`📋 Sample data pertama: <pre>${JSON.stringify(data[0], null, 2)}</pre>`, 'success');
+                    } else {
+                        addResult('⚠️ Data tasks kosong, tapi API berfungsi', 'info');
+                    }
+                } else {
+                    const errorText = await response.text();
+                    addResult(`❌ API Tasks gagal: ${errorText}`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ Error koneksi API: ${error.message}`, 'error');
+                addResult('💡 Pastikan server berjalan di port yang benar', 'info');
+            }
+        }
+        
+        // Test Koneksi Supabase
+        async function testSupabaseConnection() {
+            addResult('🌐 Mengecek konfigurasi Supabase...', 'info');
+            
+            try {
+                // Cek environment variables (jika tersedia)
+                const supabaseUrl = window.location.origin.includes('localhost') ? 
+                    'Localhost (cek .env file)' : 'Production';
+                addResult(`🔧 Environment: ${supabaseUrl}`, 'info');
+                
+                // Test dengan fetch langsung ke endpoint
+                const response = await fetch('/api/test-supabase', {
+                    method: 'GET'
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    addResult('✅ Koneksi Supabase berhasil!', 'success');
+                    addResult(`📊 Info: ${JSON.stringify(result)}`, 'success');
+                } else {
+                    addResult('❌ Koneksi Supabase gagal', 'error');
+                }
+            } catch (error) {
+                addResult(`❌ Error test Supabase: ${error.message}`, 'error');
+            }
+        }
+        
+        // Test Input Task Baru
+        async function testInputTask() {
+            addResult('➕ Mencoba input task baru...', 'info');
+            
+            // Cek apakah user sudah login
+            const userData = localStorage.getItem('user');
+            if (!userData) {
+                addResult('❌ User belum login! Login dulu sebelum test input.', 'error');
+                return;
+            }
+            
+            try {
+                const user = JSON.parse(userData);
+                const testTask = {
+                    user_id: user.id,
+                    title: `Test Task ${new Date().toLocaleTimeString()}`,
+                    description: 'Test input dari halaman test',
+                    date: new Date().toISOString().split('T')[0],
+                    activity_type: 'Perencanaan'
+                };
+                
+                addResult(`📤 Mengirim data: <pre>${JSON.stringify(testTask, null, 2)}</pre>`, 'info');
+                
+                const response = await fetch('/api/tasks', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(testTask)
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    addResult('✅ Input task berhasil!', 'success');
+                    addResult(`📋 Data tersimpan: <pre>${JSON.stringify(result, null, 2)}</pre>`, 'success');
+                    
+                    // Refresh data untuk memastikan
+                    setTimeout(() => {
+                        addResult('🔄 Mengecek data terbaru...', 'info');
+                        testTasksAPI();
+                    }, 1000);
+                } else {
+                    const errorText = await response.text();
+                    addResult(`❌ Input task gagal: ${errorText}`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ Error input task: ${error.message}`, 'error');
+            }
+        }
+        
+        // Auto-run test saat halaman dimuat
+        window.onload = function() {
+            addResult('🚀 Halaman test dimuat. Klik tombol untuk mulai test.', 'info');
+            
+            // Cek user login status
+            const userData = localStorage.getItem('user');
+            if (userData) {
+                const user = JSON.parse(userData);
+                addResult(`👤 User login: ${user.username} (${user.id})`, 'success');
+            } else {
+                addResult('⚠️ User belum login. Login dulu untuk test input.', 'info');
+            }
+        };
+    </script>
+</body>
+</html>

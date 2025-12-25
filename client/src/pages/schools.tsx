@@ -9,188 +9,131 @@ import { Plus, Trash2, MapPin, Phone, School as SchoolIcon } from "lucide-react"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabase";
 
 type School = {
   id: string;
   name: string;
   address: string;
-  contact: string;
-  principalName?: string;
-  principalNip?: string;
-  supervisions?: number;
+  phone: string;
+  principal: string;
+  email?: string;
+  created_at?: string;
 };
 
 export default function SchoolsPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  // Fetch schools from localStorage with AUTO-RECOVERY
-  const { data: schools = [], isLoading } = useQuery({
+  // SIMPLE: Pure Supabase query
+  const { data: schools = [], isLoading, refetch } = useQuery({
     queryKey: ['schools'],
-    queryFn: () => {
-      try {
-        if (typeof window !== 'undefined' && window.localStorage) {
-          let schoolsData = localStorage.getItem('schools_data');
-          
-          // AUTO-RECOVERY: If main data is missing, try backup
-          if (!schoolsData) {
-            const backup = localStorage.getItem('schools_data_backup');
-            if (backup) {
-              localStorage.setItem('schools_data', backup);
-              schoolsData = backup;
-              console.log('🔄 Schools auto-recovered from backup');
-            }
-          }
-          
-          if (schoolsData) {
-            const parsed = JSON.parse(schoolsData);
-            
-            // Create backup every time we successfully read data
-            localStorage.setItem('schools_data_backup', schoolsData);
-            localStorage.setItem('schools_data_timestamp', Date.now().toString());
-            
-            return Array.isArray(parsed) ? parsed : [];
-          }
-        }
-        return [];
-      } catch (error) {
-        console.warn('Error reading schools from localStorage:', error);
-        return [];
+    queryFn: async () => {
+      console.log('🔍 Fetching schools from Supabase...');
+      
+      const { data, error } = await supabase
+        .from('schools')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('❌ Supabase error:', error);
+        throw error;
       }
+      
+      console.log('✅ Schools loaded:', data?.length || 0);
+      return data || [];
     },
-    refetchInterval: 5000, // Auto-refresh every 5 seconds to detect changes
-    refetchIntervalInBackground: true,
+    retry: 1,
+    refetchOnWindowFocus: false,
   });
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [newSchool, setNewSchool] = useState({ 
     name: "", 
     address: "", 
-    contact: "", 
-    principalName: "", 
-    principalNip: "" 
+    phone: "", 
+    principal: "",
+    email: ""
   });
 
-  // EXACT COPY FROM WORKING TASKS.TSX PATTERN
+  // SIMPLE: Add school function
   const handleAddSchool = async () => {
     try {
-      console.log('Submitting school:', newSchool);
+      console.log('📝 Adding school:', newSchool.name);
       
-      // Direct localStorage save
-      const schoolsData = localStorage.getItem('schools_data');
-      const currentSchools = schoolsData ? JSON.parse(schoolsData) : [];
+      const { data, error } = await supabase
+        .from('schools')
+        .insert([{
+          name: newSchool.name,
+          address: newSchool.address,
+          phone: newSchool.phone,
+          principal: newSchool.principal,
+          email: newSchool.email || ''
+        }])
+        .select()
+        .single();
       
-      const newSchoolData = {
-        id: Date.now().toString(),
-        name: newSchool.name,
-        address: newSchool.address,
-        contact: newSchool.contact,
-        principalName: newSchool.principalName,
-        principalNip: newSchool.principalNip,
-        supervisions: 0,
-        createdAt: new Date().toISOString()
-      };
+      if (error) {
+        console.error('❌ Insert error:', error);
+        throw error;
+      }
       
-      const updatedSchools = [...currentSchools, newSchoolData];
+      console.log('✅ School added:', data);
       
-      // PROTECTED SAVE: Save to multiple locations
-      localStorage.setItem('schools_data', JSON.stringify(updatedSchools));
-      localStorage.setItem('schools_data_backup', JSON.stringify(updatedSchools));
-      localStorage.setItem('schools_data_timestamp', Date.now().toString());
+      // Refresh data
+      refetch();
       
-      // Trigger success manually
-      queryClient.invalidateQueries({ queryKey: ['schools'] });
+      // Success feedback
       toast({
         title: "Berhasil",
         description: "Sekolah berhasil ditambahkan",
       });
-      setNewSchool({ name: "", address: "", contact: "", principalName: "", principalNip: "" });
+      
+      // Reset form
+      setNewSchool({ name: "", address: "", phone: "", principal: "", email: "" });
       setIsAddDialogOpen(false);
       
-    } catch (error) {
-      console.error('Error in handleAddSchool:', error);
+    } catch (error: any) {
+      console.error('❌ Add school error:', error);
       toast({
         title: "Error",
-        description: "Terjadi kesalahan saat menyimpan sekolah",
+        description: error.message || "Terjadi kesalahan saat menyimpan sekolah",
         variant: "destructive",
       });
     }
   };
 
+  // SIMPLE: Delete school function
   const handleDeleteSchool = async (id: string) => {
     try {
-      console.log('🗑️ DELETE SCHOOL - Starting delete for ID:', id);
+      console.log('🗑️ Deleting school:', id);
       
-      // SAFETY CHECK: Validate ID
-      if (!id || id.trim() === '') {
-        console.error('❌ DELETE SCHOOL - Invalid ID provided:', id);
-        toast({
-          title: "Error",
-          description: "ID sekolah tidak valid",
-          variant: "destructive",
-        });
-        return;
+      const { error } = await supabase
+        .from('schools')
+        .delete()
+        .eq('id', id);
+      
+      if (error) {
+        console.error('❌ Delete error:', error);
+        throw error;
       }
       
-      // Direct localStorage delete with safety checks
-      const schoolsData = localStorage.getItem('schools_data');
-      const currentSchools = schoolsData ? JSON.parse(schoolsData) : [];
+      console.log('✅ School deleted');
       
-      console.log('📊 DELETE SCHOOL - Current schools count:', currentSchools.length);
-      console.log('🎯 DELETE SCHOOL - School to delete:', currentSchools.find((s: School) => s.id === id));
+      // Refresh data
+      refetch();
       
-      // SAFETY CHECK: Ensure school exists
-      const schoolExists = currentSchools.some((school: School) => school.id === id);
-      if (!schoolExists) {
-        console.warn('⚠️ DELETE SCHOOL - School not found with ID:', id);
-        toast({
-          title: "Error",
-          description: "Sekolah tidak ditemukan",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      // SAFE FILTER: Remove only the specific school
-      const updatedSchools = currentSchools.filter((school: School) => {
-        const shouldKeep = school.id !== id;
-        console.log('🔍 DELETE SCHOOL - Comparing:', school.id, 'vs', id, '→ keep:', shouldKeep);
-        return shouldKeep;
-      });
-      
-      console.log('📊 DELETE SCHOOL - Schools after filter:', updatedSchools.length);
-      console.log('✅ DELETE SCHOOL - Deleted count:', currentSchools.length - updatedSchools.length);
-      
-      // SAFETY CHECK: Ensure only one school was deleted
-      if (updatedSchools.length !== currentSchools.length - 1) {
-        console.error('❌ DELETE SCHOOL - Unexpected delete count. Before:', currentSchools.length, 'After:', updatedSchools.length);
-        toast({
-          title: "Error",
-          description: "Operasi delete tidak aman, dibatalkan",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      // PROTECTED SAVE: Save to multiple locations
-      localStorage.setItem('schools_data', JSON.stringify(updatedSchools));
-      localStorage.setItem('schools_data_backup', JSON.stringify(updatedSchools));
-      localStorage.setItem('schools_data_timestamp', Date.now().toString());
-      
-      console.log('💾 DELETE SCHOOL - Data saved successfully');
-      
-      // Trigger success manually
-      queryClient.invalidateQueries({ queryKey: ['schools'] });
       toast({
         title: "Berhasil",
         description: "Sekolah berhasil dihapus",
       });
       
-    } catch (error) {
-      console.error('💥 DELETE SCHOOL - Error:', error);
+    } catch (error: any) {
+      console.error('❌ Delete school error:', error);
       toast({
         title: "Error",
-        description: "Terjadi kesalahan saat menghapus sekolah",
+        description: error.message || "Terjadi kesalahan saat menghapus sekolah",
         variant: "destructive",
       });
     }
@@ -213,7 +156,7 @@ export default function SchoolsPage() {
         </div>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
-            <Button data-testid="button-add-school">
+            <Button>
               <Plus className="h-4 w-4 mr-2" />
               Tambah Sekolah
             </Button>
@@ -230,8 +173,7 @@ export default function SchoolsPage() {
                   id="school-name"
                   value={newSchool.name}
                   onChange={(e) => setNewSchool({ ...newSchool, name: e.target.value })}
-                  placeholder="Contoh: SDN 01"
-                  data-testid="input-school-name"
+                  placeholder="Contoh: SMKN 4 Garut"
                 />
               </div>
               <div className="space-y-2">
@@ -241,44 +183,40 @@ export default function SchoolsPage() {
                   value={newSchool.address}
                   onChange={(e) => setNewSchool({ ...newSchool, address: e.target.value })}
                   placeholder="Alamat lengkap sekolah"
-                  data-testid="input-school-address"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="school-contact">Kontak</Label>
+                <Label htmlFor="school-phone">Telepon</Label>
                 <Input
-                  id="school-contact"
-                  value={newSchool.contact}
-                  onChange={(e) => setNewSchool({ ...newSchool, contact: e.target.value })}
+                  id="school-phone"
+                  value={newSchool.phone}
+                  onChange={(e) => setNewSchool({ ...newSchool, phone: e.target.value })}
                   placeholder="Nomor telepon sekolah"
-                  data-testid="input-school-contact"
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="principal-name">Nama Kepala Sekolah</Label>
                 <Input
                   id="principal-name"
-                  value={newSchool.principalName}
-                  onChange={(e) => setNewSchool({ ...newSchool, principalName: e.target.value })}
+                  value={newSchool.principal}
+                  onChange={(e) => setNewSchool({ ...newSchool, principal: e.target.value })}
                   placeholder="Nama lengkap kepala sekolah"
-                  data-testid="input-principal-name"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="principal-nip">NIP/NUPTK Kepala Sekolah</Label>
+                <Label htmlFor="school-email">Email (Opsional)</Label>
                 <Input
-                  id="principal-nip"
-                  value={newSchool.principalNip}
-                  onChange={(e) => setNewSchool({ ...newSchool, principalNip: e.target.value })}
-                  placeholder="NIP atau NUPTK"
-                  data-testid="input-principal-nip"
+                  id="school-email"
+                  value={newSchool.email}
+                  onChange={(e) => setNewSchool({ ...newSchool, email: e.target.value })}
+                  placeholder="Email sekolah"
                 />
               </div>
               <div className="flex gap-2 justify-end">
-                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} data-testid="button-cancel-school">
+                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
                   Batal
                 </Button>
-                <Button onClick={handleAddSchool} disabled={!newSchool.name} data-testid="button-save-school">
+                <Button onClick={handleAddSchool} disabled={!newSchool.name}>
                   Simpan Sekolah
                 </Button>
               </div>
@@ -312,13 +250,13 @@ export default function SchoolsPage() {
                     <div className="flex-1 min-w-0">
                       <CardTitle className="text-lg truncate">{school.name}</CardTitle>
                       <Badge variant="secondary" className="mt-1 text-xs">
-                        {school.supervisions || 0} supervisi
+                        Aktif
                       </Badge>
                     </div>
                   </div>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="icon" data-testid={`button-delete-school-${school.id}`}>
+                      <Button variant="ghost" size="icon">
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </AlertDialogTrigger>
@@ -330,8 +268,8 @@ export default function SchoolsPage() {
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
-                        <AlertDialogCancel data-testid="button-cancel-delete">Batal</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handleDeleteSchool(school.id)} data-testid="button-confirm-delete">
+                        <AlertDialogCancel>Batal</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleDeleteSchool(school.id)}>
                           Hapus
                         </AlertDialogAction>
                       </AlertDialogFooter>
@@ -346,15 +284,12 @@ export default function SchoolsPage() {
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <Phone className="h-4 w-4 text-muted-foreground shrink-0" />
-                  <span className="text-muted-foreground">{school.contact}</span>
+                  <span className="text-muted-foreground">{school.phone}</span>
                 </div>
-                {school.principalName && (
+                {school.principal && (
                   <div className="pt-2 border-t">
                     <p className="text-sm font-medium">Kepala Sekolah</p>
-                    <p className="text-sm text-muted-foreground">{school.principalName}</p>
-                    {school.principalNip && (
-                      <p className="text-xs text-muted-foreground">NIP/NUPTK: {school.principalNip}</p>
-                    )}
+                    <p className="text-sm text-muted-foreground">{school.principal}</p>
                   </div>
                 )}
               </CardContent>

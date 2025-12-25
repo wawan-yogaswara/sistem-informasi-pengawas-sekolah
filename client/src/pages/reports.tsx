@@ -5,88 +5,281 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FileText, Download, Calendar, MapPin, Users, Image as ImageIcon, Printer, TrendingUp, BarChart3 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
 
 export default function ReportsPage() {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [activeTab, setActiveTab] = useState("semua");
-  // Fetch all activities with photos
-  const { data: allActivities = [], isLoading } = useQuery({
-    queryKey: ['all-activities'],
-    queryFn: () => {
+  const [allActivities, setAllActivities] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load activities from Supabase only
+  useEffect(() => {
+    const loadActivitiesFromSupabase = async () => {
       try {
+        console.log('🔍 Loading activities from Supabase...');
+        setIsLoading(true);
+        
+        // Get current user
+        const userData = localStorage.getItem('auth_user');
+        if (!userData) {
+          console.log('⚠️ No user data found');
+          setAllActivities([]);
+          setIsLoading(false);
+          return;
+        }
+        
+        const currentUser = JSON.parse(userData);
+        console.log('👤 Current user:', currentUser.username);
+        
+        // For wawan user, use the correct ID from Supabase
+        let userId = currentUser.id;
+        if (currentUser.username === 'wawan') {
+          // Use the actual Supabase user_id for Wawan
+          userId = '421cdb28-f2af-4f1f-aa5f-c59a3d661a2e';
+          // Update localStorage with correct ID
+          currentUser.id = userId;
+          localStorage.setItem('auth_user', JSON.stringify(currentUser));
+        }
+        
+        console.log('🔑 Using user_id:', userId);
+        
         const activities: any[] = [];
         
-        // Get additional tasks
-        const additionalTasksData = localStorage.getItem('additional_tasks_data');
-        if (additionalTasksData) {
-          const additionalTasks = JSON.parse(additionalTasksData);
-          additionalTasks.forEach((task: any) => {
+        // ENHANCED: Fetch tasks from Supabase with better error handling
+        try {
+          console.log('📋 Fetching tasks from:', `/api/tasks-daily?user_id=${encodeURIComponent(userId)}`);
+          const tasksResponse = await fetch(`/api/tasks-daily?user_id=${encodeURIComponent(userId)}`);
+          console.log('📋 Tasks response status:', tasksResponse.status);
+          
+          if (tasksResponse.ok) {
+            const tasksData = await tasksResponse.json();
+            console.log(`📋 Found ${tasksData.length} tasks from Supabase for user ${userId}`);
+            
+            // ENHANCED: Log detailed task data for debugging
+            if (tasksData.length > 0) {
+              console.log('📋 Sample task data:', tasksData[0]);
+              console.log('📋 Task fields available:', Object.keys(tasksData[0]));
+            }
+            
+            tasksData.forEach((task: any) => {
+              activities.push({
+                id: task.id,
+                type: 'Tugas Pokok',
+                title: task.title || 'Tugas Harian',
+                date: task.date || task.created_at,
+                location: task.location || task.school || 'Sekolah Binaan',
+                organizer: 'Pengawas Sekolah',
+                description: task.description || '',
+                // ENHANCED: Improved photo mapping with multiple fallbacks
+                photo1: task.photo || task.photo1, // Primary: use 'photo' field, fallback to 'photo1'
+                photo2: task.photo2, // Secondary photo
+                createdAt: task.created_at,
+                source: 'supabase-tasks'
+              });
+            });
+          } else {
+            const errorText = await tasksResponse.text();
+            console.error('📋 Tasks API error:', tasksResponse.status, errorText);
+          }
+        } catch (error) {
+          console.error('Error fetching tasks from Supabase:', error);
+        }
+        
+        // ENHANCED: Fetch supervisions from Supabase with better error handling
+        try {
+          console.log('🔍 Fetching supervisions from:', `/api/supervisions?user_id=${encodeURIComponent(userId)}`);
+          const supervisionsResponse = await fetch(`/api/supervisions?user_id=${encodeURIComponent(userId)}`);
+          console.log('🔍 Supervisions response status:', supervisionsResponse.status);
+          
+          if (supervisionsResponse.ok) {
+            const supervisionsData = await supervisionsResponse.json();
+            console.log(`🔍 Found ${supervisionsData.length} supervisions from Supabase for user ${userId}`);
+            
+            // ENHANCED: Log detailed supervision data for debugging
+            if (supervisionsData.length > 0) {
+              console.log('🔍 Sample supervision data:', supervisionsData[0]);
+              console.log('🔍 Supervision fields available:', Object.keys(supervisionsData[0]));
+            }
+            
+            // Fetch schools for location names
+            const schoolsResponse = await fetch('/api/schools');
+            const schoolsData = schoolsResponse.ok ? await schoolsResponse.json() : [];
+            
+            supervisionsData.forEach((supervision: any) => {
+              // Get school name
+              const school = schoolsData.find((s: any) => s.id === supervision.school_id);
+              
+              activities.push({
+                id: supervision.id,
+                type: 'Supervisi',
+                title: `Supervisi ${school?.name || supervision.school_name || 'Sekolah'}`,
+                date: supervision.date || supervision.created_at,
+                location: school?.name || supervision.school_name || 'Sekolah Binaan',
+                organizer: 'Pengawas Sekolah',
+                description: supervision.findings || supervision.recommendations || '',
+                // ENHANCED: Improved photo mapping with multiple fallbacks
+                photo1: supervision.photo || supervision.photo1, // Primary: use 'photo' field, fallback to 'photo1'
+                photo2: supervision.photo2, // Secondary photo
+                createdAt: supervision.created_at,
+                source: 'supabase-supervisions'
+              });
+            });
+          } else {
+            const errorText = await supervisionsResponse.text();
+            console.error('🔍 Supervisions API error:', supervisionsResponse.status, errorText);
+          }
+        } catch (error) {
+          console.error('Error fetching supervisions from Supabase:', error);
+        }
+        
+        // ENHANCED: Fetch additional tasks from Supabase with proper field mapping
+        try {
+          console.log('➕ ENHANCED: Fetching activities from API and Supabase direct...');
+          
+          // Try API first
+          let additionalTasksData = [];
+          try {
+            const additionalTasksResponse = await fetch(`/api/activities?user_id=${encodeURIComponent(userId)}`);
+            console.log('➕ Additional tasks response status:', additionalTasksResponse.status);
+            
+            if (additionalTasksResponse.ok) {
+              additionalTasksData = await additionalTasksResponse.json();
+              console.log(`➕ API returned ${additionalTasksData.length} additional tasks`);
+              
+              // ENHANCED: Log detailed additional tasks data for debugging
+              if (additionalTasksData.length > 0) {
+                console.log('➕ Sample additional task data:', additionalTasksData[0]);
+                console.log('➕ Additional task fields available:', Object.keys(additionalTasksData[0]));
+              }
+            } else {
+              const errorText = await additionalTasksResponse.text();
+              console.error('➕ Additional tasks API error:', additionalTasksResponse.status, errorText);
+            }
+          } catch (apiError) {
+            console.log('⚠️ API failed, trying Supabase direct:', apiError);
+          }
+          
+          // Fallback to direct Supabase if API fails or returns no data
+          if (additionalTasksData.length === 0) {
+            try {
+              console.log('🔄 Trying direct Supabase connection...');
+              // Import Supabase client
+              const { createClient } = await import('@supabase/supabase-js');
+              const supabaseUrl = 'https://fmxeboullgcewzjpql.supabase.co';
+              const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZteGVib3VsbGdjZXd6anBxbCIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzM0NTk5NzI4LCJleHAiOjIwNTAxNzU3Mjh9.Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8';
+              const supabase = createClient(supabaseUrl, supabaseKey);
+              
+              const { data: supabaseData, error } = await supabase
+                .from('additional_tasks')
+                .select(`
+                  *,
+                  schools (
+                    id,
+                    name
+                  )
+                `)
+                .eq('user_id', userId)
+                .order('created_at', { ascending: false });
+              
+              if (!error && supabaseData) {
+                additionalTasksData = supabaseData;
+                console.log(`➕ Supabase direct returned ${additionalTasksData.length} additional tasks`);
+                
+                // ENHANCED: Log detailed Supabase data for debugging
+                if (additionalTasksData.length > 0) {
+                  console.log('➕ Sample Supabase additional task data:', additionalTasksData[0]);
+                  console.log('➕ Supabase additional task fields available:', Object.keys(additionalTasksData[0]));
+                }
+              } else {
+                console.error('➕ Supabase direct error:', error);
+              }
+            } catch (supabaseError) {
+              console.error('➕ Supabase direct failed:', supabaseError);
+            }
+          }
+          
+          // Process additional tasks data with enhanced field mapping
+          additionalTasksData.forEach((task: any) => {
             activities.push({
               id: task.id,
               type: 'Tugas Tambahan',
-              title: task.name,
-              date: task.date,
-              location: task.location,
-              organizer: task.organizer,
-              description: task.description,
-              photo1: task.photo1,
-              photo2: task.photo2,
-              createdAt: task.createdAt
+              title: task.name || task.title || 'Kegiatan Tambahan',
+              date: task.date || task.created_at,
+              location: task.location || task.schools?.name || 'Tempat Kegiatan',
+              organizer: task.organizer || 'Pengawas Sekolah',
+              description: task.description || '',
+              // ENHANCED: Comprehensive photo mapping with all possible fallbacks
+              photo1: task.photo || task.photo1, // Primary: 'photo' field, fallback to 'photo1'
+              photo2: task.photo2, // Secondary photo
+              createdAt: task.created_at,
+              source: 'supabase-additional-tasks'
             });
           });
+          
+          console.log(`➕ Total additional tasks processed: ${additionalTasksData.length}`);
+          
+        } catch (error) {
+          console.error('Error fetching additional tasks:', error);
         }
         
-        // Get supervisions
-        const supervisionsData = localStorage.getItem('supervisions_data');
-        if (supervisionsData) {
-          const supervisions = JSON.parse(supervisionsData);
-          supervisions.forEach((supervision: any) => {
-            activities.push({
-              id: supervision.id,
-              type: 'Supervisi',
-              title: `Supervisi ${supervision.school}`,
-              date: supervision.date,
-              location: supervision.school,
-              organizer: 'Pengawas Sekolah',
-              description: supervision.findings || supervision.notes,
-              photo1: supervision.photo1,
-              photo2: supervision.photo2,
-              createdAt: supervision.createdAt
-            });
-          });
-        }
+        console.log(`📊 Total activities loaded from Supabase: ${activities.length}`);
+        console.log('📋 Activities with photos:', activities.filter(a => a.photo1 || a.photo2).length);
         
-        // Get tasks
-        const tasksData = localStorage.getItem('tasks_data');
-        if (tasksData) {
-          const tasks = JSON.parse(tasksData);
-          tasks.forEach((task: any) => {
-            activities.push({
-              id: task.id,
-              type: 'Tugas Pokok',
-              title: task.title,
-              date: task.dueDate || task.date,
-              location: task.location || 'Sekolah Binaan',
-              organizer: 'Pengawas Sekolah',
-              description: task.description,
-              photo1: task.photo1,
-              photo2: task.photo2,
-              createdAt: task.createdAt
+        // Debug: Log photo info for each activity
+        activities.forEach((activity, index) => {
+          if (activity.photo1 || activity.photo2) {
+            console.log(`📸 Activity ${index + 1} (${activity.type}): ${activity.title}`, {
+              photo1: activity.photo1 ? (activity.photo1.startsWith('data:') ? 'base64' : activity.photo1) : null,
+              photo2: activity.photo2 ? (activity.photo2.startsWith('data:') ? 'base64' : activity.photo2) : null,
+              source: 'supabase'
             });
-          });
-        }
+          }
+        });
         
         // Sort by date (newest first)
-        return activities.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        const sortedActivities = activities.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        setAllActivities(sortedActivities);
+        setIsLoading(false);
+        
       } catch (error) {
-        console.error('Error loading activities:', error);
-        return [];
+        console.error('Error loading activities from Supabase:', error);
+        setAllActivities([]);
+        setIsLoading(false);
       }
-    },
-    refetchInterval: 5000,
-  });
+    };
+
+    // Check for cached data first
+    const cachedData = localStorage.getItem('reports_activities_cache');
+    if (cachedData) {
+      try {
+        const parsedData = JSON.parse(cachedData);
+        console.log('📦 Found cached activities data:', parsedData.length);
+        setAllActivities(parsedData);
+        setIsLoading(false);
+        // Clear cache after using it
+        localStorage.removeItem('reports_activities_cache');
+        return;
+      } catch (error) {
+        console.error('Error parsing cached data:', error);
+      }
+    }
+
+    loadActivitiesFromSupabase();
+    
+    // Listen for custom update events
+    const handleUpdateEvent = (event: any) => {
+      console.log('📡 Received update event with activities:', event.detail.activities.length);
+      setAllActivities(event.detail.activities);
+      setIsLoading(false);
+    };
+    
+    window.addEventListener('updateReportsData', handleUpdateEvent);
+    
+    return () => {
+      window.removeEventListener('updateReportsData', handleUpdateEvent);
+    };
+  }, []);
 
   // Filter activities by period
   const getFilteredActivities = (period: string) => {
@@ -281,14 +474,41 @@ export default function ReportsPage() {
           }).join('');
         };
         
-        // Collect all photos (maksimal 6)
+        // Collect all photos (maksimal 6 untuk menghemat bandwidth Supabase)
         const allPhotos: any[] = [];
-        activitiesToExport.forEach(activity => {
-          if (activity.photo1) allPhotos.push({ src: activity.photo1, caption: `${activity.title} - Foto 1` });
-          if (activity.photo2) allPhotos.push({ src: activity.photo2, caption: `${activity.title} - Foto 2` });
+        
+        // Sort activities by date (newest first) untuk prioritas foto terbaru
+        const sortedActivities = [...activitiesToExport].sort((a, b) => 
+          new Date(b.date).getTime() - new Date(a.date).getTime()
+        );
+        
+        // Collect photos with priority for newer activities
+        sortedActivities.forEach(activity => {
+          // Stop collecting if we already have 6 photos
+          if (allPhotos.length >= 6) return;
+          
+          // Add photo1 if exists and we haven't reached limit
+          if (activity.photo1 && allPhotos.length < 6) {
+            allPhotos.push({ 
+              src: activity.photo1, 
+              caption: `${activity.title} - Foto 1`,
+              date: activity.date,
+              type: activity.type
+            });
+          }
+          
+          // Add photo2 if exists and we haven't reached limit
+          if (activity.photo2 && allPhotos.length < 6) {
+            allPhotos.push({ 
+              src: activity.photo2, 
+              caption: `${activity.title} - Foto 2`,
+              date: activity.date,
+              type: activity.type
+            });
+          }
         });
         
-        // Limit to 6 photos
+        // Ensure we only take maximum 6 photos (double safety check)
         const selectedPhotos = allPhotos.slice(0, 6);
         
         const photosHTML = selectedPhotos.length > 0 ? `
@@ -308,7 +528,11 @@ export default function ReportsPage() {
               </div>
               ${allPhotos.length > 6 ? `
                 <p style="text-align: center; margin-top: 12px; font-size: 10px; color: #6b7280; font-style: italic;">
-                  Menampilkan 6 dari ${allPhotos.length} foto dokumentasi kegiatan
+                  Menampilkan 6 foto terbaru dari ${allPhotos.length} foto dokumentasi kegiatan (dibatasi untuk menghemat bandwidth)
+                </p>
+              ` : allPhotos.length > 0 ? `
+                <p style="text-align: center; margin-top: 12px; font-size: 10px; color: #6b7280; font-style: italic;">
+                  Menampilkan ${allPhotos.length} foto dokumentasi kegiatan
                 </p>
               ` : ''}
             </div>
@@ -873,7 +1097,18 @@ export default function ReportsPage() {
                           <Users className="h-4 w-4" />
                           <span>{activity.organizer}</span>
                         </div>
-                        {(activity.photo1 || activity.photo2) && (
+                        {(() => {
+              
+        // Debug info for photo loading
+        console.log('🖼️ Loading photos for activity:', activity.id, {
+          photo1: activity.photo1 ? (activity.photo1.startsWith('data:') ? 'base64' : activity.photo1) : null,
+          photo2: activity.photo2 ? (activity.photo2.startsWith('data:') ? 'base64' : activity.photo2) : null,
+          browser: navigator.userAgent.includes('Opera') ? 'Opera' : 
+                   navigator.userAgent.includes('Chrome') ? 'Chrome' : 
+                   navigator.userAgent.includes('Edge') ? 'Edge' : 'Other'
+        });
+              return (activity.photo1 || activity.photo2);
+            })() && (
                           <Badge variant="outline">
                             <ImageIcon className="h-3 w-3 mr-1" />
                             {[activity.photo1, activity.photo2].filter(Boolean).length} foto
@@ -900,9 +1135,29 @@ export default function ReportsPage() {
                           {activity.photo1 && (
                             <div className="space-y-2">
                               <img 
-                                src={activity.photo1.startsWith('data:') ? activity.photo1 : `/uploads/${activity.photo1}`} 
+                                src={activity.photo1} 
                                 alt="Foto 1" 
                                 className="w-full h-48 object-cover rounded-md border"
+                                onLoad={() => {
+                                  console.log('✅ Photo1 loaded successfully');
+                                }}
+                                onError={(e) => {
+                                  const target = e.currentTarget as HTMLImageElement;
+                                  console.log('❌ Photo1 failed to load:', activity.photo1);
+                                  
+                                  // Show error placeholder
+                                  target.style.display = 'none';
+                                  const errorDiv = document.createElement('div');
+                                  errorDiv.className = 'w-full h-48 bg-gray-100 border-2 border-gray-300 rounded-md flex items-center justify-center text-gray-500';
+                                  errorDiv.innerHTML = `
+                                    <div class="text-center p-4">
+                                      <div class="text-3xl mb-2">📷</div>
+                                      <div class="font-medium">Foto tidak dapat dimuat</div>
+                                      <div class="text-xs mt-1">Foto 1</div>
+                                    </div>
+                                  `;
+                                  target.parentNode?.replaceChild(errorDiv, target);
+                                }}
                               />
                               <p className="text-xs text-center text-muted-foreground">Foto 1</p>
                             </div>
@@ -910,9 +1165,29 @@ export default function ReportsPage() {
                           {activity.photo2 && (
                             <div className="space-y-2">
                               <img 
-                                src={activity.photo2.startsWith('data:') ? activity.photo2 : `/uploads/${activity.photo2}`} 
+                                src={activity.photo2} 
                                 alt="Foto 2" 
                                 className="w-full h-48 object-cover rounded-md border"
+                                onLoad={() => {
+                                  console.log('✅ Photo2 loaded successfully');
+                                }}
+                                onError={(e) => {
+                                  const target = e.currentTarget as HTMLImageElement;
+                                  console.log('❌ Photo2 failed to load:', activity.photo2);
+                                  
+                                  // Show error placeholder
+                                  target.style.display = 'none';
+                                  const errorDiv = document.createElement('div');
+                                  errorDiv.className = 'w-full h-48 bg-gray-100 border-2 border-gray-300 rounded-md flex items-center justify-center text-gray-500';
+                                  errorDiv.innerHTML = `
+                                    <div class="text-center p-4">
+                                      <div class="text-3xl mb-2">📷</div>
+                                      <div class="font-medium">Foto tidak dapat dimuat</div>
+                                      <div class="text-xs mt-1">Foto 2</div>
+                                    </div>
+                                  `;
+                                  target.parentNode?.replaceChild(errorDiv, target);
+                                }}
                               />
                               <p className="text-xs text-center text-muted-foreground">Foto 2</p>
                             </div>

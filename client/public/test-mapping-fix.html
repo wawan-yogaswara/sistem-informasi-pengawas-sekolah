@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Mapping Fix - Tugas Tambahan & Foto Laporan</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+        }
+        .test-section.success {
+            border-color: #10b981;
+            background: #f0fdf4;
+        }
+        .test-section.error {
+            border-color: #ef4444;
+            background: #fef2f2;
+        }
+        .test-section.warning {
+            border-color: #f59e0b;
+            background: #fffbeb;
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        button.success {
+            background: #10b981;
+        }
+        button.error {
+            background: #ef4444;
+        }
+        .log {
+            background: #1f2937;
+            color: #f9fafb;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 10px 0;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .status.success {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #10b981;
+        }
+        .status.error {
+            background: #fecaca;
+            color: #991b1b;
+            border: 1px solid #ef4444;
+        }
+        .status.info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #3b82f6;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+            font-size: 12px;
+        }
+        .data-table th, .data-table td {
+            border: 1px solid #e5e7eb;
+            padding: 8px;
+            text-align: left;
+        }
+        .data-table th {
+            background: #f9fafb;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 Test Mapping Fix</h1>
+            <p>Verifikasi perbaikan masalah field mapping antara API dan frontend</p>
+            <p><strong>Issue:</strong> Data masuk Supabase tapi tidak muncul di halaman Tugas Tambahan</p>
+        </div>
+
+        <div class="test-section" id="apiTest">
+            <h2>🔗 Test 1: API Endpoint & Field Mapping</h2>
+            <p>Test apakah API mengembalikan data dengan field mapping yang benar</p>
+            
+            <button onclick="testApiMapping()">🧪 Test API Mapping</button>
+            <button onclick="fixApiMapping()">🔧 Fix API Mapping</button>
+            
+            <div id="apiStatus" class="status info">
+                ⏳ Belum ditest - Klik tombol test untuk memulai
+            </div>
+            
+            <div id="apiLog" class="log" style="display: none;"></div>
+            <div id="apiData" style="display: none;">
+                <h3>📊 Data Structure:</h3>
+                <table class="data-table" id="dataTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Title</th>
+                            <th>Photo</th>
+                            <th>Photo1</th>
+                            <th>Photo2</th>
+                            <th>User ID</th>
+                            <th>Created</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="test-section" id="reactQueryTest">
+            <h2>⚛️ Test 2: React Query Cache</h2>
+            <p>Test apakah React Query cache berfungsi dengan benar</p>
+            
+            <button onclick="testReactQuery()">🧪 Test React Query</button>
+            <button onclick="fixReactQuery()">🔧 Fix React Query</button>
+            
+            <div id="reactQueryStatus" class="status info">
+                ⏳ Belum ditest - Klik tombol test untuk memulai
+            </div>
+            
+            <div id="reactQueryLog" class="log" style="display: none;"></div>
+        </div>
+
+        <div class="test-section" id="domTest">
+            <h2>🎯 Test 3: DOM Rendering</h2>
+            <p>Test apakah data ter-render dengan benar di halaman</p>
+            
+            <button onclick="testDomRendering()">🧪 Test DOM Rendering</button>
+            <button onclick="fixDomRendering()">🔧 Fix DOM Rendering</button>
+            
+            <div id="domStatus" class="status info">
+                ⏳ Belum ditest - Klik tombol test untuk memulai
+            </div>
+            
+            <div id="domLog" class="log" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>🚀 Comprehensive Fix</h2>
+            <p>Jalankan semua perbaikan sekaligus</p>
+            
+            <button onclick="runComprehensiveFix()" style="background: #7c3aed;">🔧 Run Comprehensive Fix</button>
+            <button onclick="testAllSystems()" style="background: #059669;">🧪 Test All Systems</button>
+            <button onclick="clearAllLogs()">🗑️ Clear Logs</button>
+            
+            <div id="overallStatus" class="status info">
+                📊 Overall Status: Ready to test
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>📋 Quick Navigation</h2>
+            <button onclick="goToAdditionalTasks()">➡️ Go to Additional Tasks</button>
+            <button onclick="goToReports()">➡️ Go to Reports</button>
+            <button onclick="refreshCurrentPage()">🔄 Refresh Page</button>
+        </div>
+    </div>
+
+    <script>
+        // Logging function
+        function log(message, section = 'general') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logMessage = `[${timestamp}] ${message}`;
+            console.log(logMessage);
+            
+            const logElement = document.getElementById(`${section}Log`);
+            if (logElement) {
+                logElement.style.display = 'block';
+                logElement.innerHTML += logMessage + '\n';
+                logElement.scrollTop = logElement.scrollHeight;
+            }
+        }
+
+        // Update status
+        function updateStatus(section, message, type = 'info') {
+            const statusElement = document.getElementById(`${section}Status`);
+            if (statusElement) {
+                statusElement.className = `status ${type}`;
+                statusElement.innerHTML = message;
+            }
+        }
+
+        // Test API Mapping
+        async function testApiMapping() {
+            log('🧪 Testing API mapping...', 'api');
+            updateStatus('api', '⏳ Testing API mapping...', 'info');
+            
+            try {
+                // Get user data
+                const userData = localStorage.getItem('auth_user');
+                if (!userData) {
+                    log('❌ No user data found', 'api');
+                    updateStatus('api', '❌ No user data found', 'error');
+                    return false;
+                }
+                
+                const currentUser = JSON.parse(userData);
+                const userId = '421cdb28-f2af-4f1f-aa5f-c59a3d661a2e'; // Wawan's correct ID
+                
+                log(`👤 Testing with user_id: ${userId}`, 'api');
+                
+                // Test API call
+                const response = await fetch(`/api/activities?user_id=${encodeURIComponent(userId)}&_t=${Date.now()}`);
+                if (!response.ok) {
+                    log(`❌ API call failed: ${response.status}`, 'api');
+                    updateStatus('api', `❌ API call failed: ${response.status}`, 'error');
+                    return false;
+                }
+                
+                const data = await response.json();
+                log(`✅ API returned ${data.length} activities`, 'api');
+                
+                if (data.length === 0) {
+                    log('⚠️ No activities found for user', 'api');
+                    updateStatus('api', '⚠️ No activities found', 'warning');
+                    return false;
+                }
+                
+                // Analyze field mapping
+                const sample = data[0];
+                const fieldAnalysis = {
+                    hasPhoto: !!sample.photo,
+                    hasPhoto1: !!sample.photo1,
+                    hasPhoto2: !!sample.photo2,
+                    photoType: sample.photo ? (sample.photo.startsWith('data:') ? 'base64' : 'file') : 'none',
+                    photo1Type: sample.photo1 ? (sample.photo1.startsWith('data:') ? 'base64' : 'file') : 'none',
+                    photo2Type: sample.photo2 ? (sample.photo2.startsWith('data:') ? 'base64' : 'file') : 'none'
+                };
+                
+                log(`📊 Field analysis: ${JSON.stringify(fieldAnalysis)}`, 'api');
+                
+                // Check for mapping issues
+                if (sample.photo1 && !sample.photo) {
+                    log('❌ MAPPING ISSUE: API has photo1 but frontend expects photo', 'api');
+                    updateStatus('api', '❌ Field mapping issue detected', 'error');
+                } else if (sample.photo) {
+                    log('✅ Field mapping looks correct', 'api');
+                    updateStatus('api', `✅ API working - ${data.length} activities found`, 'success');
+                }
+                
+                // Populate data table
+                populateDataTable(data);
+                
+                return true;
+                
+            } catch (error) {
+                log(`❌ Test error: ${error.message}`, 'api');
+                updateStatus('api', `❌ Test failed: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        // Populate data table
+        function populateDataTable(data) {
+            const tableBody = document.getElementById('dataTableBody');
+            const dataDiv = document.getElementById('apiData');
+            
+            if (!tableBody || !dataDiv) return;
+            
+            tableBody.innerHTML = '';
+            
+            data.slice(0, 5).forEach(item => { // Show first 5 items
+                const row = tableBody.insertRow();
+                row.insertCell(0).textContent = item.id.substring(0, 8) + '...';
+                row.insertCell(1).textContent = item.title || 'No title';
+                row.insertCell(2).textContent = item.photo ? '✅' : '❌';
+                row.insertCell(3).textContent = item.photo1 ? '✅' : '❌';
+                row.insertCell(4).textContent = item.photo2 ? '✅' : '❌';
+                row.insertCell(5).textContent = item.user_id.substring(0, 8) + '...';
+                row.insertCell(6).textContent = new Date(item.created_at).toLocaleDateString();
+            });
+            
+            dataDiv.style.display = 'block';
+        }
+
+        // Fix API Mapping
+        function fixApiMapping() {
+            log('🔧 Applying API mapping fix...', 'api');
+            updateStatus('api', '⏳ Applying API mapping fix...', 'info');
+            
+            // Clear caches
+            localStorage.removeItem('additional_tasks_cache');
+            localStorage.removeItem('reports_activities_cache');
+            
+            if (window.queryClient) {
+                window.queryClient.clear();
+                log('✅ React Query cache cleared', 'api');
+            }
+            
+            // Fix user ID
+            const userData = localStorage.getItem('auth_user');
+            if (userData) {
+                const currentUser = JSON.parse(userData);
+                currentUser.id = '421cdb28-f2af-4f1f-aa5f-c59a3d661a2e';
+                localStorage.setItem('auth_user', JSON.stringify(currentUser));
+                log('✅ User ID fixed', 'api');
+            }
+            
+            updateStatus('api', '✅ API mapping fix applied', 'success');
+        }
+
+        // Test React Query
+        async function testReactQuery() {
+            log('🧪 Testing React Query...', 'reactQuery');
+            updateStatus('reactQuery', '⏳ Testing React Query...', 'info');
+            
+            try {
+                if (!window.queryClient) {
+                    log('❌ React Query client not available', 'reactQuery');
+                    updateStatus('reactQuery', '❌ React Query not available', 'error');
+                    return false;
+                }
+                
+                // Check cache
+                const cacheData = window.queryClient.getQueryData(['additional-tasks']);
+                log(`📦 Cache data: ${cacheData ? cacheData.length + ' items' : 'null'}`, 'reactQuery');
+                
+                // Check query state
+                const queryState = window.queryClient.getQueryState(['additional-tasks']);
+                log(`📊 Query state: ${queryState ? queryState.status : 'not found'}`, 'reactQuery');
+                
+                if (cacheData && cacheData.length > 0) {
+                    updateStatus('reactQuery', `✅ React Query working - ${cacheData.length} items cached`, 'success');
+                    return true;
+                } else {
+                    log('⚠️ React Query cache is empty', 'reactQuery');
+                    updateStatus('reactQuery', '⚠️ React Query cache is empty', 'warning');
+                    return false;
+                }
+                
+            } catch (error) {
+                log(`❌ React Query test error: ${error.message}`, 'reactQuery');
+                updateStatus('reactQuery', `❌ Test failed: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        // Fix React Query
+        async function fixReactQuery() {
+            log('🔧 Fixing React Query...', 'reactQuery');
+            updateStatus('reactQuery', '⏳ Fixing React Query...', 'info');
+            
+            try {
+                if (window.queryClient) {
+                    // Clear and refetch
+                    window.queryClient.removeQueries({ queryKey: ['additional-tasks'] });
+                    await window.queryClient.invalidateQueries({ queryKey: ['additional-tasks'] });
+                    await window.queryClient.refetchQueries({ queryKey: ['additional-tasks'] });
+                    
+                    log('✅ React Query refreshed', 'reactQuery');
+                    updateStatus('reactQuery', '✅ React Query fix applied', 'success');
+                } else {
+                    log('❌ React Query client not available', 'reactQuery');
+                    updateStatus('reactQuery', '❌ React Query not available', 'error');
+                }
+                
+            } catch (error) {
+                log(`❌ React Query fix error: ${error.message}`, 'reactQuery');
+                updateStatus('reactQuery', `❌ Fix failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Test DOM Rendering
+        function testDomRendering() {
+            log('🧪 Testing DOM rendering...', 'dom');
+            updateStatus('dom', '⏳ Testing DOM rendering...', 'info');
+            
+            try {
+                // Check for task cards
+                const taskCards = document.querySelectorAll('.hover\\:shadow-md, [data-testid="task-card"], .additional-task-card');
+                log(`🎯 Found ${taskCards.length} task cards in DOM`, 'dom');
+                
+                // Check for loading states
+                const loadingElements = document.querySelectorAll('.animate-spin, [data-testid="loading"]');
+                log(`⏳ Found ${loadingElements.length} loading elements`, 'dom');
+                
+                // Check for empty states
+                const emptyStateElements = Array.from(document.querySelectorAll('*')).filter(el => 
+                    el.textContent && el.textContent.includes('Belum ada kegiatan tambahan')
+                );
+                log(`📭 Found ${emptyStateElements.length} empty state elements`, 'dom');
+                
+                if (taskCards.length > 0) {
+                    updateStatus('dom', `✅ DOM rendering working - ${taskCards.length} task cards found`, 'success');
+                    return true;
+                } else if (loadingElements.length > 0) {
+                    updateStatus('dom', '⏳ Page is still loading', 'info');
+                    return false;
+                } else if (emptyStateElements.length > 0) {
+                    updateStatus('dom', '📭 Empty state is showing - data not loading', 'warning');
+                    return false;
+                } else {
+                    updateStatus('dom', '❌ No task cards or loading states found', 'error');
+                    return false;
+                }
+                
+            } catch (error) {
+                log(`❌ DOM test error: ${error.message}`, 'dom');
+                updateStatus('dom', `❌ Test failed: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        // Fix DOM Rendering
+        function fixDomRendering() {
+            log('🔧 Fixing DOM rendering...', 'dom');
+            updateStatus('dom', '⏳ Fixing DOM rendering...', 'info');
+            
+            try {
+                // Dispatch update events
+                const events = [
+                    'forceAdditionalTasksRefresh',
+                    'updateAdditionalTasksData',
+                    'refreshAdditionalTasks'
+                ];
+                
+                events.forEach(eventName => {
+                    const event = new CustomEvent(eventName, {
+                        detail: { 
+                            timestamp: Date.now(),
+                            source: 'test_page'
+                        }
+                    });
+                    window.dispatchEvent(event);
+                });
+                
+                log('✅ Update events dispatched', 'dom');
+                
+                // Check if we're on Additional Tasks page
+                if (window.location.pathname.includes('additional-tasks')) {
+                    log('🔄 On Additional Tasks page - will check results in 3 seconds', 'dom');
+                    
+                    setTimeout(() => {
+                        const taskCards = document.querySelectorAll('.hover\\:shadow-md');
+                        if (taskCards.length === 0) {
+                            log('🔄 No improvement - suggesting page reload', 'dom');
+                            updateStatus('dom', '⚠️ May need page reload', 'warning');
+                        } else {
+                            log(`✅ Fix successful - ${taskCards.length} task cards now visible`, 'dom');
+                            updateStatus('dom', `✅ DOM fix successful - ${taskCards.length} cards visible`, 'success');
+                        }
+                    }, 3000);
+                } else {
+                    updateStatus('dom', '✅ DOM fix events dispatched', 'success');
+                }
+                
+            } catch (error) {
+                log(`❌ DOM fix error: ${error.message}`, 'dom');
+                updateStatus('dom', `❌ Fix failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Run Comprehensive Fix
+        async function runComprehensiveFix() {
+            log('🚀 Running comprehensive fix...', 'api');
+            log('🚀 Running comprehensive fix...', 'reactQuery');
+            log('🚀 Running comprehensive fix...', 'dom');
+            updateStatus('overall', '⏳ Running comprehensive fix...', 'info');
+            
+            try {
+                // Step 1: Fix API mapping
+                fixApiMapping();
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Step 2: Fix React Query
+                await fixReactQuery();
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Step 3: Fix DOM rendering
+                fixDomRendering();
+                
+                updateStatus('overall', '✅ Comprehensive fix completed', 'success');
+                
+            } catch (error) {
+                updateStatus('overall', `❌ Comprehensive fix failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Test All Systems
+        async function testAllSystems() {
+            updateStatus('overall', '⏳ Testing all systems...', 'info');
+            
+            const results = {
+                api: await testApiMapping(),
+                reactQuery: await testReactQuery(),
+                dom: testDomRendering()
+            };
+            
+            const allPassed = Object.values(results).every(result => result === true);
+            
+            if (allPassed) {
+                updateStatus('overall', '🎉 All systems working correctly!', 'success');
+            } else {
+                const failedSystems = Object.entries(results)
+                    .filter(([_, passed]) => !passed)
+                    .map(([system, _]) => system);
+                
+                updateStatus('overall', `❌ Issues found in: ${failedSystems.join(', ')}`, 'error');
+            }
+        }
+
+        // Utility functions
+        function clearAllLogs() {
+            ['api', 'reactQuery', 'dom'].forEach(section => {
+                const logElement = document.getElementById(`${section}Log`);
+                if (logElement) {
+                    logElement.innerHTML = '';
+                    logElement.style.display = 'none';
+                }
+            });
+            
+            const dataDiv = document.getElementById('apiData');
+            if (dataDiv) {
+                dataDiv.style.display = 'none';
+            }
+        }
+
+        function goToAdditionalTasks() {
+            window.open('/additional-tasks', '_blank');
+        }
+
+        function goToReports() {
+            window.open('/reports', '_blank');
+        }
+
+        function refreshCurrentPage() {
+            window.location.reload();
+        }
+
+        // Auto-run basic checks on page load
+        window.addEventListener('load', () => {
+            log('🚀 Test page loaded', 'api');
+            
+            // Check if user is logged in
+            const userData = localStorage.getItem('auth_user');
+            if (userData) {
+                const user = JSON.parse(userData);
+                log(`👤 Logged in as: ${user.username}`, 'api');
+            } else {
+                log('⚠️ No user logged in', 'api');
+            }
+        });
+    </script>
+</body>
+</html>

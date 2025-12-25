@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fix Data Apel Pagi di Laporan</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #667eea;
+        }
+        .header h1 {
+            color: #2d3748;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+        .header p {
+            color: #718096;
+            font-size: 1.1em;
+        }
+        .step {
+            background: #f7fafc;
+            border-left: 5px solid #667eea;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 0 10px 10px 0;
+        }
+        .step h3 {
+            color: #2d3748;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        .step-number {
+            background: #667eea;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-weight: bold;
+        }
+        .code-block {
+            background: #1a202c;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            position: relative;
+        }
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .copy-btn:hover {
+            background: #5a67d8;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+        .status.info {
+            background: #bee3f8;
+            color: #2b6cb0;
+            border: 1px solid #90cdf4;
+        }
+        .status.success {
+            background: #c6f6d5;
+            color: #276749;
+            border: 1px solid #9ae6b4;
+        }
+        .status.warning {
+            background: #fefcbf;
+            color: #744210;
+            border: 1px solid #f6e05e;
+        }
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 10px 5px;
+            transition: all 0.3s ease;
+        }
+        .btn:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+        }
+        .btn.secondary {
+            background: #718096;
+        }
+        .btn.secondary:hover {
+            background: #4a5568;
+        }
+        .progress {
+            width: 100%;
+            height: 20px;
+            background: #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        #log {
+            background: #1a202c;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 10px;
+            height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            margin: 20px 0;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px 0;
+        }
+        .log-success { color: #68d391; }
+        .log-error { color: #fc8181; }
+        .log-info { color: #63b3ed; }
+        .log-warning { color: #f6e05e; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 Fix Data Apel Pagi di Laporan</h1>
+            <p>Perbaikan untuk menampilkan data "Apel Pagi" di halaman laporan</p>
+        </div>
+
+        <div class="status info">
+            <strong>📋 Masalah:</strong> Data "Apel Pagi" sudah ada di localStorage tapi belum muncul di halaman laporan karena belum dimigrasi ke Supabase.
+        </div>
+
+        <div class="step">
+            <h3><span class="step-number">1</span>Cek Data Apel Pagi di localStorage</h3>
+            <p>Pertama, mari kita cek data Apel Pagi yang ada di localStorage:</p>
+            <button class="btn" onclick="checkLocalData()">🔍 Cek Data localStorage</button>
+            <div id="localDataResult"></div>
+        </div>
+
+        <div class="step">
+            <h3><span class="step-number">2</span>Migrasi Data ke Supabase</h3>
+            <p>Migrasi data Apel Pagi dari localStorage ke database Supabase:</p>
+            <button class="btn" onclick="migrateApelPagi()">🚀 Mulai Migrasi</button>
+            <div class="progress">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            <div id="migrationResult"></div>
+        </div>
+
+        <div class="step">
+            <h3><span class="step-number">3</span>Verifikasi Data di Supabase</h3>
+            <p>Cek apakah data sudah berhasil tersimpan di Supabase:</p>
+            <button class="btn secondary" onclick="verifySupabaseData()">✅ Verifikasi Data</button>
+            <div id="verificationResult"></div>
+        </div>
+
+        <div class="step">
+            <h3><span class="step-number">4</span>Test Halaman Laporan</h3>
+            <p>Buka halaman laporan untuk memastikan data Apel Pagi sudah muncul:</p>
+            <button class="btn" onclick="openReportsPage()">📊 Buka Halaman Laporan</button>
+        </div>
+
+        <div class="step">
+            <h3><span class="step-number">5</span>Log Aktivitas</h3>
+            <div id="log"></div>
+            <button class="btn secondary" onclick="clearLog()">🗑️ Clear Log</button>
+        </div>
+    </div>
+
+    <script>
+        let logContainer = document.getElementById('log');
+        
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry log-${type}`;
+            logEntry.innerHTML = `[${timestamp}] ${message}`;
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        function clearLog() {
+            logContainer.innerHTML = '';
+        }
+
+        function updateProgress(percentage) {
+            document.getElementById('progressBar').style.width = percentage + '%';
+        }
+
+        async function checkLocalData() {
+            addLog('🔍 Mengecek data localStorage...', 'info');
+            
+            try {
+                const localData = JSON.parse(localStorage.getItem('local-database') || '{}');
+                
+                if (!localData.additionalTasks) {
+                    addLog('❌ Tidak ada data additionalTasks di localStorage', 'error');
+                    document.getElementById('localDataResult').innerHTML = 
+                        '<div class="status warning">Tidak ada data additionalTasks di localStorage</div>';
+                    return;
+                }
+                
+                const apelTasks = localData.additionalTasks.filter(task => 
+                    task.name && task.name.toLowerCase().includes('apel')
+                );
+                
+                addLog(`📋 Ditemukan ${apelTasks.length} data Apel Pagi`, 'success');
+                
+                let resultHTML = `<div class="status success">
+                    <strong>✅ Ditemukan ${apelTasks.length} data Apel Pagi:</strong><br>`;
+                
+                apelTasks.forEach((task, index) => {
+                    resultHTML += `${index + 1}. ${task.name} - ${new Date(task.date).toLocaleDateString('id-ID')}<br>`;
+                    addLog(`   - ${task.name} (${task.date})`, 'info');
+                });
+                
+                resultHTML += '</div>';
+                document.getElementById('localDataResult').innerHTML = resultHTML;
+                
+            } catch (error) {
+                addLog(`❌ Error: ${error.message}`, 'error');
+                document.getElementById('localDataResult').innerHTML = 
+                    '<div class="status warning">Error mengecek data localStorage</div>';
+            }
+        }
+
+        async function migrateApelPagi() {
+            addLog('🚀 Memulai migrasi data Apel Pagi...', 'info');
+            updateProgress(0);
+            
+            try {
+                // Ambil data dari localStorage
+                const localData = JSON.parse(localStorage.getItem('local-database') || '{}');
+                
+                if (!localData.additionalTasks) {
+                    addLog('❌ Tidak ada data additionalTasks di localStorage', 'error');
+                    return;
+                }
+                
+                const apelTasks = localData.additionalTasks.filter(task => 
+                    task.name && task.name.toLowerCase().includes('apel')
+                );
+                
+                if (apelTasks.length === 0) {
+                    addLog('❌ Tidak ada data Apel Pagi yang ditemukan', 'error');
+                    return;
+                }
+                
+                addLog(`📋 Akan migrasi ${apelTasks.length} data Apel Pagi`, 'info');
+                
+                // Get current user
+                const currentUser = JSON.parse(localStorage.getItem('auth_user') || '{}');
+                const userId = currentUser.id || currentUser.username || 'wawan-user';
+                
+                addLog(`👤 User ID: ${userId}`, 'info');
+                
+                let successCount = 0;
+                let errorCount = 0;
+                
+                for (let i = 0; i < apelTasks.length; i++) {
+                    const task = apelTasks[i];
+                    const progress = ((i + 1) / apelTasks.length) * 100;
+                    updateProgress(progress);
+                    
+                    try {
+                        addLog(`📤 Migrasi: ${task.name}`, 'info');
+                        
+                        const response = await fetch('/api/tasks', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                title: task.name,
+                                description: task.description || 'Apel pagi rutin di kantor dinas',
+                                date: task.date,
+                                location: task.location || 'KCD XI',
+                                organizer: task.organizer || 'KCD XI',
+                                user_id: userId
+                            })
+                        });
+                        
+                        if (response.ok) {
+                            const result = await response.json();
+                            addLog(`✅ Berhasil: ${task.name} (ID: ${result.id})`, 'success');
+                            successCount++;
+                        } else {
+                            const error = await response.text();
+                            addLog(`❌ Gagal: ${task.name} - ${error}`, 'error');
+                            errorCount++;
+                        }
+                        
+                        // Delay untuk menghindari rate limiting
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                        
+                    } catch (error) {
+                        addLog(`❌ Error migrasi ${task.name}: ${error.message}`, 'error');
+                        errorCount++;
+                    }
+                }
+                
+                addLog(`\n📊 HASIL MIGRASI:`, 'info');
+                addLog(`✅ Berhasil: ${successCount}`, 'success');
+                addLog(`❌ Gagal: ${errorCount}`, errorCount > 0 ? 'error' : 'info');
+                addLog(`📋 Total: ${apelTasks.length}`, 'info');
+                
+                let resultHTML = `<div class="status ${successCount > 0 ? 'success' : 'warning'}">
+                    <strong>📊 Hasil Migrasi:</strong><br>
+                    ✅ Berhasil: ${successCount}<br>
+                    ❌ Gagal: ${errorCount}<br>
+                    📋 Total: ${apelTasks.length}
+                </div>`;
+                
+                document.getElementById('migrationResult').innerHTML = resultHTML;
+                
+                if (successCount > 0) {
+                    addLog('🎉 Migrasi selesai! Data Apel Pagi sudah tersimpan di Supabase.', 'success');
+                }
+                
+            } catch (error) {
+                addLog(`❌ Error migrasi: ${error.message}`, 'error');
+                document.getElementById('migrationResult').innerHTML = 
+                    '<div class="status warning">Error saat migrasi data</div>';
+            }
+        }
+
+        async function verifySupabaseData() {
+            addLog('✅ Memverifikasi data di Supabase...', 'info');
+            
+            try {
+                const currentUser = JSON.parse(localStorage.getItem('auth_user') || '{}');
+                const userId = currentUser.id || currentUser.username || 'wawan-user';
+                
+                const response = await fetch(`/api/tasks?user_id=${userId}`);
+                
+                if (response.ok) {
+                    const tasks = await response.json();
+                    const apelTasks = tasks.filter(task => 
+                        task.title && task.title.toLowerCase().includes('apel')
+                    );
+                    
+                    addLog(`📋 Ditemukan ${apelTasks.length} data Apel Pagi di Supabase`, 'success');
+                    
+                    let resultHTML = `<div class="status success">
+                        <strong>✅ Data di Supabase:</strong><br>
+                        Ditemukan ${apelTasks.length} data Apel Pagi<br>`;
+                    
+                    apelTasks.forEach((task, index) => {
+                        resultHTML += `${index + 1}. ${task.title} - ${new Date(task.date).toLocaleDateString('id-ID')}<br>`;
+                        addLog(`   - ${task.title} (${task.date})`, 'info');
+                    });
+                    
+                    resultHTML += '</div>';
+                    document.getElementById('verificationResult').innerHTML = resultHTML;
+                    
+                } else {
+                    addLog('❌ Gagal mengambil data dari Supabase', 'error');
+                    document.getElementById('verificationResult').innerHTML = 
+                        '<div class="status warning">Gagal mengambil data dari Supabase</div>';
+                }
+                
+            } catch (error) {
+                addLog(`❌ Error verifikasi: ${error.message}`, 'error');
+                document.getElementById('verificationResult').innerHTML = 
+                    '<div class="status warning">Error saat verifikasi data</div>';
+            }
+        }
+
+        function openReportsPage() {
+            addLog('📊 Membuka halaman laporan...', 'info');
+            window.open('/reports', '_blank');
+        }
+
+        // Auto-check data saat halaman dimuat
+        window.onload = function() {
+            addLog('🔧 Halaman Fix Apel Pagi dimuat', 'info');
+            addLog('📋 Siap untuk memperbaiki data Apel Pagi di laporan', 'info');
+        };
+    </script>
+</body>
+</html>
