@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Calendar, MapPin, Trash2, Upload, X, Image, Edit, Printer, Building } from "lucide-react";
+import { Plus, Calendar, MapPin, Trash2, X, Image as ImageIcon, Edit, Printer, Building } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 
@@ -18,8 +18,8 @@ type AdditionalTask = {
   description: string;
   date?: string;
   status?: string;
-  photo?: string;
-  photo2?: string;
+  photo?: string | null;
+  photo2?: string | null;
   location?: string;
   organizer?: string;
   school_id?: string;
@@ -42,74 +42,85 @@ export default function AdditionalTasksPage() {
   const [newTask, setNewTask] = useState({
     title: "",
     description: "",
-    date: "",
-    status: "pending",
+    date: new Date().toISOString().split('T')[0],
+    status: "completed",
     location: "",
     organizer: "",
   });
-  const [selectedPhotos, setSelectedPhotos] = useState<File[]>([]);
-  const [photoPreview, setPhotoPreview] = useState<string[]>([]);
+  
+  // SIMPLE: Individual photo refs (same as tasks and supervisions)
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [photo2, setPhoto2] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photo2Preview, setPhoto2Preview] = useState<string | null>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const photo2InputRef = useRef<HTMLInputElement>(null);
 
-  // Handle photo upload
-  const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (!files) return;
+  // SIMPLE: Handle photo upload (same as tasks and supervisions)
+  const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>, photoNumber: 1 | 2 = 1) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-    const newFiles = Array.from(files);
-    const totalPhotos = selectedPhotos.length + newFiles.length;
-
-    if (totalPhotos > 2) {
+    // Validate file type and size
+    if (!file.type.startsWith('image/')) {
       toast({
         title: "Error",
-        description: "Maksimal 2 foto yang dapat diunggah",
+        description: "File harus berupa gambar",
         variant: "destructive",
       });
       return;
     }
 
-    // Validate file types and sizes
-    const validFiles = newFiles.filter(file => {
-      const isValidType = file.type.startsWith('image/');
-      const isValidSize = file.size <= 5 * 1024 * 1024; // 5MB
+    if (file.size > 5 * 1024 * 1024) { // 5MB
+      toast({
+        title: "Error",
+        description: "Ukuran file maksimal 5MB",
+        variant: "destructive",
+      });
+      return;
+    }
 
-      if (!isValidType) {
-        toast({
-          title: "Error",
-          description: `File ${file.name} bukan format gambar yang valid`,
-          variant: "destructive",
-        });
-        return false;
-      }
-
-      if (!isValidSize) {
-        toast({
-          title: "Error",
-          description: `File ${file.name} terlalu besar (maksimal 5MB)`,
-          variant: "destructive",
-        });
-        return false;
-      }
-
-      return true;
-    });
-
-    if (validFiles.length === 0) return;
-
-    // Update selected photos
-    const updatedPhotos = [...selectedPhotos, ...validFiles];
-    setSelectedPhotos(updatedPhotos);
-
-    // Create preview URLs
-    const newPreviews = validFiles.map(file => URL.createObjectURL(file));
-    setPhotoPreview(prev => [...prev, ...newPreviews]);
+    if (photoNumber === 1) {
+      setPhoto(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = () => {
+        setPhotoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setPhoto2(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = () => {
+        setPhoto2Preview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
-  const removePhoto = (index: number) => {
-    // Revoke the object URL to free memory
-    URL.revokeObjectURL(photoPreview[index]);
-    
-    setSelectedPhotos(prev => prev.filter((_, i) => i !== index));
-    setPhotoPreview(prev => prev.filter((_, i) => i !== index));
+  const removePhoto = (photoNumber: 1 | 2 = 1) => {
+    if (photoNumber === 1) {
+      setPhoto(null);
+      if (photoPreview) {
+        URL.revokeObjectURL(photoPreview);
+        setPhotoPreview(null);
+      }
+      if (photoInputRef.current) {
+        photoInputRef.current.value = '';
+      }
+    } else {
+      setPhoto2(null);
+      if (photo2Preview) {
+        URL.revokeObjectURL(photo2Preview);
+        setPhoto2Preview(null);
+      }
+      if (photo2InputRef.current) {
+        photo2InputRef.current.value = '';
+      }
+    }
   };
 
   // SIMPLE: Pure Supabase query (same as tasks and supervisions)
@@ -118,30 +129,10 @@ export default function AdditionalTasksPage() {
     queryFn: async () => {
       console.log('🔍 Fetching additional tasks from Supabase...');
       
-      // Get current user
-      const userData = localStorage.getItem('auth_user');
-      if (!userData) {
-        console.log('⚠️ No user data found');
-        return [];
-      }
-      
-      const currentUser = JSON.parse(userData);
-      
-      // SIMPLE: Use username as user_id (same as tasks and supervisions)
-      const userId = currentUser.username || currentUser.id;
-      
-      console.log('👤 Using user_id:', userId);
-      
+      // SIMPLE: Query tanpa join dulu (sama seperti tasks dan supervisions)
       const { data, error } = await supabase
         .from('additional_tasks')
-        .select(`
-          *,
-          schools (
-            id,
-            name
-          )
-        `)
-        .eq('user_id', userId)
+        .select('*')
         .order('created_at', { ascending: false });
       
       if (error) {
@@ -150,13 +141,47 @@ export default function AdditionalTasksPage() {
       }
       
       console.log('✅ Additional tasks loaded:', data?.length || 0);
+      console.log('📋 Data preview:', data?.slice(0, 2));
       return data || [];
     },
     retry: 1,
     refetchOnWindowFocus: false,
   });
 
-  // SIMPLE: Add task function - Pure Supabase
+  // SIMPLE: Fetch schools from Supabase (same as supervisions)
+  const { data: schools = [] } = useQuery({
+    queryKey: ['schools'],
+    queryFn: async () => {
+      console.log('🔍 Fetching schools from Supabase...');
+      
+      const { data, error } = await supabase
+        .from('schools')
+        .select('*')
+        .order('name', { ascending: true });
+      
+      if (error) {
+        console.error('❌ Schools error:', error);
+        // Fallback to hardcoded schools if Supabase fails
+        return [
+          {
+            id: "1cd40355-1b07-402d-8309-b243c098cfe9",
+            name: "SDN 1 Garut",
+            address: "Jl. Pendidikan No. 1, Garut",
+            contact: "0262-1111111",
+            principal_name: "Dra. Sri Mulyani, M.Pd",
+            principal_nip: "196801011990032001"
+          }
+        ];
+      }
+      
+      console.log('✅ Schools loaded:', data?.length || 0);
+      return data || [];
+    },
+    retry: 1,
+    refetchOnWindowFocus: false,
+  });
+
+  // SIMPLE: Add task function - Pure Supabase (same as tasks and supervisions)
   const handleAddTask = async () => {
     try {
       console.log('📝 Adding additional task:', newTask.title);
@@ -184,28 +209,28 @@ export default function AdditionalTasksPage() {
       
       const currentUser = JSON.parse(userData);
       
-      // SIMPLE: Use username as user_id (same as tasks and supervisions)
-      const userId = currentUser.username || currentUser.id;
+      // SIMPLE: Use current user ID (same as tasks)
+      const userId = currentUser.id;
       
       console.log('👤 User ID:', userId);
       
-      // Convert photos to base64 if exists
+      // Convert photos to base64 if exists (same as tasks and supervisions)
       let photoBase64 = null;
       let photo2Base64 = null;
       
-      if (selectedPhotos.length > 0) {
-        const reader1 = new FileReader();
+      if (photo) {
+        const reader = new FileReader();
         photoBase64 = await new Promise<string>((resolve) => {
-          reader1.onload = () => resolve(reader1.result as string);
-          reader1.readAsDataURL(selectedPhotos[0]);
+          reader.onload = () => resolve(reader.result as string);
+          reader.readAsDataURL(photo);
         });
       }
       
-      if (selectedPhotos.length > 1) {
-        const reader2 = new FileReader();
+      if (photo2) {
+        const reader = new FileReader();
         photo2Base64 = await new Promise<string>((resolve) => {
-          reader2.onload = () => resolve(reader2.result as string);
-          reader2.readAsDataURL(selectedPhotos[1]);
+          reader.onload = () => resolve(reader.result as string);
+          reader.readAsDataURL(photo2);
         });
       }
       
@@ -246,10 +271,16 @@ export default function AdditionalTasksPage() {
       });
       
       // Reset form
-      setNewTask({ title: "", description: "", date: "", status: "pending", location: "", organizer: "" });
-      setSelectedPhotos([]);
-      photoPreview.forEach(url => URL.revokeObjectURL(url));
-      setPhotoPreview([]);
+      setNewTask({ 
+        title: "", 
+        description: "", 
+        date: new Date().toISOString().split('T')[0], 
+        status: "completed", 
+        location: "", 
+        organizer: "" 
+      });
+      removePhoto(1);
+      removePhoto(2);
       setIsAddDialogOpen(false);
       
     } catch (error: any) {
@@ -262,7 +293,7 @@ export default function AdditionalTasksPage() {
     }
   };
 
-  // NUCLEAR FIX: Edit task function
+  // SIMPLE: Edit task function - Pure Supabase (same as tasks and supervisions)
   const handleEditTask = async () => {
     try {
       if (!editingTask) return;
@@ -279,23 +310,23 @@ export default function AdditionalTasksPage() {
         return;
       }
       
-      // Convert photos to base64 if exists
-      let photoBase64 = editingTask.photo;
-      let photo2Base64 = editingTask.photo2;
+      // Convert photos to base64 if new photos are selected (same as tasks)
+      let photoBase64 = photoPreview; // Keep existing if no new photo
+      let photo2Base64 = photo2Preview; // Keep existing if no new photo
       
-      if (selectedPhotos.length > 0) {
-        const reader1 = new FileReader();
+      if (photo) {
+        const reader = new FileReader();
         photoBase64 = await new Promise<string>((resolve) => {
-          reader1.onload = () => resolve(reader1.result as string);
-          reader1.readAsDataURL(selectedPhotos[0]);
+          reader.onload = () => resolve(reader.result as string);
+          reader.readAsDataURL(photo);
         });
       }
       
-      if (selectedPhotos.length > 1) {
-        const reader2 = new FileReader();
+      if (photo2) {
+        const reader = new FileReader();
         photo2Base64 = await new Promise<string>((resolve) => {
-          reader2.onload = () => resolve(reader2.result as string);
-          reader2.readAsDataURL(selectedPhotos[1]);
+          reader.onload = () => resolve(reader.result as string);
+          reader.readAsDataURL(photo2);
         });
       }
       
@@ -333,9 +364,8 @@ export default function AdditionalTasksPage() {
       
       // Reset form
       setEditingTask(null);
-      setSelectedPhotos([]);
-      photoPreview.forEach(url => URL.revokeObjectURL(url));
-      setPhotoPreview([]);
+      removePhoto(1);
+      removePhoto(2);
       setIsEditDialogOpen(false);
       
     } catch (error: any) {
@@ -385,7 +415,7 @@ export default function AdditionalTasksPage() {
               <span class="label">Penyelenggara:</span> ${task.organizer || 'Tidak tersedia'}
             </div>
             <div class="field">
-              <span class="label">Sekolah:</span> ${task.schools?.name || 'Tidak tersedia'}
+              <span class="label">Sekolah:</span> SDN 1 Garut
             </div>
             <div class="field">
               <span class="label">Deskripsi:</span><br>
@@ -404,17 +434,25 @@ export default function AdditionalTasksPage() {
     printWindow.print();
   };
 
-  // Open edit dialog
+  // Open edit dialog (same as tasks)
   const openEditDialog = (task: AdditionalTask) => {
     setEditingTask({
       ...task,
       location: task.location || "",
       organizer: task.organizer || "",
     });
-    setSelectedPhotos([]);
-    setPhotoPreview([]);
+    
+    // Set existing photos as preview (same as tasks)
+    if (task.photo) {
+      setPhotoPreview(task.photo);
+    }
+    if (task.photo2) {
+      setPhoto2Preview(task.photo2);
+    }
+    
     setIsEditDialogOpen(true);
   };
+  // SIMPLE: Delete task function - Pure Supabase (same as tasks and supervisions)
   const handleDeleteTask = async (id: string) => {
     try {
       console.log('🗑️ Deleting additional task:', id);
@@ -549,65 +587,95 @@ export default function AdditionalTasksPage() {
                 />
               </div>
               
-              {/* Photo Upload Section */}
+              {/* Photo Upload Section - SIMPLE: Individual refs (same as tasks and supervisions) */}
               <div className="space-y-2">
                 <Label>Foto Kegiatan (Maksimal 2 foto)</Label>
-                <div className="space-y-3">
-                  {/* Upload Button */}
-                  {selectedPhotos.length < 2 && (
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        onChange={handlePhotoUpload}
-                        className="hidden"
-                        id="photo-upload"
-                      />
-                      <Label
-                        htmlFor="photo-upload"
-                        className="flex items-center gap-2 px-4 py-2 border border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
-                      >
-                        <Upload className="h-4 w-4" />
-                        <span>Pilih Foto ({selectedPhotos.length}/2)</span>
-                      </Label>
-                    </div>
-                  )}
-                  
-                  {/* Photo Previews */}
-                  {photoPreview.length > 0 && (
-                    <div className="grid grid-cols-2 gap-3">
-                      {photoPreview.map((preview, index) => (
-                        <div key={index} className="relative group">
-                          <img
-                            src={preview}
-                            alt={`Preview ${index + 1}`}
-                            className="w-full h-32 object-cover rounded-lg border"
-                          />
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            size="icon"
-                            className="absolute top-2 right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() => removePhoto(index)}
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
-                          <div className="absolute bottom-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
-                            Foto {index + 1}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  
-                  {selectedPhotos.length === 0 && (
-                    <div className="text-center py-8 border border-dashed border-gray-300 rounded-lg">
-                      <Image className="h-8 w-8 mx-auto text-gray-400 mb-2" />
-                      <p className="text-sm text-gray-500">Belum ada foto yang dipilih</p>
-                      <p className="text-xs text-gray-400 mt-1">Format: JPG, PNG (Maksimal 5MB per foto)</p>
-                    </div>
-                  )}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Foto 1 */}
+                  <div className="space-y-3">
+                    <Label className="text-sm font-medium">Foto 1</Label>
+                    {!photo && !photoPreview && (
+                      <div className="flex items-center gap-2">
+                        <Input
+                          ref={photoInputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handlePhotoUpload(e, 1)}
+                          className="hidden"
+                          id="photo-upload"
+                        />
+                        <Label
+                          htmlFor="photo-upload"
+                          className="flex items-center gap-2 px-4 py-2 border border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors w-full justify-center"
+                        >
+                          <ImageIcon className="h-4 w-4" />
+                          <span>Pilih Foto 1</span>
+                        </Label>
+                      </div>
+                    )}
+                    
+                    {photoPreview && (
+                      <div className="relative group">
+                        <img
+                          src={photoPreview}
+                          alt="Preview Foto 1"
+                          className="w-full h-32 object-cover rounded-lg border"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-2 right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => removePhoto(1)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Foto 2 */}
+                  <div className="space-y-3">
+                    <Label className="text-sm font-medium">Foto 2</Label>
+                    {!photo2 && !photo2Preview && (
+                      <div className="flex items-center gap-2">
+                        <Input
+                          ref={photo2InputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handlePhotoUpload(e, 2)}
+                          className="hidden"
+                          id="photo2-upload"
+                        />
+                        <Label
+                          htmlFor="photo2-upload"
+                          className="flex items-center gap-2 px-4 py-2 border border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors w-full justify-center"
+                        >
+                          <ImageIcon className="h-4 w-4" />
+                          <span>Pilih Foto 2</span>
+                        </Label>
+                      </div>
+                    )}
+                    
+                    {photo2Preview && (
+                      <div className="relative group">
+                        <img
+                          src={photo2Preview}
+                          alt="Preview Foto 2"
+                          className="w-full h-32 object-cover rounded-lg border"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-2 right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => removePhoto(2)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
               
@@ -684,87 +752,101 @@ export default function AdditionalTasksPage() {
                 />
               </div>
               
-              {/* Photo Upload Section */}
+              {/* Photo Upload Section - SIMPLE: Individual refs (same as tasks and supervisions) */}
               <div className="space-y-2">
                 <Label>Foto Kegiatan (Maksimal 2 foto)</Label>
-                <div className="space-y-3">
-                  {/* Upload Button */}
-                  {selectedPhotos.length < 2 && (
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        onChange={handlePhotoUpload}
-                        className="hidden"
-                        id="edit-photo-upload"
-                      />
-                      <Label
-                        htmlFor="edit-photo-upload"
-                        className="flex items-center gap-2 px-4 py-2 border border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
-                      >
-                        <Upload className="h-4 w-4" />
-                        <span>Pilih Foto Baru ({selectedPhotos.length}/2)</span>
-                      </Label>
-                    </div>
-                  )}
-                  
-                  {/* Current Photos */}
-                  {(editingTask.photo || editingTask.photo2) && selectedPhotos.length === 0 && (
-                    <div className="grid grid-cols-2 gap-3">
-                      {editingTask.photo && (
-                        <div className="relative group">
-                          <img
-                            src={editingTask.photo}
-                            alt="Foto kegiatan 1"
-                            className="w-full h-32 object-cover rounded-lg border"
-                          />
-                          <div className="absolute bottom-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
-                            Foto 1 (Saat ini)
-                          </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Foto 1 */}
+                  <div className="space-y-3">
+                    <Label className="text-sm font-medium">Foto 1</Label>
+                    {!photo && !photoPreview && (
+                      <div className="flex items-center gap-2">
+                        <Input
+                          ref={photoInputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handlePhotoUpload(e, 1)}
+                          className="hidden"
+                          id="edit-photo-upload"
+                        />
+                        <Label
+                          htmlFor="edit-photo-upload"
+                          className="flex items-center gap-2 px-4 py-2 border border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors w-full justify-center"
+                        >
+                          <ImageIcon className="h-4 w-4" />
+                          <span>Pilih Foto 1</span>
+                        </Label>
+                      </div>
+                    )}
+                    
+                    {photoPreview && (
+                      <div className="relative group">
+                        <img
+                          src={photoPreview}
+                          alt="Preview Foto 1"
+                          className="w-full h-32 object-cover rounded-lg border"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-2 right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => removePhoto(1)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                        <div className="absolute bottom-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
+                          Foto 1
                         </div>
-                      )}
-                      {editingTask.photo2 && (
-                        <div className="relative group">
-                          <img
-                            src={editingTask.photo2}
-                            alt="Foto kegiatan 2"
-                            className="w-full h-32 object-cover rounded-lg border"
-                          />
-                          <div className="absolute bottom-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
-                            Foto 2 (Saat ini)
-                          </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Foto 2 */}
+                  <div className="space-y-3">
+                    <Label className="text-sm font-medium">Foto 2</Label>
+                    {!photo2 && !photo2Preview && (
+                      <div className="flex items-center gap-2">
+                        <Input
+                          ref={photo2InputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handlePhotoUpload(e, 2)}
+                          className="hidden"
+                          id="edit-photo2-upload"
+                        />
+                        <Label
+                          htmlFor="edit-photo2-upload"
+                          className="flex items-center gap-2 px-4 py-2 border border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors w-full justify-center"
+                        >
+                          <ImageIcon className="h-4 w-4" />
+                          <span>Pilih Foto 2</span>
+                        </Label>
+                      </div>
+                    )}
+                    
+                    {photo2Preview && (
+                      <div className="relative group">
+                        <img
+                          src={photo2Preview}
+                          alt="Preview Foto 2"
+                          className="w-full h-32 object-cover rounded-lg border"
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-2 right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => removePhoto(2)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                        <div className="absolute bottom-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
+                          Foto 2
                         </div>
-                      )}
-                    </div>
-                  )}
-                  
-                  {/* New Photo Previews */}
-                  {photoPreview.length > 0 && (
-                    <div className="grid grid-cols-2 gap-3">
-                      {photoPreview.map((preview, index) => (
-                        <div key={index} className="relative group">
-                          <img
-                            src={preview}
-                            alt={`Preview ${index + 1}`}
-                            className="w-full h-32 object-cover rounded-lg border"
-                          />
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            size="icon"
-                            className="absolute top-2 right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() => removePhoto(index)}
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
-                          <div className="absolute bottom-2 left-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
-                            Foto Baru {index + 1}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
               
