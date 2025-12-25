@@ -23,10 +23,6 @@ type AdditionalTask = {
   location?: string;
   organizer?: string;
   school_id?: string;
-  schools?: {
-    id: string;
-    name: string;
-  };
   created_at?: string;
 };
 
@@ -123,13 +119,13 @@ export default function AdditionalTasksPage() {
     }
   };
 
-  // SIMPLE: Pure Supabase query with user filter (same as reports page)
+  // EMERGENCY: Kembalikan ke query paling sederhana yang pernah bekerja
   const { data: tasks = [], isLoading, refetch } = useQuery({
     queryKey: ['additional-tasks'],
     queryFn: async () => {
-      console.log('🔍 Fetching additional tasks from Supabase...');
+      console.log('🔍 EMERGENCY: Fetching additional tasks with simplest query...');
       
-      // Get current user (same as reports page)
+      // Get current user (sama seperti yang bekerja sebelumnya)
       const userData = localStorage.getItem('auth_user');
       if (!userData) {
         console.log('⚠️ No user data found');
@@ -138,28 +134,30 @@ export default function AdditionalTasksPage() {
       
       const currentUser = JSON.parse(userData);
       const userId = currentUser.username || currentUser.id;
-      console.log('🔑 Using user_id for additional tasks:', userId);
+      console.log('🔑 EMERGENCY: Using user_id for additional tasks:', userId);
       
-      // SIMPLE: Query with user filter (same as reports page)
+      // EMERGENCY: Query paling sederhana tanpa join apapun
       const { data, error } = await supabase
         .from('additional_tasks')
-        .select(`
-          *,
-          schools (
-            id,
-            name
-          )
-        `)
+        .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
       
       if (error) {
-        console.error('❌ Supabase error:', error);
+        console.error('❌ EMERGENCY: Supabase error:', error);
         throw error;
       }
       
-      console.log('✅ Additional tasks loaded for user:', data?.length || 0);
-      console.log('📋 Data preview:', data?.slice(0, 2));
+      console.log('✅ EMERGENCY: Additional tasks loaded:', data?.length || 0);
+      console.log('📋 EMERGENCY: Data preview:', data?.slice(0, 2));
+      
+      // EMERGENCY: Log semua data untuk debugging
+      if (data && data.length > 0) {
+        console.log('🎉 EMERGENCY: Data ditemukan!', data);
+      } else {
+        console.log('⚠️ EMERGENCY: Tidak ada data ditemukan untuk user:', userId);
+      }
+      
       return data || [];
     },
     retry: 1,

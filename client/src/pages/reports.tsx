@@ -108,12 +108,18 @@ export default function ReportsPage() {
           console.error('Error fetching supervisions from Supabase:', error);
         }
         
-        // SIMPLE: Fetch additional tasks from Supabase directly (SIMPLIFIED - no join with schools)
+        // SIMPLE: Fetch additional tasks from Supabase directly
         try {
           console.log('➕ Fetching additional tasks from Supabase...');
           const { data: additionalTasksData, error: additionalTasksError } = await supabase
             .from('additional_tasks')
-            .select('*')
+            .select(`
+              *,
+              schools (
+                id,
+                name
+              )
+            `)
             .eq('user_id', userId)
             .order('created_at', { ascending: false });
           
@@ -124,13 +130,13 @@ export default function ReportsPage() {
               activities.push({
                 id: task.id,
                 type: 'Tugas Tambahan',
-                title: task.name || task.title || 'Kegiatan Tambahan',
+                title: task.title || task.name || 'Kegiatan Tambahan', // Support both title and name columns
                 date: task.date || task.created_at,
-                location: task.location || 'Tempat Kegiatan', // SIMPLIFIED: Use static location instead of join
+                location: task.location || task.schools?.name || 'Tempat Kegiatan',
                 organizer: task.organizer || 'Pengawas Sekolah',
                 description: task.description || '',
                 // ENHANCED: Comprehensive photo mapping with all possible fallbacks
-                photo1: task.photo || task.photo1, // Primary: 'photo' field, fallback to 'photo1'
+                photo1: task.photo1 || task.photo, // Primary: 'photo1' field, fallback to 'photo'
                 photo2: task.photo2, // Secondary photo
                 createdAt: task.created_at,
                 source: 'supabase-additional-tasks'
