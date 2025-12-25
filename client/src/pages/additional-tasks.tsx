@@ -123,16 +123,34 @@ export default function AdditionalTasksPage() {
     }
   };
 
-  // SIMPLE: Pure Supabase query (same as tasks and supervisions)
+  // SIMPLE: Pure Supabase query with user filter (same as reports page)
   const { data: tasks = [], isLoading, refetch } = useQuery({
     queryKey: ['additional-tasks'],
     queryFn: async () => {
       console.log('🔍 Fetching additional tasks from Supabase...');
       
-      // SIMPLE: Query tanpa join dulu (sama seperti tasks dan supervisions)
+      // Get current user (same as reports page)
+      const userData = localStorage.getItem('auth_user');
+      if (!userData) {
+        console.log('⚠️ No user data found');
+        return [];
+      }
+      
+      const currentUser = JSON.parse(userData);
+      const userId = currentUser.username || currentUser.id;
+      console.log('🔑 Using user_id for additional tasks:', userId);
+      
+      // SIMPLE: Query with user filter (same as reports page)
       const { data, error } = await supabase
         .from('additional_tasks')
-        .select('*')
+        .select(`
+          *,
+          schools (
+            id,
+            name
+          )
+        `)
+        .eq('user_id', userId)
         .order('created_at', { ascending: false });
       
       if (error) {
@@ -140,7 +158,7 @@ export default function AdditionalTasksPage() {
         throw error;
       }
       
-      console.log('✅ Additional tasks loaded:', data?.length || 0);
+      console.log('✅ Additional tasks loaded for user:', data?.length || 0);
       console.log('📋 Data preview:', data?.slice(0, 2));
       return data || [];
     },
