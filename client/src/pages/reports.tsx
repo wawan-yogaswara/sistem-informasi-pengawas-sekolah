@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FileText, Download, Calendar, MapPin, Users, Image as ImageIcon, Printer, TrendingUp, BarChart3 } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
 export default function ReportsPage() {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
@@ -13,7 +14,7 @@ export default function ReportsPage() {
   const [allActivities, setAllActivities] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load activities from Supabase only
+  // SIMPLE: Load activities from Supabase only (Pure Supabase approach)
   useEffect(() => {
     const loadActivitiesFromSupabase = async () => {
       try {
@@ -32,35 +33,23 @@ export default function ReportsPage() {
         const currentUser = JSON.parse(userData);
         console.log('👤 Current user:', currentUser.username);
         
-        // For wawan user, use the correct ID from Supabase
-        let userId = currentUser.id;
-        if (currentUser.username === 'wawan') {
-          // Use the actual Supabase user_id for Wawan
-          userId = '421cdb28-f2af-4f1f-aa5f-c59a3d661a2e';
-          // Update localStorage with correct ID
-          currentUser.id = userId;
-          localStorage.setItem('auth_user', JSON.stringify(currentUser));
-        }
+        // SIMPLE: Use username as user_id (same as other pages)
+        const userId = currentUser.username || currentUser.id;
         
         console.log('🔑 Using user_id:', userId);
         
         const activities: any[] = [];
         
-        // ENHANCED: Fetch tasks from Supabase with better error handling
+        // SIMPLE: Fetch tasks from Supabase directly
         try {
-          console.log('📋 Fetching tasks from:', `/api/tasks-daily?user_id=${encodeURIComponent(userId)}`);
-          const tasksResponse = await fetch(`/api/tasks-daily?user_id=${encodeURIComponent(userId)}`);
-          console.log('📋 Tasks response status:', tasksResponse.status);
+          console.log('📋 Fetching tasks from Supabase...');
+          const { data: tasksData, error: tasksError } = await supabase
+            .from('tasks')
+            .select('*')
+            .order('created_at', { ascending: false });
           
-          if (tasksResponse.ok) {
-            const tasksData = await tasksResponse.json();
-            console.log(`📋 Found ${tasksData.length} tasks from Supabase for user ${userId}`);
-            
-            // ENHANCED: Log detailed task data for debugging
-            if (tasksData.length > 0) {
-              console.log('📋 Sample task data:', tasksData[0]);
-              console.log('📋 Task fields available:', Object.keys(tasksData[0]));
-            }
+          if (!tasksError && tasksData) {
+            console.log(`📋 Found ${tasksData.length} tasks from Supabase`);
             
             tasksData.forEach((task: any) => {
               activities.push({
@@ -68,7 +57,7 @@ export default function ReportsPage() {
                 type: 'Tugas Pokok',
                 title: task.title || 'Tugas Harian',
                 date: task.date || task.created_at,
-                location: task.location || task.school || 'Sekolah Binaan',
+                location: task.location || task.school_name || 'Sekolah Binaan',
                 organizer: 'Pengawas Sekolah',
                 description: task.description || '',
                 // ENHANCED: Improved photo mapping with multiple fallbacks
@@ -79,146 +68,83 @@ export default function ReportsPage() {
               });
             });
           } else {
-            const errorText = await tasksResponse.text();
-            console.error('📋 Tasks API error:', tasksResponse.status, errorText);
+            console.error('📋 Tasks error:', tasksError);
           }
         } catch (error) {
           console.error('Error fetching tasks from Supabase:', error);
         }
         
-        // ENHANCED: Fetch supervisions from Supabase with better error handling
+        // SIMPLE: Fetch supervisions from Supabase directly
         try {
-          console.log('🔍 Fetching supervisions from:', `/api/supervisions?user_id=${encodeURIComponent(userId)}`);
-          const supervisionsResponse = await fetch(`/api/supervisions?user_id=${encodeURIComponent(userId)}`);
-          console.log('🔍 Supervisions response status:', supervisionsResponse.status);
+          console.log('🔍 Fetching supervisions from Supabase...');
+          const { data: supervisionsData, error: supervisionsError } = await supabase
+            .from('supervisions')
+            .select('*')
+            .order('created_at', { ascending: false });
           
-          if (supervisionsResponse.ok) {
-            const supervisionsData = await supervisionsResponse.json();
-            console.log(`🔍 Found ${supervisionsData.length} supervisions from Supabase for user ${userId}`);
-            
-            // ENHANCED: Log detailed supervision data for debugging
-            if (supervisionsData.length > 0) {
-              console.log('🔍 Sample supervision data:', supervisionsData[0]);
-              console.log('🔍 Supervision fields available:', Object.keys(supervisionsData[0]));
-            }
-            
-            // Fetch schools for location names
-            const schoolsResponse = await fetch('/api/schools');
-            const schoolsData = schoolsResponse.ok ? await schoolsResponse.json() : [];
+          if (!supervisionsError && supervisionsData) {
+            console.log(`🔍 Found ${supervisionsData.length} supervisions from Supabase`);
             
             supervisionsData.forEach((supervision: any) => {
-              // Get school name
-              const school = schoolsData.find((s: any) => s.id === supervision.school_id);
-              
               activities.push({
                 id: supervision.id,
                 type: 'Supervisi',
-                title: `Supervisi ${school?.name || supervision.school_name || 'Sekolah'}`,
+                title: `Supervisi ${supervision.school || 'Sekolah'}`,
                 date: supervision.date || supervision.created_at,
-                location: school?.name || supervision.school_name || 'Sekolah Binaan',
+                location: supervision.school || 'Sekolah Binaan',
                 organizer: 'Pengawas Sekolah',
                 description: supervision.findings || supervision.recommendations || '',
                 // ENHANCED: Improved photo mapping with multiple fallbacks
-                photo1: supervision.photo || supervision.photo1, // Primary: use 'photo' field, fallback to 'photo1'
+                photo1: supervision.photo1 || supervision.photo, // Primary: use 'photo1' field, fallback to 'photo'
                 photo2: supervision.photo2, // Secondary photo
                 createdAt: supervision.created_at,
                 source: 'supabase-supervisions'
               });
             });
           } else {
-            const errorText = await supervisionsResponse.text();
-            console.error('🔍 Supervisions API error:', supervisionsResponse.status, errorText);
+            console.error('🔍 Supervisions error:', supervisionsError);
           }
         } catch (error) {
           console.error('Error fetching supervisions from Supabase:', error);
         }
         
-        // ENHANCED: Fetch additional tasks from Supabase with proper field mapping
+        // SIMPLE: Fetch additional tasks from Supabase directly
         try {
-          console.log('➕ ENHANCED: Fetching activities from API and Supabase direct...');
+          console.log('➕ Fetching additional tasks from Supabase...');
+          const { data: additionalTasksData, error: additionalTasksError } = await supabase
+            .from('additional_tasks')
+            .select(`
+              *,
+              schools (
+                id,
+                name
+              )
+            `)
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false });
           
-          // Try API first
-          let additionalTasksData = [];
-          try {
-            const additionalTasksResponse = await fetch(`/api/activities?user_id=${encodeURIComponent(userId)}`);
-            console.log('➕ Additional tasks response status:', additionalTasksResponse.status);
+          if (!additionalTasksError && additionalTasksData) {
+            console.log(`➕ Found ${additionalTasksData.length} additional tasks from Supabase`);
             
-            if (additionalTasksResponse.ok) {
-              additionalTasksData = await additionalTasksResponse.json();
-              console.log(`➕ API returned ${additionalTasksData.length} additional tasks`);
-              
-              // ENHANCED: Log detailed additional tasks data for debugging
-              if (additionalTasksData.length > 0) {
-                console.log('➕ Sample additional task data:', additionalTasksData[0]);
-                console.log('➕ Additional task fields available:', Object.keys(additionalTasksData[0]));
-              }
-            } else {
-              const errorText = await additionalTasksResponse.text();
-              console.error('➕ Additional tasks API error:', additionalTasksResponse.status, errorText);
-            }
-          } catch (apiError) {
-            console.log('⚠️ API failed, trying Supabase direct:', apiError);
-          }
-          
-          // Fallback to direct Supabase if API fails or returns no data
-          if (additionalTasksData.length === 0) {
-            try {
-              console.log('🔄 Trying direct Supabase connection...');
-              // Import Supabase client
-              const { createClient } = await import('@supabase/supabase-js');
-              const supabaseUrl = 'https://fmxeboullgcewzjpql.supabase.co';
-              const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZteGVib3VsbGdjZXd6anBxbCIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzM0NTk5NzI4LCJleHAiOjIwNTAxNzU3Mjh9.Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8Ej8';
-              const supabase = createClient(supabaseUrl, supabaseKey);
-              
-              const { data: supabaseData, error } = await supabase
-                .from('additional_tasks')
-                .select(`
-                  *,
-                  schools (
-                    id,
-                    name
-                  )
-                `)
-                .eq('user_id', userId)
-                .order('created_at', { ascending: false });
-              
-              if (!error && supabaseData) {
-                additionalTasksData = supabaseData;
-                console.log(`➕ Supabase direct returned ${additionalTasksData.length} additional tasks`);
-                
-                // ENHANCED: Log detailed Supabase data for debugging
-                if (additionalTasksData.length > 0) {
-                  console.log('➕ Sample Supabase additional task data:', additionalTasksData[0]);
-                  console.log('➕ Supabase additional task fields available:', Object.keys(additionalTasksData[0]));
-                }
-              } else {
-                console.error('➕ Supabase direct error:', error);
-              }
-            } catch (supabaseError) {
-              console.error('➕ Supabase direct failed:', supabaseError);
-            }
-          }
-          
-          // Process additional tasks data with enhanced field mapping
-          additionalTasksData.forEach((task: any) => {
-            activities.push({
-              id: task.id,
-              type: 'Tugas Tambahan',
-              title: task.name || task.title || 'Kegiatan Tambahan',
-              date: task.date || task.created_at,
-              location: task.location || task.schools?.name || 'Tempat Kegiatan',
-              organizer: task.organizer || 'Pengawas Sekolah',
-              description: task.description || '',
-              // ENHANCED: Comprehensive photo mapping with all possible fallbacks
-              photo1: task.photo || task.photo1, // Primary: 'photo' field, fallback to 'photo1'
-              photo2: task.photo2, // Secondary photo
-              createdAt: task.created_at,
-              source: 'supabase-additional-tasks'
+            additionalTasksData.forEach((task: any) => {
+              activities.push({
+                id: task.id,
+                type: 'Tugas Tambahan',
+                title: task.name || task.title || 'Kegiatan Tambahan',
+                date: task.date || task.created_at,
+                location: task.location || task.schools?.name || 'Tempat Kegiatan',
+                organizer: task.organizer || 'Pengawas Sekolah',
+                description: task.description || '',
+                // ENHANCED: Comprehensive photo mapping with all possible fallbacks
+                photo1: task.photo || task.photo1, // Primary: 'photo' field, fallback to 'photo1'
+                photo2: task.photo2, // Secondary photo
+                createdAt: task.created_at,
+                source: 'supabase-additional-tasks'
+              });
             });
-          });
-          
-          console.log(`➕ Total additional tasks processed: ${additionalTasksData.length}`);
-          
+          } else {
+            console.error('➕ Additional tasks error:', additionalTasksError);
+          }
         } catch (error) {
           console.error('Error fetching additional tasks:', error);
         }
@@ -249,36 +175,7 @@ export default function ReportsPage() {
       }
     };
 
-    // Check for cached data first
-    const cachedData = localStorage.getItem('reports_activities_cache');
-    if (cachedData) {
-      try {
-        const parsedData = JSON.parse(cachedData);
-        console.log('📦 Found cached activities data:', parsedData.length);
-        setAllActivities(parsedData);
-        setIsLoading(false);
-        // Clear cache after using it
-        localStorage.removeItem('reports_activities_cache');
-        return;
-      } catch (error) {
-        console.error('Error parsing cached data:', error);
-      }
-    }
-
     loadActivitiesFromSupabase();
-    
-    // Listen for custom update events
-    const handleUpdateEvent = (event: any) => {
-      console.log('📡 Received update event with activities:', event.detail.activities.length);
-      setAllActivities(event.detail.activities);
-      setIsLoading(false);
-    };
-    
-    window.addEventListener('updateReportsData', handleUpdateEvent);
-    
-    return () => {
-      window.removeEventListener('updateReportsData', handleUpdateEvent);
-    };
   }, []);
 
   // Filter activities by period

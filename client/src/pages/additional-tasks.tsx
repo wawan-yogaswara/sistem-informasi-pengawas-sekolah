@@ -112,40 +112,26 @@ export default function AdditionalTasksPage() {
     setPhotoPreview(prev => prev.filter((_, i) => i !== index));
   };
 
-  // NUCLEAR FIX: Direct API call with forced refresh
+  // SIMPLE: Pure Supabase query (same as tasks and supervisions)
   const { data: tasks = [], isLoading, refetch } = useQuery({
     queryKey: ['additional-tasks'],
     queryFn: async () => {
-      console.log('🔍 NUCLEAR FIX: Fetching additional tasks...');
+      console.log('🔍 Fetching additional tasks from Supabase...');
       
-      // Force correct user ID
-      const userId = '421cdb28-f2af-4f1f-aa5f-c59a3d661a2e';
-      
-      // Update localStorage
+      // Get current user
       const userData = localStorage.getItem('auth_user');
-      if (userData) {
-        const user = JSON.parse(userData);
-        user.id = userId;
-        localStorage.setItem('auth_user', JSON.stringify(user));
+      if (!userData) {
+        console.log('⚠️ No user data found');
+        return [];
       }
+      
+      const currentUser = JSON.parse(userData);
+      
+      // SIMPLE: Use username as user_id (same as tasks and supervisions)
+      const userId = currentUser.username || currentUser.id;
       
       console.log('👤 Using user_id:', userId);
       
-      // Try API first (more reliable)
-      try {
-        const response = await fetch(`/api/activities?user_id=${encodeURIComponent(userId)}`);
-        if (response.ok) {
-          const apiData = await response.json();
-          console.log('✅ API returned:', apiData.length, 'tasks');
-          if (apiData.length > 0) {
-            return apiData;
-          }
-        }
-      } catch (error) {
-        console.log('⚠️ API failed, trying Supabase direct');
-      }
-      
-      // Fallback to direct Supabase
       const { data, error } = await supabase
         .from('additional_tasks')
         .select(`
@@ -163,13 +149,11 @@ export default function AdditionalTasksPage() {
         throw error;
       }
       
-      console.log('✅ Supabase returned:', data?.length || 0, 'tasks');
+      console.log('✅ Additional tasks loaded:', data?.length || 0);
       return data || [];
     },
-    retry: 3,
+    retry: 1,
     refetchOnWindowFocus: false,
-    staleTime: 0,
-    cacheTime: 0,
   });
 
   // SIMPLE: Add task function - Pure Supabase
@@ -200,15 +184,8 @@ export default function AdditionalTasksPage() {
       
       const currentUser = JSON.parse(userData);
       
-      // For wawan user, use the correct UUID from Supabase
-      let userId = currentUser.id;
-      if (currentUser.username === 'wawan' || !userId || typeof userId !== 'string' || userId.length < 10) {
-        // Use the actual Supabase user_id for Wawan
-        userId = '421cdb28-f2af-4f1f-aa5f-c59a3d661a2e';
-        // Update localStorage with correct ID
-        currentUser.id = userId;
-        localStorage.setItem('auth_user', JSON.stringify(currentUser));
-      }
+      // SIMPLE: Use username as user_id (same as tasks and supervisions)
+      const userId = currentUser.username || currentUser.id;
       
       console.log('👤 User ID:', userId);
       
@@ -232,7 +209,7 @@ export default function AdditionalTasksPage() {
         });
       }
       
-      // Use default school for additional tasks (not user-selectable)
+      // SIMPLE: Use default school for additional tasks (same as tasks)
       const schoolId = '1cd40355-1b07-402d-8309-b243c098cfe9'; // SDN 1 Garut
       
       const { data, error } = await supabase
@@ -259,18 +236,8 @@ export default function AdditionalTasksPage() {
       
       console.log('✅ Additional task added:', data);
       
-      // NUCLEAR FIX: Force immediate refresh
-      await queryClient.clear();
-      await queryClient.invalidateQueries({ queryKey: ['additional-tasks'] });
-      await queryClient.refetchQueries({ queryKey: ['additional-tasks'] });
-      await refetch();
-      
-      // Force page refresh if still no data
-      setTimeout(() => {
-        if (tasks.length === 0) {
-          window.location.reload();
-        }
-      }, 1000);
+      // SIMPLE: Refresh data (same as tasks and supervisions)
+      refetch();
       
       // Success feedback
       toast({
@@ -355,18 +322,8 @@ export default function AdditionalTasksPage() {
       
       console.log('✅ Additional task updated:', data);
       
-      // NUCLEAR FIX: Force immediate refresh
-      await queryClient.clear();
-      await queryClient.invalidateQueries({ queryKey: ['additional-tasks'] });
-      await queryClient.refetchQueries({ queryKey: ['additional-tasks'] });
-      await refetch();
-      
-      // Force page refresh if still no data
-      setTimeout(() => {
-        if (tasks.length === 0) {
-          window.location.reload();
-        }
-      }, 1000);
+      // SIMPLE: Refresh data (same as tasks and supervisions)
+      refetch();
       
       // Success feedback
       toast({
@@ -474,18 +431,8 @@ export default function AdditionalTasksPage() {
       
       console.log('✅ Additional task deleted');
       
-      // NUCLEAR FIX: Force immediate refresh
-      await queryClient.clear();
-      await queryClient.invalidateQueries({ queryKey: ['additional-tasks'] });
-      await queryClient.refetchQueries({ queryKey: ['additional-tasks'] });
-      await refetch();
-      
-      // Force page refresh if still no data
-      setTimeout(() => {
-        if (tasks.length === 0) {
-          window.location.reload();
-        }
-      }, 1000);
+      // SIMPLE: Refresh data (same as tasks and supervisions)
+      refetch();
       
       toast({
         title: "Berhasil",
