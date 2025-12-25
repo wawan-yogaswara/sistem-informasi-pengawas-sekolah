@@ -40,7 +40,7 @@ export default function ReportsPage() {
         
         const activities: any[] = [];
         
-        // SIMPLE: Fetch tasks from Supabase directly
+        // SIMPLE: Fetch tasks from Supabase directly (same as tasks.tsx)
         try {
           console.log('📋 Fetching tasks from Supabase...');
           const { data: tasksData, error: tasksError } = await supabase
@@ -74,7 +74,7 @@ export default function ReportsPage() {
           console.error('Error fetching tasks from Supabase:', error);
         }
         
-        // SIMPLE: Fetch supervisions from Supabase directly
+        // SIMPLE: Fetch supervisions from Supabase directly (same as supervisions.tsx)
         try {
           console.log('🔍 Fetching supervisions from Supabase...');
           const { data: supervisionsData, error: supervisionsError } = await supabase
@@ -108,19 +108,12 @@ export default function ReportsPage() {
           console.error('Error fetching supervisions from Supabase:', error);
         }
         
-        // SIMPLE: Fetch additional tasks from Supabase directly
+        // SIMPLE: Fetch additional tasks from Supabase directly (same as additional-tasks.tsx)
         try {
           console.log('➕ Fetching additional tasks from Supabase...');
           const { data: additionalTasksData, error: additionalTasksError } = await supabase
             .from('additional_tasks')
-            .select(`
-              *,
-              schools (
-                id,
-                name
-              )
-            `)
-            .eq('user_id', userId)
+            .select('*')
             .order('created_at', { ascending: false });
           
           if (!additionalTasksError && additionalTasksData) {
@@ -132,7 +125,7 @@ export default function ReportsPage() {
                 type: 'Tugas Tambahan',
                 title: task.title || task.name || 'Kegiatan Tambahan', // Support both title and name columns
                 date: task.date || task.created_at,
-                location: task.location || task.schools?.name || 'Tempat Kegiatan',
+                location: task.location || 'Tempat Kegiatan',
                 organizer: task.organizer || 'Pengawas Sekolah',
                 description: task.description || '',
                 // ENHANCED: Comprehensive photo mapping with all possible fallbacks

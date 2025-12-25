@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quick Test - Tugas Tambahan Localhost</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        button { padding: 10px 15px; margin: 5px; }
+        pre { background: #f5f5f5; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Quick Test - Tugas Tambahan Localhost</h1>
+    
+    <div class="test-section">
+        <h3>1. Test Server Status</h3>
+        <button onclick="testServer()">Test Server</button>
+        <div id="server-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>2. Test User Data</h3>
+        <button onclick="testUserData()">Check User Data</button>
+        <div id="user-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>3. Test Supabase Query</h3>
+        <button onclick="testSupabaseQuery()">Test Query</button>
+        <div id="supabase-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>4. Test All Data</h3>
+        <button onclick="testAllData()">Check All Data</button>
+        <div id="all-data-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>5. Quick Actions</h3>
+        <button onclick="clearCache()">Clear Cache</button>
+        <button onclick="forceRefresh()">Force Refresh</button>
+        <button onclick="runAllTests()">Run All Tests</button>
+    </div>
+    
+    <div class="test-section">
+        <h3>Console Output</h3>
+        <pre id="console-output"></pre>
+    </div>
+
+    <script>
+        // Redirect console.log to our output
+        const originalLog = console.log;
+        const originalError = console.error;
+        const consoleOutput = document.getElementById('console-output');
+        
+        function addToConsole(message, type = 'log') {
+            const timestamp = new Date().toLocaleTimeString();
+            const line = `[${timestamp}] ${type.toUpperCase()}: ${message}\n`;
+            consoleOutput.textContent += line;
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addToConsole(args.join(' '), 'log');
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addToConsole(args.join(' '), 'error');
+        };
+
+        // Test functions
+        async function testServer() {
+            const result = document.getElementById('server-result');
+            try {
+                console.log('Testing server status...');
+                const response = await fetch('http://localhost:5000/api/test');
+                if (response.ok) {
+                    result.innerHTML = '<span class="success">✅ Server is running</span>';
+                    console.log('Server test: SUCCESS');
+                } else {
+                    result.innerHTML = `<span class="error">❌ Server error: ${response.status}</span>`;
+                    console.log(`Server test: ERROR ${response.status}`);
+                }
+            } catch (error) {
+                result.innerHTML = `<span class="error">❌ Cannot connect to server: ${error.message}</span>`;
+                console.error('Server test: FAILED', error.message);
+            }
+        }
+
+        function testUserData() {
+            const result = document.getElementById('user-result');
+            try {
+                console.log('Testing user data...');
+                const userData = localStorage.getItem('auth_user');
+                if (userData) {
+                    const user = JSON.parse(userData);
+                    result.innerHTML = `
+                        <span class="success">✅ User data found</span><br>
+                        <strong>Username:</strong> ${user.username}<br>
+                        <strong>ID:</strong> ${user.id}<br>
+                        <strong>Name:</strong> ${user.fullName}
+                    `;
+                    console.log('User data:', user);
+                    return user;
+                } else {
+                    result.innerHTML = '<span class="error">❌ No user data in localStorage</span>';
+                    console.log('User data: NOT FOUND');
+                    return null;
+                }
+            } catch (error) {
+                result.innerHTML = `<span class="error">❌ Error reading user data: ${error.message}</span>`;
+                console.error('User data test: ERROR', error.message);
+                return null;
+            }
+        }
+
+        async function testSupabaseQuery() {
+            const result = document.getElementById('supabase-result');
+            try {
+                console.log('Testing Supabase query...');
+                
+                const userData = localStorage.getItem('auth_user');
+                if (!userData) {
+                    result.innerHTML = '<span class="error">❌ No user data for query</span>';
+                    return;
+                }
+                
+                const currentUser = JSON.parse(userData);
+                const userId = currentUser.username || currentUser.id;
+                console.log('Using userId:', userId);
+                
+                // Check if supabase is available
+                if (typeof supabase === 'undefined') {
+                    result.innerHTML = '<span class="error">❌ Supabase client not available</span>';
+                    console.log('Supabase client: NOT AVAILABLE');
+                    return;
+                }
+                
+                const { data, error } = await supabase
+                    .from('additional_tasks')
+                    .select('*')
+                    .eq('user_id', userId)
+                    .order('created_at', { ascending: false });
+                
+                if (error) {
+                    result.innerHTML = `<span class="error">❌ Supabase error: ${error.message}</span>`;
+                    console.error('Supabase query: ERROR', error);
+                } else {
+                    result.innerHTML = `
+                        <span class="success">✅ Query successful</span><br>
+                        <strong>Records found:</strong> ${data?.length || 0}<br>
+                        <strong>User ID:</strong> ${userId}
+                    `;
+                    console.log('Supabase query: SUCCESS', data?.length || 0, 'records');
+                    if (data && data.length > 0) {
+                        console.log('Sample data:', data.slice(0, 2));
+                    }
+                    return data;
+                }
+                
+            } catch (error) {
+                result.innerHTML = `<span class="error">❌ Query failed: ${error.message}</span>`;
+                console.error('Supabase query: FAILED', error.message);
+            }
+        }
+
+        async function testAllData() {
+            const result = document.getElementById('all-data-result');
+            try {
+                console.log('Testing all data query...');
+                
+                if (typeof supabase === 'undefined') {
+                    result.innerHTML = '<span class="error">❌ Supabase client not available</span>';
+                    return;
+                }
+                
+                const { data, error } = await supabase
+                    .from('additional_tasks')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                if (error) {
+                    result.innerHTML = `<span class="error">❌ Query error: ${error.message}</span>`;
+                    console.error('All data query: ERROR', error);
+                } else {
+                    const userIds = [...new Set(data?.map(item => item.user_id))];
+                    result.innerHTML = `
+                        <span class="success">✅ All data query successful</span><br>
+                        <strong>Total records:</strong> ${data?.length || 0}<br>
+                        <strong>User IDs:</strong> ${userIds.join(', ')}
+                    `;
+                    console.log('All data query: SUCCESS', data?.length || 0, 'total records');
+                    console.log('User IDs found:', userIds);
+                    
+                    // Show data per user
+                    userIds.forEach(userId => {
+                        const userTasks = data?.filter(item => item.user_id === userId);
+                        console.log(`User ${userId}: ${userTasks?.length || 0} tasks`);
+                    });
+                    
+                    return data;
+                }
+                
+            } catch (error) {
+                result.innerHTML = `<span class="error">❌ Query failed: ${error.message}</span>`;
+                console.error('All data query: FAILED', error.message);
+            }
+        }
+
+        function clearCache() {
+            try {
+                console.log('Clearing cache...');
+                localStorage.removeItem('additional-tasks-cache');
+                if (window.queryClient) {
+                    window.queryClient.invalidateQueries(['additional-tasks']);
+                    console.log('React Query cache cleared');
+                }
+                console.log('Cache cleared successfully');
+            } catch (error) {
+                console.error('Clear cache: ERROR', error.message);
+            }
+        }
+
+        function forceRefresh() {
+            console.log('Force refreshing page...');
+            window.location.reload();
+        }
+
+        async function runAllTests() {
+            console.log('🧪 Running all tests...');
+            consoleOutput.textContent = '';
+            
+            await testServer();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            const user = testUserData();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            if (user) {
+                await testSupabaseQuery();
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                await testAllData();
+            }
+            
+            console.log('🏁 All tests completed');
+        }
+
+        // Auto-run basic tests on load
+        window.addEventListener('load', () => {
+            console.log('🚀 Page loaded, running basic tests...');
+            setTimeout(runAllTests, 1000);
+        });
+    </script>
+</body>
+</html>

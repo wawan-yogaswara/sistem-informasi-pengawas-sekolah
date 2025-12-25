@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -119,50 +119,45 @@ export default function AdditionalTasksPage() {
     }
   };
 
-  // EMERGENCY: Kembalikan ke query paling sederhana yang pernah bekerja
+  // SIMPLE: Pure Supabase query (sama seperti tasks dan supervisions)
   const { data: tasks = [], isLoading, refetch } = useQuery({
     queryKey: ['additional-tasks'],
     queryFn: async () => {
-      console.log('🔍 EMERGENCY: Fetching additional tasks with simplest query...');
+      console.log('🔍 Fetching additional tasks from Supabase...');
       
-      // Get current user (sama seperti yang bekerja sebelumnya)
-      const userData = localStorage.getItem('auth_user');
-      if (!userData) {
-        console.log('⚠️ No user data found');
-        return [];
-      }
-      
-      const currentUser = JSON.parse(userData);
-      const userId = currentUser.username || currentUser.id;
-      console.log('🔑 EMERGENCY: Using user_id for additional tasks:', userId);
-      
-      // EMERGENCY: Query paling sederhana tanpa join apapun
       const { data, error } = await supabase
         .from('additional_tasks')
         .select('*')
-        .eq('user_id', userId)
         .order('created_at', { ascending: false });
       
       if (error) {
-        console.error('❌ EMERGENCY: Supabase error:', error);
+        console.error('❌ Supabase error:', error);
         throw error;
       }
       
-      console.log('✅ EMERGENCY: Additional tasks loaded:', data?.length || 0);
-      console.log('📋 EMERGENCY: Data preview:', data?.slice(0, 2));
-      
-      // EMERGENCY: Log semua data untuk debugging
-      if (data && data.length > 0) {
-        console.log('🎉 EMERGENCY: Data ditemukan!', data);
-      } else {
-        console.log('⚠️ EMERGENCY: Tidak ada data ditemukan untuk user:', userId);
-      }
-      
+      console.log('✅ Additional tasks loaded:', data?.length || 0);
       return data || [];
     },
     retry: 1,
     refetchOnWindowFocus: false,
   });
+
+  // Export refetch function for debugging
+  useEffect(() => {
+    window.refetchAdditionalTasks = refetch;
+    console.log('🔧 Additional tasks refetch function exported to window');
+    
+    // Debug current state
+    console.log('📊 Additional tasks state:', {
+      isLoading,
+      tasksCount: tasks.length,
+      hasData: tasks.length > 0
+    });
+    
+    return () => {
+      delete window.refetchAdditionalTasks;
+    };
+  }, [refetch, isLoading, tasks.length]);
 
   // SIMPLE: Fetch schools from Supabase (same as supervisions)
   const { data: schools = [] } = useQuery({
@@ -197,7 +192,7 @@ export default function AdditionalTasksPage() {
     refetchOnWindowFocus: false,
   });
 
-  // SIMPLE: Add task function - Pure Supabase (same as tasks and supervisions)
+  // SIMPLE: Add task function - Pure Supabase (sama seperti supervisions.tsx)
   const handleAddTask = async () => {
     try {
       console.log('📝 Adding additional task:', newTask.title);
@@ -212,7 +207,7 @@ export default function AdditionalTasksPage() {
         return;
       }
       
-      // Get current user
+      // Get current user - SIMPLIFIED (sama seperti supervisions)
       const userData = localStorage.getItem('auth_user');
       if (!userData) {
         toast({
@@ -225,12 +220,12 @@ export default function AdditionalTasksPage() {
       
       const currentUser = JSON.parse(userData);
       
-      // SIMPLE: Use current user ID (same as tasks)
-      const userId = currentUser.id;
+      // Use simple string user_id (sama seperti supervisions)
+      const userId = currentUser.username || 'user-' + Date.now();
       
       console.log('👤 User ID:', userId);
       
-      // Convert photos to base64 if exists (same as tasks and supervisions)
+      // Convert photos to base64 if exists (sama seperti supervisions)
       let photoBase64 = null;
       let photo2Base64 = null;
       
@@ -250,14 +245,11 @@ export default function AdditionalTasksPage() {
         });
       }
       
-      // SIMPLE: Use default school for additional tasks (same as tasks)
-      const schoolId = '1cd40355-1b07-402d-8309-b243c098cfe9'; // SDN 1 Garut
-      
+      // SIMPLE: Use default school for additional tasks (tidak perlu school_id)
       const { data, error } = await supabase
         .from('additional_tasks')
         .insert([{
           user_id: userId,
-          school_id: schoolId,
           title: newTask.title,
           description: newTask.description,
           date: newTask.date,
@@ -277,7 +269,7 @@ export default function AdditionalTasksPage() {
       
       console.log('✅ Additional task added:', data);
       
-      // SIMPLE: Refresh data (same as tasks and supervisions)
+      // SIMPLE: Refresh data (sama seperti supervisions)
       refetch();
       
       // Success feedback
